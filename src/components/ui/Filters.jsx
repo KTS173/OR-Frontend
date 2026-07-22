@@ -1,6 +1,7 @@
-import { Filter, Search, X } from 'lucide-react'
+import { Filter, RefreshCw, Search, X } from 'lucide-react'
 
-export default function Filters({ search, onSearch, compact = false }) {
+export default function Filters({ search, onSearch, compact = false, validation = false }) {
+  if (validation) return <ValidationFilters search={search} onSearch={onSearch} />
   return (
     <section className="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
@@ -19,4 +20,17 @@ export default function Filters({ search, onSearch, compact = false }) {
       </div>
     </section>
   )
+}
+
+function ValidationFilters({ search, onSearch }) {
+  const fields = ['สถานะตรวจสอบ', 'หัตถการ', 'รอบการติดตาม', 'สถานะผู้ป่วย', 'สถานะผู้ป่วย']
+  return <section className="rounded-xl border border-black/10 bg-white p-[25px] shadow-sm">
+    <h2 className="flex items-center gap-2 text-[16px] leading-6 font-semibold text-[#191c1e]"><Search size={18} className="text-[#175beb]" />ค้นหาข้อมูล</h2>
+    <div className="mt-4 grid grid-cols-5 gap-[10px]">{fields.map((label, i) => <label key={`${label}-${i}`} className="flex flex-col gap-1 text-[13px] leading-[18px] text-[#424752]">{label}<select className="h-[39px] rounded-lg border border-[#e2e8f0] bg-white px-[13px] text-[14px] text-[#191c1e]"><option>ทั้งหมด</option></select></label>)}</div>
+    <div className="mt-4 grid grid-cols-[201px_minmax(0,1fr)_246px] gap-[10px]">
+      <label className="flex flex-col gap-1 text-[13px] leading-[18px] text-[#424752]">ความเสี่ยง SSI<select className="h-[39px] rounded-lg border border-[#e2e8f0] bg-white px-[13px] text-[14px]"><option>ทั้งหมด</option></select></label>
+      <label className="flex flex-col gap-1 text-[13px] leading-[18px] text-[#424752]">คำค้นหา<input value={search} onChange={(e) => onSearch(e.target.value)} className="h-[39px] rounded-lg border border-[#e2e8f0] px-[13px] text-[14px] outline-none" placeholder="ค้นหา HN, ชื่อผู้ป่วย, หัตถการ..." /></label>
+      <div className="flex items-end gap-3"><button className="flex h-[42px] shrink-0 items-center gap-2 whitespace-nowrap rounded-lg bg-[#175beb] px-6 text-[14px] font-semibold tracking-[.6px] text-white"><Search size={14} />ค้นหา</button><button onClick={() => onSearch('')} className="flex h-[42px] shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-[#e2e8f0] px-[17px] text-[14px] font-medium tracking-[.6px] text-[#424752]"><RefreshCw size={13} />ล้างตัวกรอง</button></div>
+    </div>
+  </section>
 }

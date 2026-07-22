@@ -1,29 +1,42 @@
-import { Bell, Menu, Search } from 'lucide-react'
+import { Bell, CalendarDays, ChevronDown, Menu } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
+
+const routeTitles = {
+  '/dashboard': 'แดชบอร์ด',
+  '/or-validation': 'OR Validation List (รายการเคสที่ต้องตรวจสอบก่อนส่งเข้า Surveillance)',
+  '/opd-queue': 'รายการ คิว OPD (ชื่อ-แผนก)',
+  '/ipd-queue': 'คิว IPD',
+  '/my-follow-ups': 'งานติดตามของฉัน',
+  '/calendar': 'ปฏิทินติดตาม',
+  '/history': 'ประวัติการติดตาม',
+  '/suspected-ssi': 'เคสสงสัย SSI',
+  '/confirmed-ssi': 'เคสยืนยัน SSI',
+  '/doctor-review': 'แพทย์ตรวจสอบ SSI',
+  '/reports': 'รายงานและวิเคราะห์',
+  '/notifications': 'การแจ้งเตือน',
+  '/central-search': 'ค้นหาข้อมูลกลาง',
+  '/documents': 'เอกสารข่าวสารกลาง',
+  '/his-sync': 'ซิงค์ข้อมูลหลัก',
+  '/settings': 'ตั้งค่า',
+  '/users': 'จัดการผู้ใช้',
+}
 
 export default function Header({ onMenu }) {
+  const { pathname } = useLocation()
+  const title = pathname.endsWith('/create-follow-up') ? 'สร้างบันทึกการเฝ้าระวัง (Create Follow-up)' : pathname.startsWith('/cases/') ? 'รายละเอียดเคสผ่าตัด (OR Surgery Case Detail)' : routeTitles[pathname] ?? 'OR SMART SSI'
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6">
+    <header className="sticky top-0 z-20 flex h-[var(--or-header-height)] items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-[var(--or-header-padding)]">
       <div className="flex items-center gap-3">
         <button onClick={onMenu} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 lg:hidden" aria-label="เปิดเมนู"><Menu size={19} /></button>
-        <div className="relative hidden sm:block">
-          <Search className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" size={16} />
-          <input className="h-9 w-72 rounded-lg border border-slate-200 bg-slate-50 pr-3 pl-9 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100" placeholder="ค้นหา HN, ชื่อผู้ป่วย, หัตถการ..." />
-        </div>
+        <h1 className="text-[24px] leading-[20px] font-medium text-[#175beb]">{title}</h1>
       </div>
-      <div className="flex items-center gap-3">
-        <span className="hidden text-xs text-slate-500 md:block">15 มิ.ย. 2569</span>
-        <button className="relative rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" aria-label="การแจ้งเตือน">
-          <Bell size={18} />
-          <span className="absolute -top-1 -right-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">12</span>
+      <div className="flex items-center gap-6">
+        <button className="hidden h-[42px] w-[182px] items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-[17px] py-[9px] text-[14px] font-normal leading-6 text-[#1f2937] md:flex"><span className="flex items-center gap-2"><CalendarDays size={18} />15 มิ.ย 2569</span><ChevronDown size={12} /></button>
+        <div className="h-8 w-px bg-[#e2e8f0]" />
+        <button className="relative rounded-full p-1 text-slate-700 hover:bg-slate-50" aria-label="การแจ้งเตือน">
+          <Bell size={24} />
+          <span className="absolute -top-1 -right-1 grid h-[19px] min-w-[19px] place-items-center rounded-full border-2 border-white bg-[#e53935] p-0.5 text-[10px] leading-[15px] font-bold text-white">1</span>
         </button>
-        <div className="h-7 w-px bg-slate-200" />
-        <div className="flex items-center gap-2">
-          <div className="grid h-8 w-8 place-items-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">AH</div>
-          <div className="hidden sm:block">
-            <p className="text-xs font-semibold text-slate-700">Admin Hospital</p>
-            <p className="text-[10px] text-slate-400">System Admin</p>
-          </div>
-        </div>
       </div>
     </header>
   )

@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/layout/AppLayout.jsx'
 import CalendarPage from './pages/CalendarPage.jsx'
 import CaseDetailPage from './pages/CaseDetailPage.jsx'
+import CreateFollowUpPage from './pages/CreateFollowUpPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import DocumentsPage from './pages/DocumentsPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
@@ -39,6 +40,7 @@ function App() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="users" element={<UserManagementPage />} />
         <Route path="cases/:id" element={<CaseDetailPage />} />
+        <Route path="cases/:id/create-follow-up" element={<CreateFollowUpPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
