@@ -5,7 +5,7 @@ export default function PageHeader({ title, description, actions }) {
         <h1 className="text-xl font-bold text-slate-800 sm:text-2xl">{title}</h1>
         {description && <p className="mt-1 text-xs text-slate-500 sm:text-sm">{description}</p>}
       </div>
-      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+      {actions && <div className="flex w-full flex-wrap gap-2 sm:w-auto [&>*]:max-sm:flex-1">{actions}</div>}
     </div>
   )
 }

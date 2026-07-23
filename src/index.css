@@ -43,14 +43,66 @@
   .dashboard-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .dashboard-lower { grid-template-columns: 1fr; }
   .dashboard-charts { grid-template-columns: 1fr; }
+  .grid-cols-5 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
 }
 
 @media (max-width: 1023px) {
   .or-sidebar { width: min(86vw, 315px); }
+  .or-page { padding: 20px; }
+  [class*="grid-cols-[400px_400px"],
+  [class*="grid-cols-[201px_minmax"],
+  [class*="grid-cols-[194px_194px"],
+  [class*="grid-cols-[177px_161px"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
 }
 
 @media (max-width: 700px) {
-  .dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  :root {
+    --or-page-gap: 12px;
+    --or-header-height: 58px;
+  }
+  .dashboard-grid { grid-template-columns: 1fr; gap: 10px; }
+  .dashboard-charts { gap: 12px; }
+  .or-card { border-radius: 12px; }
+  .card { padding: 14px; }
+  .grid-cols-5,
+  .grid-cols-4,
+  [class*="grid-cols-[400px_400px"],
+  [class*="grid-cols-[201px_minmax"],
+  [class*="grid-cols-[194px_194px"],
+  [class*="grid-cols-[177px_161px"],
+  [class*="grid-cols-[209px_1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+  .or-page .h-\[273px\],
+  .or-page .h-\[274px\] { height: auto !important; min-height: 0; }
+  .or-page .h-\[73px\],
+  .or-page .h-\[66px\],
+  .or-page .h-\[62px\],
+  .or-page .h-\[52px\] { height: auto !important; min-height: 52px; }
+  .or-page .px-\[25px\] { padding-left: 16px; padding-right: 16px; }
+  .or-page .gap-\[31px\] { gap: 16px; }
+  .or-page .size-\[98px\] { width: 68px; height: 68px; }
+  .or-page nav,
+  .or-page footer { max-width: 100%; }
+  .or-page article.flex.items-center {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .or-page > div.space-y-4 > section.flex { overflow-x: auto; }
+  .or-page > div.space-y-4 > section.flex > div { min-width: max-content; }
+  .or-page footer .page-button.w-auto {
+    padding-inline: 8px;
+    font-size: 0;
+  }
+  .or-page footer .page-button.w-auto:first-child::after { content: "‹"; font-size: 14px; }
+  .or-page footer .page-button.w-auto:last-child::after { content: "›"; font-size: 14px; }
+}
+
+@media (min-width: 480px) and (max-width: 700px) {
+  .dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @layer components {
@@ -129,4 +181,10 @@
 
 @media (max-width: 640px) {
   .table-cell { @apply px-3 py-2; }
+  .btn-primary, .btn-secondary { min-height: 40px; height: auto; }
+  .login-card { padding: 28px 20px; }
+  .login-heading { font-size: 23px; }
+  .login-input { height: 52px; }
+  .login-btn { height: 54px; }
+  .login-footer { position: static; margin-top: 24px; }
 }

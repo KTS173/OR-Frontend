@@ -46,7 +46,7 @@ export default function MetricCard({ label, value, unit, trend, tone = 'blue', d
   const colorClass = tones[tone].split(' ').at(-1)
 
   return (
-    <article className={`flex flex-col items-start gap-1 overflow-hidden rounded-xl border border-black/10 bg-white p-[17px] shadow-[0_1px_2px_rgba(0,0,0,0.05)] ${topRow ? 'h-[138px]' : 'h-[124px]'} ${tone === 'orange' ? 'bg-orange-50/50' : tone === 'rose' ? 'bg-red-50/60' : ''}`}>
+    <article className={`flex min-h-[124px] flex-col items-start gap-1 overflow-hidden rounded-xl border border-black/10 bg-white p-[17px] shadow-[0_1px_2px_rgba(0,0,0,0.05)] ${topRow ? 'sm:min-h-[138px]' : ''} ${tone === 'orange' ? 'bg-orange-50/50' : tone === 'rose' ? 'bg-red-50/60' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <p className={`text-[14px] leading-5 font-medium ${tone === 'blue' ? 'text-[#1823ed]' : colorClass}`}>{label}</p>
         <span className={`grid place-items-center rounded-lg ${topRow ? 'h-10 w-10' : 'h-6 w-6'}`}><Icon size={24} className={tone === 'blue' ? 'text-[#1823ed]' : colorClass} strokeWidth={2.2} /></span>

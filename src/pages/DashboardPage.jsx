@@ -1,4 +1,4 @@
-import { ArrowRight, ClipboardCheck, Image, Megaphone, Phone, Stethoscope } from 'lucide-react'
+import { ArrowRight, ClipboardCheck, Image, Phone, Stethoscope } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Line, LineChart, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Link } from 'react-router-dom'
 import MetricCard from '../components/ui/MetricCard.jsx'
@@ -100,7 +100,7 @@ export default function DashboardPage() {
           {/* Follow-up Summary Donut */}
           <article className="or-card overflow-hidden">
             <div className="border-b border-slate-100 px-5 py-4 text-base font-bold text-[#10386f]">สรุปการติดตามประจำวัน</div>
-            <div className="flex min-h-[205px] items-center gap-2 px-4 py-3">
+            <div className="flex min-h-[205px] flex-col items-stretch gap-2 px-4 py-3 sm:flex-row sm:items-center">
               <div className="relative h-36 min-w-36 flex-1">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -113,7 +113,7 @@ export default function DashboardPage() {
                   ทั้งหมด<strong className="block text-xl text-slate-800">214</strong>เคส
                 </div>
               </div>
-              <div className="min-w-[210px] space-y-2.5">
+              <div className="min-w-0 space-y-2.5 sm:min-w-[210px]">
                 {followUpSummary.map((item) => (
                   <div key={item.name} className="flex items-center gap-2 text-xs">
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: item.color }} />
@@ -155,12 +155,6 @@ export default function DashboardPage() {
         <PatientTable patients={patients} dashboard />
       </section>
 
-      {/* ── Announcement Bar ── */}
-      <div className="or-card flex items-center gap-4 px-5 py-3 text-xs font-medium text-blue-600">
-        <Megaphone size={17} />
-        <strong>15 มิ.ย. 2569</strong>
-        <span>ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
-      </div>
     </div>
   )
 }

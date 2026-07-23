@@ -8,7 +8,7 @@ export default function PatientTable({ patients, loading = false, dashboard = fa
   const openPatient = (patient) => navigate(`/cases/${patient.id}`)
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className={`flex items-center justify-between border-b border-slate-100 ${validation ? 'h-[75px] px-6' : 'px-4 py-3'}`}>
+      <div className={`flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 ${validation ? 'min-h-[75px] px-4 py-3 sm:px-6' : 'px-4 py-3'}`}>
         <div><h2 className={`${dashboard || validation ? 'text-base text-[#002d73]' : 'text-sm text-slate-800'} font-medium`}>{dashboard ? <>รายการติดตามผู้ป่วย <span className="text-sm text-slate-400">(1,250 ราย)</span></> : validation ? 'รายการติดตามผู้ป่วย (58 ราย)' : 'รายการผู้ป่วย'}</h2>{!dashboard && !validation && <p className="mt-0.5 text-[10px] text-slate-400">ข้อมูลตัวอย่างสำหรับเชื่อมต่อ API</p>}</div>
         {dashboard ? <select className="h-9 rounded-lg border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-500"><option>2569</option></select> : validation ? <select className="h-[42px] w-[154px] rounded-lg border border-[#e2e8f0] bg-white px-[17px] text-[14px]"><option>วันนี้</option></select> : <button className="rounded-lg p-2 text-slate-400 hover:bg-slate-50"><MoreHorizontal size={18} /></button>}
       </div>
@@ -27,7 +27,7 @@ export default function PatientTable({ patients, loading = false, dashboard = fa
           </tbody>
         </table>
       </div>
-      <div className={`flex items-center justify-between border-t border-slate-100 px-6 ${validation ? 'h-[47px] text-[14px]' : 'py-2.5 text-[10px]'} text-slate-400`}><span>{dashboard || validation ? 'Showing 10 of 10 Historical Log' : `แสดง ${patients.length} จาก ${patients.length} รายการ`}</span><div className="flex items-center gap-2"><button className="page-button"><ChevronLeft size={13} /></button><button className="page-button bg-[#175beb] text-white">1</button><button className="page-button">2</button><button className="page-button">3</button><button className="page-button"><ChevronRight size={13} /></button></div></div>
+      <div className={`flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-3 sm:px-6 ${validation ? 'min-h-[47px] py-2 text-[12px] sm:text-[14px]' : 'py-2.5 text-[10px]'} text-slate-400`}><span>{dashboard || validation ? 'Showing 10 of 10 Historical Log' : `แสดง ${patients.length} จาก ${patients.length} รายการ`}</span><div className="flex items-center gap-1 sm:gap-2"><button className="page-button"><ChevronLeft size={13} /></button><button className="page-button bg-[#175beb] text-white">1</button><button className="page-button">2</button><button className="page-button">3</button><button className="page-button"><ChevronRight size={13} /></button></div></div>
     </section>
   )
 }
