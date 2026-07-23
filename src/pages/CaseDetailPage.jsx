@@ -1,6 +1,6 @@
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Info, Mail, MessageSquare, MinusCircle, Phone, RefreshCw, Send, UserRound, Users, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Info, MinusCircle, RefreshCw, Send, UserRound, Users, X } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import StatusBadge from '../components/ui/StatusBadge.jsx'
 import { patients } from '../data/mockData.js'
 
@@ -13,6 +13,7 @@ function DetailRow({ label, value }) {
 
 export default function CaseDetailPage() {
   const { id } = useParams()
+  const { pathname } = useLocation()
   const patient = patients.find((item) => item.id === id) ?? patients[0]
   const [queueOpen, setQueueOpen] = useState(false)
   const [successOpen, setSuccessOpen] = useState(false)
@@ -22,6 +23,8 @@ export default function CaseDetailPage() {
     setQueueOpen(false)
     setSuccessOpen(true)
   }
+
+  if (pathname.startsWith('/follow-ups/')) return <FollowUpCaseDetail patient={patient}/>
 
   return (
     <>
@@ -39,6 +42,33 @@ export default function CaseDetailPage() {
   )
 }
 
+function FollowUpCaseDetail({ patient }) {
+  return <>
+    <div className="flex min-h-6 flex-wrap items-center justify-between gap-2">
+      <Link to="/my-follow-ups" className="inline-flex items-center gap-2 text-[14px] font-medium text-[#175beb]"><ArrowLeft size={12}/>กลับไปหน้ารายการ</Link>
+      <div className="flex items-center gap-2">
+        <span className="rounded border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[12px] text-emerald-600">สร้าง Follow-up สำเร็จ</span>
+        <span className="rounded border border-orange-200 bg-orange-50 px-2.5 py-1 text-[12px] text-orange-500">ต้องติดตามวันนี้</span>
+      </div>
+    </div>
+    <PatientSummary patient={patient}/>
+    <FollowUpTabs/>
+    <FollowUpTimeline/>
+    <SurgerySection patient={patient}/>
+    <ContactAndProcedures patient={patient}/>
+  </>
+}
+
+function FollowUpTabs() {
+  const tabs = ['ข้อมูลคนไข้', 'ประเมินตามรอบ (รอบที่ 1)', 'การติดตาม / Timeline', 'ย้ายเคส / ส่งต่อการดูแล', 'เอกสาร']
+  return <nav className="mt-3 flex min-h-[73px] flex-wrap items-center justify-between gap-3 rounded-xl border border-[#e2e8f0] bg-white px-[17px] py-2 shadow-sm">
+    <div className="flex min-w-0 items-center gap-6 overflow-x-auto">
+      {tabs.map((tab, index)=><button key={tab} className={`h-12 shrink-0 text-[14px] font-medium ${index === 0 ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}>{tab}</button>)}
+    </div>
+    <button className="inline-flex h-[42px] shrink-0 items-center gap-2 rounded-lg bg-[#175beb] px-5 text-[14px] font-medium text-white shadow-sm"><span className="text-lg leading-none">+</span>เพิ่มกิจกรรมแรก</button>
+  </nav>
+}
+
 function ActionBar({ onExclude, onQueue }) {
   return <section className="mt-3 flex h-[62px] items-center justify-between rounded-xl border border-[#e2e8f0] bg-white px-6 shadow-sm">
     <button onClick={onExclude} className="inline-flex h-[37px] items-center justify-center gap-2 rounded-xl border border-red-400 bg-white px-5 text-[14px] font-medium text-red-500 transition hover:bg-red-50"><MinusCircle size={16}/>ตัดเคสออก</button>
@@ -50,7 +80,24 @@ function ActionBar({ onExclude, onQueue }) {
 }
 
 function PatientSummary({ patient }) {
-  return <section className="mt-3 grid gap-3 xl:grid-cols-[827fr_273fr]"><article className="flex h-[273px] items-center gap-[31px] rounded-xl border border-[#e2e8f0] bg-white px-[25px] pb-[25px] pt-[13px] shadow-sm"><div className="grid size-[98px] shrink-0 place-items-center rounded-full border border-[#e2e8f0] bg-[#f8fafc] text-[#64748b]"><UserRound size={60} strokeWidth={1.4}/></div><div className="min-w-0 flex-1"><p className="text-[14px] font-medium leading-7 text-[#424752]">HN <span className="ml-1">{patient.id}</span></p><h2 className="text-[24px] font-semibold leading-8 text-[#191c1e]">{patient.name}</h2><div className="mt-[11px] grid grid-cols-[177px_161px_1fr]"><div className="space-y-2"><DetailRow label="เพศ" value={patient.sex}/><DetailRow label="อายุ" value={`${patient.age} ปี`}/><DetailRow label="เบอร์โทร" value="081-234-5678"/><DetailRow label="วันเกิด" value="17 ม.ค. 2501"/></div><div className="ml-2 space-y-2 border-l border-black/10 px-3"><DetailRow label="เชื้อชาติ" value="ไทย"/><DetailRow label="สัญชาติ" value="ไทย"/><DetailRow label="สิทธิการรักษา" value="-"/></div><div className="ml-2 border-l border-black/10 pl-3 text-[14px] text-[#424752]"><p>ที่อยู่</p><strong className="mt-2 block font-medium">99/9 หมู่ 4 จ.เชียงใหม่ 5100</strong></div></div></div></article><aside className="h-[273px] rounded-xl border border-[#e2e8f0] bg-white px-[25px] py-[13px] shadow-sm"><h2 className="text-[16px] font-medium leading-7 text-[#424752]">สถานะข้อมูล (Validation)</h2><div className="mt-2 space-y-2">{validationItems.map(item=><p key={item} className="flex items-center gap-2 text-[14px] leading-5 text-[#424752]"><span className="grid size-[18px] place-items-center rounded-full bg-[#16a34a] text-white"><Check size={12} strokeWidth={3}/></span>{item}</p>)}</div><div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-[5px] text-center text-[12px] leading-6 text-emerald-700">ข้อมูลพร้อมสำหรับสร้าง Follow-up</div></aside></section>
+  return <section className="mt-3 grid gap-3 xl:grid-cols-[827fr_273fr]"><PatientInfoCard patient={patient}/><aside className="h-[273px] rounded-xl border border-[#e2e8f0] bg-white px-[25px] py-[13px] shadow-sm"><h2 className="text-[16px] font-medium leading-7 text-[#424752]">สถานะข้อมูล (Validation)</h2><div className="mt-2 space-y-2">{validationItems.map(item=><p key={item} className="flex items-center gap-2 text-[14px] leading-5 text-[#424752]"><span className="grid size-[18px] place-items-center rounded-full bg-[#16a34a] text-white"><Check size={12} strokeWidth={3}/></span>{item}</p>)}</div><div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-[5px] text-center text-[12px] leading-6 text-emerald-700">ข้อมูลพร้อมสำหรับสร้าง Follow-up</div></aside></section>
+}
+
+export function PatientInfoCard({ patient }) {
+  return <article className="flex min-h-[273px] items-center gap-[31px] rounded-xl border border-[#e2e8f0] bg-white px-[25px] pb-[25px] pt-[13px] shadow-sm">
+    <div className="grid size-[98px] shrink-0 place-items-center rounded-full border border-blue-100 bg-blue-50/40 text-[#175beb]"><UserRound size={60} strokeWidth={1.4}/></div>
+    <div className="min-w-0 flex-1">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div><p className="text-[14px] font-medium leading-7 text-[#424752]">HN <span className="ml-1">{patient.id}</span></p><h2 className="text-[24px] font-semibold leading-8 text-[#191c1e]">{patient.name}</h2></div>
+        <div className="flex flex-wrap items-center gap-2 pt-1 text-[13px] text-[#424752]"><span>ประเภทผู้ป่วย</span><span className="rounded-md bg-blue-50 px-2.5 py-1 text-[12px] font-medium text-[#175beb]">OPD</span><span className="ml-2">สถานะเคส</span><span className="rounded-md bg-blue-50 px-2.5 py-1 text-[12px] font-medium text-[#175beb]">ติดตามโดยOPD</span></div>
+      </div>
+      <div className="mt-[11px] grid grid-cols-[177px_161px_1fr]">
+        <div className="space-y-2"><DetailRow label="เพศ" value={patient.sex ?? 'ชาย'}/><DetailRow label="อายุ" value={`${patient.age ?? 68} ปี`}/><DetailRow label="เบอร์โทร" value="081-234-5678"/><DetailRow label="วันเกิด" value="17 ม.ค. 2501"/></div>
+        <div className="ml-2 space-y-2 border-l border-black/10 px-3"><DetailRow label="เชื้อชาติ" value="ไทย"/><DetailRow label="สัญชาติ" value="ไทย"/><DetailRow label="สิทธิการรักษา" value="-"/></div>
+        <div className="ml-2 border-l border-black/10 pl-3 text-[14px] text-[#424752]"><p>ที่อยู่</p><strong className="mt-2 block font-medium">99/9 หมู่ 4 จ.เชียงใหม่ 5100</strong></div>
+      </div>
+    </div>
+  </article>
 }
 
 function SurgerySection({ patient }) {
@@ -60,16 +107,16 @@ function SurgerySection({ patient }) {
 
 function ContactAndProcedures({ patient }) {
   const contacts = [
-    [Phone, 'เบอร์โทรหลัก', '081-234-5678', 'text-[#175beb]'],
-    [Phone, 'เบอร์โทร 2', '-', 'text-[#175beb]'],
-    [MessageSquare, 'Line', 'Somchai_jaidee', 'text-[#16a34a]'],
-    [MessageSquare, 'SMS', '081-234-5678', 'text-[#475569]'],
-    [Mail, 'อีเมล', '-', 'text-[#475569]'],
+    ['/assets/icon/dashboard/phone.png', 'เบอร์โทรหลัก', '081-234-5678'],
+    ['/assets/icon/dashboard/phone.png', 'เบอร์โทร 2', '-'],
+    ['/assets/icon/user info/line_svgrepo.com.png', 'Line', 'Somchai_jaidee'],
+    ['/assets/icon/user info/sms.png', 'SMS', '081-234-5678'],
+    ['/assets/icon/user info/email.png', 'อีเมล', '-'],
   ]
   return <section className="mt-3 grid min-h-[216px] gap-3 xl:grid-cols-[332fr_740fr]">
     <article className="rounded-xl border border-[#e2e8f0] bg-white px-[25px] py-[13px] shadow-sm">
       <h3 className="text-[16px] font-medium leading-7 text-[#002d73]">ข้อมูลติดต่อ (Contact)</h3>
-      <div className="mt-3 space-y-3">{contacts.map(([Icon,label,value,color])=><div key={label} className="flex items-center justify-between text-[14px] leading-5 text-[#424752]"><span className="inline-flex items-center gap-1"><Icon size={20} className={color}/>{label}</span><strong className="font-medium">{value}</strong></div>)}</div>
+      <div className="mt-3 space-y-3">{contacts.map(([icon,label,value])=><div key={label} className="flex items-center justify-between text-[14px] leading-5 text-[#424752]"><span className="inline-flex items-center gap-2"><img src={icon} alt="" className="h-5 w-5 shrink-0 object-contain"/>{label}</span><strong className="font-medium">{value}</strong></div>)}</div>
     </article>
     <article className="flex flex-col gap-3 rounded-xl border border-[#e2e8f0] bg-white p-[13px] shadow-sm">
       <h3 className="inline-flex items-center gap-1 text-[16px] font-medium leading-7 text-[#002d73]">รายการหัตถการในเคส (มี 1 รายการ)<Info size={17} className="text-[#64748b]"/></h3>

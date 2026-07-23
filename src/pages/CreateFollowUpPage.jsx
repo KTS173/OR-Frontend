@@ -1,11 +1,8 @@
-import { ArrowLeft, ArrowRight, Check, ChevronLeft, ChevronRight, Copy, Info, Plus, UserRound, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, ChevronLeft, ChevronRight, Copy, Info, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { patients } from '../data/mockData.js'
-
-function DetailRow({ label, value }) {
-  return <div className="flex min-h-5 items-start justify-between gap-4 text-[14px] leading-5 text-[#424752]"><span>{label}</span><strong className="text-right font-medium">{value}</strong></div>
-}
+import { PatientInfoCard } from './CaseDetailPage.jsx'
 
 export default function CreateFollowUpPage() {
   const { id } = useParams()
@@ -61,79 +58,8 @@ export default function CreateFollowUpPage() {
         </div>
       </section>
 
-      {/* Patient Info Header Card & Risk Score */}
-      <section className="grid gap-3 xl:grid-cols-[827fr_273fr]">
-        {/* Left: Patient Details */}
-        <article className="flex h-[273px] items-center gap-[31px] rounded-xl border border-[#e2e8f0] bg-white px-[25px] pb-[25px] pt-[13px] shadow-sm">
-          <div className="grid size-[98px] shrink-0 place-items-center rounded-full border border-blue-100 bg-blue-50/40 text-[#175beb]">
-            <UserRound size={60} strokeWidth={1.4} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[14px] font-medium leading-7 text-[#424752]">HN <span className="ml-1">{patient.id}</span></p>
-                <h2 className="text-[24px] font-semibold leading-8 text-[#191c1e]">{patient.name}</h2>
-              </div>
-              <div className="flex items-center gap-2 pt-1 text-[13px] text-[#424752]">
-                <span>ประเภทผู้ป่วย</span>
-                <span className="rounded-md bg-blue-50 px-2.5 py-1 text-[12px] font-medium text-[#175beb]">OPD</span>
-                <span className="ml-2">สถานะเคส</span>
-                <span className="rounded-md bg-blue-50 px-2.5 py-1 text-[12px] font-medium text-[#175beb]">ติดตามโดยOPD</span>
-              </div>
-            </div>
-
-            <div className="mt-[11px] grid grid-cols-[177px_161px_1fr]">
-              <div className="space-y-2">
-                <DetailRow label="เพศ" value={patient.sex ?? 'ชาย'} />
-                <DetailRow label="อายุ" value={`${patient.age ?? 68} ปี`} />
-                <DetailRow label="เบอร์โทร" value="081-234-5678" />
-                <DetailRow label="วันเกิด" value="17 ม.ค. 2501" />
-              </div>
-              <div className="ml-2 space-y-2 border-l border-black/10 px-3">
-                <DetailRow label="เชื้อชาติ" value="ไทย" />
-                <DetailRow label="สัญชาติ" value="ไทย" />
-                <DetailRow label="สิทธิการรักษา" value="-" />
-              </div>
-              <div className="ml-2 border-l border-black/10 pl-3 text-[14px] text-[#424752]">
-                <p>ที่อยู่</p>
-                <strong className="mt-2 block font-medium">99/9 หมู่ 4 จ.เชียงใหม่ 5100</strong>
-              </div>
-            </div>
-          </div>
-        </article>
-
-        {/* Right: SSI Risk Summary */}
-        <article className="flex h-[273px] flex-col rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
-          <h3 className="px-6 py-[13px] text-[16px] font-medium leading-7 text-[#191c1e]">ความเสี่ยง SSI</h3>
-          <div className="flex h-[40px] items-center justify-between bg-slate-50/80 px-6 text-[14px] font-medium text-[#191c1e]">
-            <span>ปัจจัยเสี่ยง</span>
-            <span>ผลประเมิน</span>
-          </div>
-          <div className="flex-1 space-y-2 px-6 pt-3">
-            {[
-              ['อายุ > 60 ปี', 'มี'],
-              ['เบาหวาน', 'มี'],
-              ['การติดเชื้อก่อนผ่าตัด', 'ไม่มี'],
-            ].map(([l, v]) => (
-              <div key={l} className="flex h-[36px] items-center justify-between text-[14px] text-[#424752]">
-                <span>{l}</span>
-                <span className="inline-flex items-center gap-2">
-                  <span className={`grid size-[18px] place-items-center rounded-full text-white ${v === 'มี' ? 'bg-[#16a34a]' : 'bg-slate-400'}`}>
-                    <Check size={12} strokeWidth={3} />
-                  </span>
-                  {v}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="flex h-[52px] items-center justify-between border-t border-black/10 px-6 text-[14px] font-medium">
-            <span>Risk Score</span>
-            <span className="flex items-center gap-2 font-semibold">
-              72 % <i className="size-[7px] rounded-full bg-[#f57e0c]" /> ปานกลาง
-            </span>
-          </div>
-        </article>
-      </section>
+      {/* Shared patient summary used by Case Detail and Create Follow-up */}
+      <PatientInfoCard patient={patient}/>
 
       {step === 1 && <>
         {/* 1. Select Procedure Section */}
