@@ -19,7 +19,7 @@ export default function LoginPage() {
             <h1 className="login-hero-title">OR SMART <span className="login-hero-accent">SSI</span></h1>
             <p className="login-hero-subtitle">ระบบติดตามภาวะแผลติดเชื้อหลังผ่าตัด</p>
             <p className="login-hero-body">
-              ระบบติดตามภาวะแผลติดเชื้อหลังผ่าตัด ช่วยเฝ้าระวังและติดตามผู้ป่วย<br />
+              ระบบติดตามภาวะแผลติดเชื้อหลังผ่าตัด ช่วยเฝ้าระวังและติดตามผู้ป่วย
               หลังการผ่าตัด อย่างเป็นระบบและมีประสิทธิภาพ
             </p>
           </div>
@@ -44,7 +44,7 @@ export default function LoginPage() {
       <section className="login-panel relative flex min-h-screen items-center justify-center px-6 py-10">
         <form
           onSubmit={(e) => { e.preventDefault(); sessionStorage.setItem('or-smart-auth', 'true'); navigate('/dashboard') }}
-          className="login-card w-full max-w-[630px]"
+          className="login-card"
         >
           {/* Logo + heading */}
           <div className="text-center">
@@ -56,13 +56,27 @@ export default function LoginPage() {
           {/* Username */}
           <label className="login-label login-first-field">
             ชื่อผู้ใช้ / อีเมล
-            <input className="login-input" placeholder="กรอกชื่อผู้ใช้ หรือ อีเมล" />
+            <input
+              className="login-input"
+              name="username"
+              autoComplete="username"
+              inputMode="email"
+              placeholder="กรอกชื่อผู้ใช้ หรือ อีเมล"
+              required
+            />
           </label>
 
           {/* Password */}
           <label className="login-label login-password-field">
             รหัสผ่าน
-            <input type="password" className="login-input" placeholder="กรอกรหัสผ่าน" />
+            <input
+              type="password"
+              className="login-input"
+              name="password"
+              autoComplete="current-password"
+              placeholder="กรอกรหัสผ่าน"
+              required
+            />
           </label>
 
           {/* Remember / Forgot */}
