@@ -52,12 +52,12 @@ export default function DashboardPage() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={ssiTrend} margin={{ top: 12, right: 24, left: 0, bottom: 4 }}>
                 <CartesianGrid stroke="#e9edf3" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#667085' }} />
-                <YAxis domain={[0, 2]} ticks={[0, 0.5, 1, 1.5, 2]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11, fill: '#667085' }} />
+                <XAxis dataKey="month" tick={{ fontSize: 16, fill: '#667085' }} />
+                <YAxis domain={[0, 2]} ticks={[0, 0.5, 1, 1.5, 2]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 16, fill: '#667085' }} />
                 <Tooltip formatter={(v) => `${v}%`} />
                 <Legend
                   verticalAlign="bottom"
-                  wrapperStyle={{ fontSize: 11, paddingTop: 14 }}
+                  wrapperStyle={{ fontSize: 16, paddingTop: 14 }}
                   payload={[
                     { value: 'สงสัย SSI',   type: 'line', color: '#f97316' },
                     { value: 'ยืนยัน SSI',  type: 'line', color: '#ef4444' },
@@ -80,12 +80,12 @@ export default function DashboardPage() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={surgeryRates} layout="vertical" margin={{ left: 8, right: 52, top: 4 }}>
                 <CartesianGrid horizontal={false} stroke="#e9edf3" />
-                <XAxis type="number" domain={[0, 2]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 10 }} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: '#475467' }} width={130} />
+                <XAxis type="number" domain={[0, 2]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 16 }} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 16, fill: '#475467' }} width={130} />
                 <Tooltip formatter={(v) => `${v}%`} />
                 <Bar dataKey="rate" radius={[0, 6, 6, 0]} barSize={13}>
                   {surgeryRates.map((item, i) => <Cell key={item.name} fill={barColors[i]} />)}
-                  <LabelList dataKey="rate" position="right" formatter={(v) => `${v}%`} style={{ fontSize: 11, fill: '#475467', fontWeight: 600 }} />
+                  <LabelList dataKey="rate" position="right" formatter={(v) => `${v}%`} style={{ fontSize: 16, fill: '#475467', fontWeight: 600 }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -137,8 +137,8 @@ export default function DashboardPage() {
                       <Icon size={17} />
                     </span>
                     <p className="min-w-0 flex-1 text-xs font-semibold text-slate-700">{task.label}</p>
-                    <span className="text-[11px] text-slate-500">{task.count} รายการ</span>
-                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${metaBadge[task.metaTone] ?? metaBadge.gray}`}>
+                    <span className="text-[16px] text-slate-500">{task.count} รายการ</span>
+                    <span className={`rounded-full px-2.5 py-1 text-[16px] font-semibold ${metaBadge[task.metaTone] ?? metaBadge.gray}`}>
                       {task.meta}
                     </span>
                   </div>

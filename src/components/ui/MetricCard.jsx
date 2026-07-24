@@ -38,7 +38,7 @@ export default function MetricCard({ label, value, unit, trend, tone = 'blue', d
           <span className={`rounded-lg p-1.5 ${tones[tone]}`}>{positive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}</span>
         </div>
         <p className="mt-2 text-2xl font-bold text-slate-800">{value} <span className="text-xs font-normal text-slate-400">{unit}</span></p>
-        <p className={`mt-2 text-[10px] ${positive ? 'text-emerald-600' : 'text-slate-400'}`}>{trend} <span className="text-slate-400">จากเมื่อวาน</span></p>
+        <p className={`mt-2 text-[16px] ${positive ? 'text-emerald-600' : 'text-slate-400'}`}>{trend} <span className="text-slate-400">จากเมื่อวาน</span></p>
       </article>
     )
   }

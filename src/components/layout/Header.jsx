@@ -35,7 +35,7 @@ export default function Header({ onMenu }) {
         <div className="hidden h-8 w-px bg-[#e2e8f0] sm:block" />
         <button className="relative rounded-full p-1 text-slate-700 hover:bg-slate-50" aria-label="การแจ้งเตือน">
           <Bell size={24} />
-          <span className="absolute -top-1 -right-1 grid h-[19px] min-w-[19px] place-items-center rounded-full border-2 border-white bg-[#e53935] p-0.5 text-[10px] leading-[15px] font-bold text-white">1</span>
+          <span className="absolute -top-1 -right-1 grid h-[19px] min-w-[19px] place-items-center rounded-full border-2 border-white bg-[#e53935] p-0.5 text-[16px] leading-[15px] font-bold text-white">1</span>
         </button>
       </div>
     </header>

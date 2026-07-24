@@ -28,7 +28,7 @@ export default function CreateFollowUpPage() {
               <span className="grid size-8 place-items-center rounded-full bg-[#175beb] font-semibold text-white">{step > 1 ? <Check size={16} /> : '1'}</span>
               <div>
                 <p className="text-[14px] font-medium text-[#175beb]">เลือกหัตถการและรอบติดตาม</p>
-                <p className="text-[11px] text-slate-400">Step 1 / 3</p>
+                <p className="text-[16px] text-slate-400">Step 1 / 3</p>
               </div>
             </div>
 
@@ -39,7 +39,7 @@ export default function CreateFollowUpPage() {
               <span className={`grid size-8 place-items-center rounded-full font-semibold ${step >= 2 ? 'bg-[#175beb] text-white' : 'border border-slate-300 bg-slate-100 text-slate-500'}`}>{step > 2 ? <Check size={16} /> : '2'}</span>
               <div>
                 <p className={`text-[14px] font-medium ${step === 2 ? 'text-[#175beb]' : 'text-slate-700'}`}>กำหนดเฝ้าติดตามอาการ</p>
-                <p className="text-[11px] text-slate-400">Step 2 / 3</p>
+                <p className="text-[16px] text-slate-400">Step 2 / 3</p>
               </div>
             </div>
 
@@ -50,7 +50,7 @@ export default function CreateFollowUpPage() {
               <span className={`grid size-8 place-items-center rounded-full font-semibold ${step === 3 ? 'bg-[#175beb] text-white' : 'border border-slate-300 bg-slate-100 text-slate-500'}`}>3</span>
               <div>
                 <p className={`text-[14px] font-medium ${step === 3 ? 'text-[#175beb]' : 'text-slate-700'}`}>ยืนยันการสร้าง</p>
-                <p className="text-[11px] text-slate-400">Step 3 / 3</p>
+                <p className="text-[16px] text-slate-400">Step 3 / 3</p>
               </div>
             </div>
           </div>
@@ -182,7 +182,7 @@ export default function CreateFollowUpPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <strong className="text-[14px] font-semibold text-slate-800">Follow-up Day 30</strong>
-                    <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">มาตรฐาน</span>
+                    <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[16px] font-medium text-emerald-700">มาตรฐาน</span>
                   </div>
                   <p className="mt-1 text-[12px] leading-5 text-slate-500">ชุดการติดตามมาตรฐานสำหรับหัตถการทางออร์โธปิดิกส์ (CDC SSI Guideline) (30 วัน)</p>
                 </div>
@@ -193,7 +193,7 @@ export default function CreateFollowUpPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <strong className="text-[14px] font-semibold text-slate-800">Follow-up Day 90</strong>
-                    <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">มาตรฐาน</span>
+                    <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[16px] font-medium text-emerald-700">มาตรฐาน</span>
                   </div>
                   <p className="mt-1 text-[12px] leading-5 text-slate-500">ชุดการติดตามมาตรฐานสำหรับหัตถการทางออร์โธปิดิกส์ (CDC SSI Guideline) (90 วัน)</p>
                 </div>
@@ -308,7 +308,7 @@ function FollowUpSuccessModal({ onClose, onView }) {
 function StepTwo() {
   const field = 'mt-2 h-[38px] w-full rounded-lg border border-[#cbd5e1] bg-white px-3 text-[13px] text-[#374151] outline-none focus:border-[#175beb]'
   return <>
-    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><h3 className="text-[15px] font-semibold text-[#002d73]">ผู้รับผิดชอบหลัก (Case Owner)</h3><div className="my-5 border-t border-slate-200" /><div className="grid grid-cols-[194px_194px_1fr] gap-2"><label className="text-[12px] font-medium">แผนกผู้ดูแลติดตามคนไข้ <span className="text-red-500">*</span><input className={field} defaultValue="เจ้าหน้าที่ OPD" /></label><label className="text-[12px] font-medium">แผนกผู้ดูแลติดตามคนไข้ <span className="text-red-500">*</span><input className={field} defaultValue="OPD ทั่วไป" /></label><label className="text-[12px] font-medium">ชื่อ-นามสกุลผู้รับผิดชอบ <span className="text-red-500">*</span><input className={field} defaultValue="น.ส มัลลิกา คุรุครุภาคุล" /></label></div><p className="mt-6 rounded-lg border border-blue-100 bg-blue-50 px-3 py-3 text-[11px] text-blue-700"><strong>หมายเหตุ:</strong> ผู้รับผิดชอบหลักจะเป็นผู้ดูแลการติดตามผลและประเมินผู้ป่วยในทุกรอบ Follow-up</p></section>
+    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><h3 className="text-[15px] font-semibold text-[#002d73]">ผู้รับผิดชอบหลัก (Case Owner)</h3><div className="my-5 border-t border-slate-200" /><div className="grid grid-cols-[194px_194px_1fr] gap-2"><label className="text-[12px] font-medium">แผนกผู้ดูแลติดตามคนไข้ <span className="text-red-500">*</span><input className={field} defaultValue="เจ้าหน้าที่ OPD" /></label><label className="text-[12px] font-medium">แผนกผู้ดูแลติดตามคนไข้ <span className="text-red-500">*</span><input className={field} defaultValue="OPD ทั่วไป" /></label><label className="text-[12px] font-medium">ชื่อ-นามสกุลผู้รับผิดชอบ <span className="text-red-500">*</span><input className={field} defaultValue="น.ส มัลลิกา คุรุครุภาคุล" /></label></div><p className="mt-6 rounded-lg border border-blue-100 bg-blue-50 px-3 py-3 text-[16px] text-blue-700"><strong>หมายเหตุ:</strong> ผู้รับผิดชอบหลักจะเป็นผู้ดูแลการติดตามผลและประเมินผู้ป่วยในทุกรอบ Follow-up</p></section>
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><h3 className="text-[15px] font-semibold text-[#002d73]">ข้อมูลเพิ่มเติม</h3><div className="my-5 border-t border-slate-200" /><div className="grid grid-cols-2 gap-6"><label className="text-[12px] font-medium">ความสำคัญ (Priority)<select className={field} defaultValue="Medium"><option>Medium</option><option>High</option><option>Low</option></select></label><label className="text-[12px] font-medium">วันที่เริ่มติดตาม<input className={field} defaultValue="15 มิ.ย. 2569" /></label></div><label className="mt-6 block text-[12px] font-medium">หมายเหตุ<textarea className="mt-2 h-[234px] w-full resize-none rounded-lg border border-[#cbd5e1] p-4 text-[13px] outline-none focus:border-[#175beb]" placeholder="เพิ่มหมายเหตุ (ถ้ามี)" /></label></section>
   </>
 }
@@ -317,7 +317,7 @@ function StepThree({ patient }) {
   const infoRows = [['หมายเหตุ', '-'], ['ความสำคัญ(Priority)', '● Medium'], ['หัตถการ', 'Laparoscopic Cholecystectomy'], ['ศัลยแพทย์', patient.surgeon], ['ช่องทางติดต่อผู้ป่วยหลัก', 'โทรศัพท์ 081-234-5678'], ['วันที่เริ่มติดตาม', '15 มิ.ย. 2569'], ['หน่วยงาน', 'น.ส มัลลิกา คุรุครุภาคุล'], ['แผนกติดตามคนไข้', 'เจ้าหน้าที่ OPD'], ['สร้างโดย', 'AdminHospitalBK'], ['หน่วยงาน', 'OR']]
   const schedule = [['Day 1', '16 มิ.ย.2569'], ['Day 7', '22 มิ.ย.2569'], ['Day 14', '29 มิ.ย.2569'], ['Day 21', '6 ก.ค.2569'], ['Day 28', '13 ก.ค.2569'], ['Day 30', '15 ก.ค.2569']]
   return <>
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><h3 className="text-[14px] font-semibold text-[#002d73]">รายการหัตถการในเคส (มี 2 รายการ) <Info size={15} className="inline text-slate-400" /></h3><div className="mt-3 overflow-hidden border border-slate-200"><table className="w-full text-[12px]"><thead className="h-10 bg-slate-50"><tr><th>ลำดับ</th><th>หัตถการ</th><th>ศัลยแพทย์</th><th>สถานะ SSI</th></tr></thead><tbody><tr className="h-12 text-center"><td>1</td><td>TKA (เข่าขวา)</td><td>{patient.surgeon}</td><td className="text-emerald-600">● เข้าเกณฑ์</td></tr></tbody></table></div><p className="mt-3 rounded bg-blue-50 px-3 py-2 text-[11px] text-blue-700"><Info size={14} className="mr-2 inline" />เฉพาะหัตถการที่เข้าเกณฑ์ SSI Surveillance เท่านั้นที่ต้องสร้าง Follow-up</p></section>
+    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><h3 className="text-[14px] font-semibold text-[#002d73]">รายการหัตถการในเคส (มี 2 รายการ) <Info size={15} className="inline text-slate-400" /></h3><div className="mt-3 overflow-hidden border border-slate-200"><table className="w-full text-[12px]"><thead className="h-10 bg-slate-50"><tr><th>ลำดับ</th><th>หัตถการ</th><th>ศัลยแพทย์</th><th>สถานะ SSI</th></tr></thead><tbody><tr className="h-12 text-center"><td>1</td><td>TKA (เข่าขวา)</td><td>{patient.surgeon}</td><td className="text-emerald-600">● เข้าเกณฑ์</td></tr></tbody></table></div><p className="mt-3 rounded bg-blue-50 px-3 py-2 text-[16px] text-blue-700"><Info size={14} className="mr-2 inline" />เฉพาะหัตถการที่เข้าเกณฑ์ SSI Surveillance เท่านั้นที่ต้องสร้าง Follow-up</p></section>
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><h3 className="text-[15px] font-semibold text-[#002d73]">ข้อมูลเพิ่มเติม</h3><div className="my-4 border-t border-slate-200" /><div className="space-y-3">{infoRows.map(([label, value]) => <div key={`${label}-${value}`} className="flex justify-between text-[12px]"><span>{label}</span><strong className={`font-medium ${value.includes('Medium') ? 'text-orange-500' : ''}`}>{value}</strong></div>)}</div></section>
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><h3 className="text-[15px] font-semibold text-[#002d73]">การแจ้งเตือน (Notification)</h3><div className="my-4 border-t border-slate-200" /><p className="text-[12px] font-medium">● แจ้งเตือนผู้ป่วย</p><label className="mt-4 block text-[12px]">ช่วงเวลาแจ้งเตือน <span className="text-red-500">*</span><select className="mt-2 h-[38px] w-full rounded-lg border border-slate-200 px-3"><option>ก่อนถึงเวลา 24 ชั่วโมง</option></select></label><label className="mt-4 block text-[12px]">เบอร์แจ้งเตือนคนไข้ SMS <span className="text-red-500">*</span><select className="mt-2 h-[38px] w-full rounded-lg border border-slate-200 px-3"><option>081-234-5678</option></select></label><label className="mt-6 flex items-center gap-3 text-[12px]"><input type="checkbox" defaultChecked className="size-4 accent-emerald-600" />ช่องทางแจ้งเตือน<br />SMS</label></section>
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -328,8 +328,8 @@ function StepThree({ patient }) {
           <div key={day} className="relative z-10 text-center">
             <i className={`mx-auto block size-4 rounded-full ${index === 0 ? 'bg-[#3b82f6]' : 'bg-[#6b7280]'} shadow-[0_0_0_4px_white]`} />
             <strong className="mt-3 block text-[13px] font-semibold text-[#175beb]">{day}</strong>
-            <span className="block text-[11px] text-[#424752]">{date}</span>
-            <span className="block text-[11px] text-[#424752]">09:00</span>
+            <span className="block text-[16px] text-[#424752]">{date}</span>
+            <span className="block text-[16px] text-[#424752]">09:00</span>
           </div>
         ))}
       </div>
@@ -363,5 +363,5 @@ function FollowUpCalendar() {
   const days = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
   const dates = [28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8]
   const active = new Set([16, 22, 29, 6])
-  return <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between text-[13px] font-semibold"><ChevronLeft size={15} className="text-slate-400" /><span>มิ.ย.2569</span><ChevronRight size={15} className="text-slate-400" /></div><div className="mt-4 grid grid-cols-7 gap-y-3 text-center text-[11px]">{days.map(day => <span key={day} className="text-slate-400">{day}</span>)}{dates.map((date, index) => <span key={`${date}-${index}`} className={`mx-auto grid size-6 place-items-center rounded-full ${active.has(date) && index > 10 ? 'bg-[#175beb] text-white' : 'text-slate-600'} ${index < 3 || index > 33 ? 'text-slate-300' : ''}`}>{date}</span>)}</div></article>
+  return <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between text-[13px] font-semibold"><ChevronLeft size={15} className="text-slate-400" /><span>มิ.ย.2569</span><ChevronRight size={15} className="text-slate-400" /></div><div className="mt-4 grid grid-cols-7 gap-y-3 text-center text-[16px]">{days.map(day => <span key={day} className="text-slate-400">{day}</span>)}{dates.map((date, index) => <span key={`${date}-${index}`} className={`mx-auto grid size-6 place-items-center rounded-full ${active.has(date) && index > 10 ? 'bg-[#175beb] text-white' : 'text-slate-600'} ${index < 3 || index > 33 ? 'text-slate-300' : ''}`}>{date}</span>)}</div></article>
 }

@@ -16,7 +16,7 @@ export default function AppLayout() {
           <Outlet />
         </main>
         <SystemAnnouncement className="mx-4 mb-4 sm:mx-6" />
-        <footer className="mx-4 mb-4 flex flex-col justify-between gap-2 border-t border-slate-200 pt-3 text-[10px] text-slate-400 sm:mx-6 sm:flex-row">
+        <footer className="mx-4 mb-4 flex flex-col justify-between gap-2 border-t border-slate-200 pt-3 text-[16px] text-slate-400 sm:mx-6 sm:flex-row">
           <span>ระบบ OR SMART SSI สำหรับบุคลากรโรงพยาบาลที่ได้รับอนุญาต</span>
           <span>© Bangkok Hospital · Version 1.0</span>
         </footer>

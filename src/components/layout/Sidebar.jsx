@@ -68,7 +68,7 @@ function NavItems({ items, onNavigate }) {
       <Icon size={19} strokeWidth={2} className="shrink-0" />
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {badge ? (
-        <span className={`grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-center text-[11px] font-bold ${danger ? 'bg-[#ff4747] text-white' : 'bg-[#286eea] text-white'}`}>
+        <span className={`grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-center text-[16px] font-bold ${danger ? 'bg-[#ff4747] text-white' : 'bg-[#286eea] text-white'}`}>
           {badge}
         </span>
       ) : null}
@@ -123,7 +123,7 @@ export default function Sidebar({ open, onClose }) {
           </div>
           <button onClick={logout} className="flex h-[50px] w-full items-center gap-4 rounded-[9px] border border-blue-200/60 px-5 text-[14px] font-semibold text-white hover:bg-white/8"><LogOut size={20} />ออกจากระบบ</button>
         </div>
-        <div className="grid min-h-[72px] shrink-0 place-items-center border-t border-white/10 text-[10px] font-medium text-blue-50">Bangkok Hospital OR SMART v1.0</div>
+        <div className="grid min-h-[72px] shrink-0 place-items-center border-t border-white/10 text-[16px] font-medium text-blue-50">Bangkok Hospital OR SMART v1.0</div>
       </aside>
       <button onClick={() => open || onClose()} className="sr-only"><Menu /></button>
     </>

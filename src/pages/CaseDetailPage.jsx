@@ -1,11 +1,17 @@
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Info, Mail, MessageSquare, MinusCircle, Phone, RefreshCw, Send, UserRound, Users, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Info, Mail, MessageSquare, MinusCircle, Phone, RefreshCw, Send, UserRound, Users, X, Plus, Calendar, Clock, CheckCircle2, User, Save } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import StatusBadge from '../components/ui/StatusBadge.jsx'
 import { patients } from '../data/mockData.js'
 
+// Import sub-views
+import EvaluationForm from '../components/EvaluationForm'
+import TimelineView from '../components/TimelineView'
+import TransferCareView from '../components/TransferCareView'
+import DocsView from '../components/DocsView'
+import SetupFollowUpView from '../components/SetupFollowUpView'
+
 const validationItems = ['ข้อมูลผู้ป่วยครบถ้วน', 'มีข้อมูลหัตถการ', 'มีศัลยแพทย์', 'มีข้อมูลวันผ่าตัด', 'มีวันจำหน่าย', 'มีเบอร์โทรศัพท์พร้อมใช้งาน']
-const followUpDays = ['Day 1', 'Day 7', 'Day 14', 'Day 21', 'Day 28', 'Day 30']
 
 function DetailRow({ label, value }) {
   return <div className="flex min-h-5 items-start justify-between gap-4 text-[14px] leading-5 text-[#424752]"><span>{label}</span><strong className="text-right font-medium">{value}</strong></div>
@@ -14,9 +20,30 @@ function DetailRow({ label, value }) {
 export default function CaseDetailPage() {
   const { id } = useParams()
   const patient = patients.find((item) => item.id === id) ?? patients[0]
+  
   const [queueOpen, setQueueOpen] = useState(false)
   const [successOpen, setSuccessOpen] = useState(false)
   const [excludeOpen, setExcludeOpen] = useState(false)
+
+  // Tab state & activities
+  const [activeDetailTab, setActiveDetailTab] = useState('info');
+  const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false);
+  const [isActivityAdded, setIsActivityAdded] = useState(false);
+  const [isSetupFollowUpOpen, setIsSetupFollowUpOpen] = useState(false);
+
+  // Form states for Add Activity Modal
+  const [activityType, setActivityType] = useState('phone');
+  const [purpose, setPurpose] = useState('follow_up_post_surgery');
+  const [activityDate, setActivityDate] = useState('18 มิ.ย. 2569');
+  const [activityTime, setActivityTime] = useState('13:30');
+  const [location, setLocation] = useState('');
+  const [responsiblePerson, setResponsiblePerson] = useState('OPD Nurse B');
+  const [primaryPhone, setPrimaryPhone] = useState(patient?.phone || '081-234-5678');
+  const [secondaryPhone, setSecondaryPhone] = useState('-');
+  const [activityRemarks, setActivityRemarks] = useState('คนไข้แจ้งปวดแผลบริเวณเข่าขวาเพิ่มขึ้นเล็กน้อย ต้องการติดตามอาการก่อนถึง Day 7');
+  const [notifyPatient, setNotifyPatient] = useState(true);
+  const [notifyTiming, setNotifyTiming] = useState('before_24h');
+  const [notifySMS, setNotifySMS] = useState(true);
 
   const handleSend = () => {
     setQueueOpen(false)
@@ -25,16 +52,492 @@ export default function CaseDetailPage() {
 
   return (
     <>
-      <div className="flex h-6 items-center justify-between"><Link to="/or-validation" className="inline-flex items-center gap-2 text-[14px] font-medium text-[#175beb]"><ArrowLeft size={12}/>กลับไปหน้ารายการ</Link><div className="flex items-center gap-2"><span className="rounded-full bg-blue-50 px-2 py-1 text-[12px] text-blue-600">ข้อมูลจาก HIS / TrackCare</span><StatusBadge>{patient.status}</StatusBadge></div></div>
+      {/* Header */}
+      <div className="flex h-6 items-center justify-between">
+        <Link to="/or-validation" className="inline-flex items-center gap-2 text-[14px] font-medium text-[#175beb]">
+          <ArrowLeft size={12}/>กลับไปหน้ารายการ
+        </Link>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-blue-50 px-2 py-1 text-[12px] text-blue-600">ข้อมูลจาก HIS / TrackCare</span>
+          <StatusBadge>{patient.status}</StatusBadge>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
+        <h1 className="header-title" style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--or-navy)' }}>
+          {isSetupFollowUpOpen ? 'ตั้งค่ารอบ Follow-up' : 'รายละเอียดเคสผ่าตัด (Case Detail)'}
+        </h1>
+      </div>
+
+      {/* Patient horizontal profile summary & Validation status card */}
       <PatientSummary patient={patient}/>
-      <nav className="mt-3 flex h-[73px] items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-[17px]"><div className="flex h-[39px] gap-6 border-b border-[#e2e8f0]"><button className="border-b-2 border-[#175beb] text-[16px] font-medium text-[#175beb]">ข้อมูลคนไข้</button><button className="text-[16px] text-[#424752]">เอกสารอ้างอิง</button></div><button className="inline-flex h-[38px] items-center gap-2 rounded-lg border border-[#e2e8f0] px-[13px] text-[14px]"><RefreshCw size={14}/>รีเฟรช</button></nav>
-      <SurgerySection patient={patient}/>
-      <ContactAndProcedures patient={patient}/>
-      <FollowUpTimeline/>
-      <ActionBar onExclude={() => setExcludeOpen(true)} onQueue={() => setQueueOpen(true)}/>
+
+      {/* Sub Tabs within Case Detail */}
+      <nav className="mt-3 flex h-[73px] items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-[17px]">
+        <div className="flex h-[39px] gap-6 border-b border-[#e2e8f0]">
+          <button 
+            className={`text-[16px] font-medium ${activeDetailTab === 'info' && !isSetupFollowUpOpen ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}
+            onClick={() => {
+              setActiveDetailTab('info');
+              setIsSetupFollowUpOpen(false);
+            }}
+          >
+            ข้อมูลคนไข้
+          </button>
+          <button 
+            className={`text-[16px] font-medium ${activeDetailTab === 'evaluation' && !isSetupFollowUpOpen ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}
+            onClick={() => {
+              setActiveDetailTab('evaluation');
+              setIsSetupFollowUpOpen(false);
+            }}
+          >
+            ประเมินตามรอบ (รอบที่ 1)
+          </button>
+          <button 
+            className={`text-[16px] font-medium ${activeDetailTab === 'timeline' && !isSetupFollowUpOpen ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}
+            onClick={() => {
+              setActiveDetailTab('timeline');
+              setIsSetupFollowUpOpen(false);
+            }}
+          >
+            การติดตาม / Timeline
+          </button>
+          <button 
+            className={`text-[16px] font-medium ${activeDetailTab === 'transfer' && !isSetupFollowUpOpen ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}
+            onClick={() => {
+              setActiveDetailTab('transfer');
+              setIsSetupFollowUpOpen(false);
+            }}
+          >
+            ย้ายเคส / ส่งต่อการดูแล
+          </button>
+          <button 
+            className={`text-[16px] font-medium ${activeDetailTab === 'docs' && !isSetupFollowUpOpen ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}
+            onClick={() => {
+              setActiveDetailTab('docs');
+              setIsSetupFollowUpOpen(false);
+            }}
+          >
+            เอกสาร
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            className="inline-flex h-[38px] items-center gap-2 rounded-lg bg-[#175beb] text-white px-[13px] text-[14px] hover:bg-blue-700 transition-colors"
+            onClick={() => setIsAddActivityModalOpen(true)}
+          >
+            <Plus size={16} />
+            <span>เพิ่มกิจกรรมแทรก</span>
+          </button>
+          <button className="inline-flex h-[38px] items-center gap-2 rounded-lg border border-[#e2e8f0] px-[13px] text-[14px] bg-white"><RefreshCw size={14}/>รีเฟรช</button>
+        </div>
+      </nav>
+
+      {/* Timeline track (Day 1 - Day 30 status line) */}
+      <div className="timeline-card" style={{ marginTop: '12px' }}>
+        <div className="timeline-card-header">
+          <div className="timeline-title-container">
+            <h4 className="timeline-title">ช่วงเวลาติดตามอาการคนไข้</h4>
+            <span className="timeline-subtitle">รอบการติดตามมาตรฐานสำหรับหัตถการนี้</span>
+          </div>
+          <select className="form-select" style={{ width: 'auto', fontSize: '13px' }}>
+            <option value="15/06/2569">15 / 06 / 2569</option>
+            <option value="all">แสดงทั้งหมด</option>
+          </select>
+        </div>
+
+        <div className="timeline-track-container">
+          <div className="timeline-line"></div>
+          <div className="timeline-line-progress" style={{ width: isActivityAdded ? '42%' : '20%' }}></div>
+          <div className="timeline-steps">
+            <div className="timeline-step">
+              <div className="timeline-dot completed"></div>
+              <span className="timeline-step-name">Day 1</span>
+              <span className="timeline-step-date">16 มิ.ย. 2569</span>
+              <span className="timeline-step-time">09:00</span>
+            </div>
+
+            {isActivityAdded && (
+              <div className="timeline-step">
+                <div className="timeline-dot" style={{ backgroundColor: 'var(--color-orange)', boxShadow: '0 0 0 2px #ffedd5' }}></div>
+                <span className="timeline-step-name" style={{ color: 'var(--color-orange)' }}>กิจกรรมแทรก</span>
+                <span className="timeline-step-date">18 มิ.ย. 2569</span>
+                <span className="timeline-step-time">09:00</span>
+              </div>
+            )}
+
+            <div className="timeline-step">
+              <div className="timeline-dot active-tracking"></div>
+              <span className="timeline-step-name">Day 7</span>
+              <span className="timeline-step-date">22 มิ.ย. 2569</span>
+              <span className="timeline-step-time">09:00</span>
+            </div>
+
+            {isActivityAdded && (
+              <div className="timeline-step">
+                <div className="timeline-dot" style={{ backgroundColor: 'var(--color-orange)', boxShadow: '0 0 0 2px #ffedd5' }}></div>
+                <span className="timeline-step-name" style={{ color: 'var(--color-orange)' }}>กิจกรรมแทรก</span>
+                <span className="timeline-step-date">23 มิ.ย. 2569</span>
+                <span className="timeline-step-time">13:30</span>
+              </div>
+            )}
+
+            <div className="timeline-step">
+              <div className="timeline-dot pending"></div>
+              <span className="timeline-step-name">Day 14</span>
+              <span className="timeline-step-date">29 มิ.ย. 2569</span>
+              <span className="timeline-step-time">09:00</span>
+            </div>
+            <div className="timeline-step">
+              <div className="timeline-dot pending"></div>
+              <span className="timeline-step-name">Day 21</span>
+              <span className="timeline-step-date">6 ก.ค. 2569</span>
+              <span className="timeline-step-time">09:00</span>
+            </div>
+            <div className="timeline-step">
+              <div className="timeline-dot pending"></div>
+              <span className="timeline-step-name">Day 28</span>
+              <span className="timeline-step-date">13 ก.ค. 2569</span>
+              <span className="timeline-step-time">09:00</span>
+            </div>
+            <div className="timeline-step">
+              <div className="timeline-dot pending"></div>
+              <span className="timeline-step-name">Day 30</span>
+              <span className="timeline-step-date">15 ก.ค. 2569</span>
+              <span className="timeline-step-time">09:00</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="timeline-legend">
+          <div className="legend-item">
+            <span className="legend-dot" style={{ backgroundColor: 'var(--color-success)' }}></span>
+            <span>ดำเนินการสำเร็จ</span>
+          </div>
+          <div className="legend-item">
+            <span className="legend-dot" style={{ backgroundColor: 'var(--color-info)' }}></span>
+            <span>อยู่ระหว่างติดตามดำเนินการ</span>
+          </div>
+          <div className="legend-item">
+            <span className="legend-dot" style={{ backgroundColor: 'var(--color-orange)' }}></span>
+            <span>กิจกรรมแทรก</span>
+          </div>
+          <div className="legend-item">
+            <span className="legend-dot" style={{ backgroundColor: '#cbd5e1' }}></span>
+            <span>ยังไม่เริ่มติดตาม</span>
+          </div>
+          <div className="legend-item">
+            <span className="legend-dot" style={{ backgroundColor: 'var(--color-danger)' }}></span>
+            <span>เกินกำหนด</span>
+          </div>
+        </div>
+
+        <div style={{ fontSize: '16px', color: 'var(--text-light)', marginTop: '12px' }}>
+          หมายเหตุ: วันที่อาจเปลี่ยนแปลงได้ตามการกำหนดของโรงพยาบาล
+        </div>
+      </div>
+
+      {/* Conditionally render SetupFollowUpView or the regular sub-tabs */}
+      {isSetupFollowUpOpen ? (
+        <SetupFollowUpView 
+          selectedPatient={patient}
+          onClose={() => setIsSetupFollowUpOpen(false)}
+        />
+      ) : (
+        <>
+          {activeDetailTab === 'info' && (
+            <>
+              <SurgerySection patient={patient}/>
+              <ContactAndProcedures patient={patient}/>
+            </>
+          )}
+
+          {activeDetailTab === 'evaluation' && (
+            <EvaluationForm 
+              selectedPatient={patient}
+              setSelectedPatient={() => {}}
+            />
+          )}
+
+          {activeDetailTab === 'timeline' && (
+            <TimelineView 
+              selectedPatient={patient}
+              setActiveDetailTab={setActiveDetailTab}
+              isActivityAdded={isActivityAdded}
+              onSetupFollowUpClick={() => setIsSetupFollowUpOpen(true)}
+            />
+          )}
+
+          {activeDetailTab === 'transfer' && (
+            <TransferCareView 
+              selectedPatient={patient}
+              isActivityAdded={isActivityAdded}
+            />
+          )}
+
+          {activeDetailTab === 'docs' && (
+            <DocsView 
+              selectedPatient={patient}
+            />
+          )}
+        </>
+      )}
+
+      {/* Bottom control bar (shows only on Info tab) */}
+      {activeDetailTab === 'info' && !isSetupFollowUpOpen && (
+        <ActionBar onExclude={() => setExcludeOpen(true)} onQueue={() => setQueueOpen(true)}/>
+      )}
+
+      {/* Modals */}
       {queueOpen && <QueueModal patient={patient} onClose={() => setQueueOpen(false)} onSend={handleSend} />}
       {successOpen && <SuccessModal patient={patient} onClose={() => setSuccessOpen(false)} />}
       {excludeOpen && <ExcludeCaseModal patient={patient} onClose={() => setExcludeOpen(false)} />}
+
+      {/* Add Intervening Activity Modal */}
+      {isAddActivityModalOpen && patient && (
+        <div className="modal-overlay">
+          <div className="activity-modal">
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', width: '100%' }}>
+              <div style={{ textAlign: 'left' }}>
+                <h3 className="modal-title" style={{ margin: 0, textAlign: 'left' }}>สร้างกิจกรรมเพิ่ม (ก่อนรอบนัดถัดไป)</h3>
+                <p className="modal-subtitle" style={{ margin: 0, textAlign: 'left' }}>กำหนดกิจกรรมเพิ่มเติมในช่วงระหว่างรอบติดตาม</p>
+              </div>
+              <button className="modal-close-btn" onClick={() => setIsAddActivityModalOpen(false)} style={{ top: '24px', right: '24px' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Patient Horizontal profile grid */}
+            <div className="modal-patient-info-horizontal">
+              <div className="patient-info-left-side" style={{ textAlign: 'left' }}>
+                <div className="modal-patient-avatar" style={{ width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', backgroundColor: '#dbeafe', color: 'var(--color-primary)', marginRight: '16px', float: 'left' }}>
+                  <User size={24} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>HN {patient.id}</span>
+                  <strong style={{ fontSize: '15px', color: 'var(--text-dark)' }}>{patient.name}</strong>
+                  <span style={{ fontSize: '12px', color: 'var(--text-medium)' }}>
+                    ชาย • อายุ {patient.age} ปี (17 ม.ค. 2501)
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-medium)' }}>
+                    เบอร์โทร {patient.phone || '081-234-5678'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="patient-info-right-side">
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>สิทธิ์การรักษา</span>
+                  <strong>ชำระเงินเอง</strong>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>หัตถการผ่าตัด</span>
+                  <strong>{patient.procedure} (เข่าขวา)</strong>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>ศัลยแพทย์ผู้ผ่าตัด</span>
+                  <strong>{patient.surgeon}</strong>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>ความเสี่ยง SSI</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="dot dot-orange"></span>
+                    <strong>{patient.risk}</strong>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>รอบติดตาม</span>
+                  <strong>Day 30 (6 รอบ)</strong>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>รอบปัจจุบัน</span>
+                  <strong>Day 1 (รอบที่ 1/6)</strong>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>นัดติดตามถัดไป</span>
+                  <strong style={{ color: 'var(--color-primary)' }}>Day 7 (22 มิ.ย. 2569)</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Form Fields: รายละเอียดกิจกรรม */}
+            <div style={{ textAlign: 'left', width: '100%' }}>
+              <h4 className="modal-section-title" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '16px' }}>รายละเอียดกิจกรรม</h4>
+              
+              <div className="form-grid-three-cols">
+                {/* Column 1 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="form-group">
+                    <label>ประเภทกิจกรรม *</label>
+                    <select className="form-select" value={activityType} onChange={(e) => setActivityType(e.target.value)}>
+                      <option value="phone">โทรติดตามอาการ</option>
+                      <option value="sms">SMS ติดตามอาการ</option>
+                      <option value="visit">พบที่โรงพยาบาล</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>วัตถุประสงค์ *</label>
+                    <select className="form-select" value={purpose} onChange={(e) => setPurpose(e.target.value)}>
+                      <option value="follow_up_post_surgery">ติดตามอาการหลังผ่าตัด</option>
+                      <option value="routine_check">ตรวจตามรอบนัด</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Column 2 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="form-group">
+                    <label>วันที่นัดหมายกิจกรรม *</label>
+                    <select className="form-select" value={activityDate} onChange={(e) => setActivityDate(e.target.value)}>
+                      <option value="18 มิ.ย. 2569">18 มิ.ย. 2569</option>
+                      <option value="19 มิ.ย. 2569">19 มิ.ย. 2569</option>
+                      <option value="20 มิ.ย. 2569">20 มิ.ย. 2569</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px' }}>
+                    <div className="form-group">
+                      <label>เวลานัดหมาย *</label>
+                      <select className="form-select" value={activityTime} onChange={(e) => setActivityTime(e.target.value)}>
+                        <option value="13:30">13:30</option>
+                        <option value="14:00">14:00</option>
+                        <option value="15:00">15:00</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>สถานที่ (ถ้ามี)</label>
+                      <input 
+                        type="text" 
+                        placeholder="เช่น โรงพยาบาล / ที่บ้าน / อื่นๆ" 
+                        className="form-input" 
+                        value={location} 
+                        onChange={(e) => setLocation(e.target.value)}
+                        style={{ fontSize: '13px' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column 3 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="form-group">
+                    <label>ผู้รับผิดชอบกิจกรรม *</label>
+                    <select className="form-select" value={responsiblePerson} onChange={(e) => setResponsiblePerson(e.target.value)}>
+                      <option value="OPD Nurse B">OPD Nurse B</option>
+                      <option value="OPD Staff A">OPD Staff A</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div className="form-group">
+                      <label>ช่องทางการติดต่อที่ 1 *</label>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        value={primaryPhone} 
+                        onChange={(e) => setPrimaryPhone(e.target.value)}
+                        style={{ fontSize: '13px' }}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>ช่องทางการติดต่อสำรอง *</label>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        value={secondaryPhone} 
+                        onChange={(e) => setSecondaryPhone(e.target.value)}
+                        style={{ fontSize: '13px' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Full Width Textarea */}
+              <div className="form-group" style={{ marginTop: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <label>รายละเอียดกิจกรรม *</label>
+                  <span className="char-counter">{activityRemarks.length}/500</span>
+                </div>
+                <textarea 
+                  className="form-input" 
+                  style={{ height: '70px', resize: 'vertical', fontSize: '13px' }}
+                  maxLength={500}
+                  value={activityRemarks}
+                  onChange={(e) => setActivityRemarks(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Notification Section */}
+            <div style={{ textAlign: 'left', width: '100%', marginTop: '16px' }}>
+              <h4 className="modal-section-title" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '16px' }}>การแจ้งเตือน</h4>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <label className="checkbox-label" style={{ fontWeight: '600' }}>
+                  <input 
+                    type="checkbox" 
+                    className="checkbox-input"
+                    checked={notifyPatient}
+                    onChange={(e) => setNotifyPatient(e.target.checked)}
+                  />
+                  <span>แจ้งเตือนผู้ป่วย</span>
+                </label>
+
+                {notifyPatient && (
+                  <div style={{ paddingLeft: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className="form-group" style={{ maxWidth: '300px' }}>
+                      <label style={{ fontSize: '16px', color: 'var(--text-medium)', fontWeight: '500' }}>ช่วงเวลาแจ้งเตือน *</label>
+                      <select className="form-select" value={notifyTiming} onChange={(e) => setNotifyTiming(e.target.value)} style={{ fontSize: '13px' }}>
+                        <option value="before_24h">ก่อนถึงเวลานัด 24 ชั่วโมง</option>
+                        <option value="before_12h">ก่อนถึงเวลานัด 12 ชั่วโมง</option>
+                        <option value="before_1h">ก่อนถึงเวลานัด 1 ชั่วโมง</option>
+                      </select>
+                    </div>
+
+                    <label className="checkbox-label" style={{ fontSize: '12.5px' }}>
+                      <input 
+                        type="checkbox" 
+                        className="checkbox-input"
+                        checked={notifySMS}
+                        onChange={(e) => setNotifySMS(e.target.checked)}
+                      />
+                      <span>ช่องทางแจ้งเตือนผู้ป่วย SMS</span>
+                    </label>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="modal-action-row" style={{ marginTop: '24px', justifyContent: 'flex-end', gap: '12px' }}>
+              <button 
+                type="button" 
+                className="clear-btn" 
+                style={{ padding: '12px 24px', flex: 'none', minWidth: '100px' }}
+                onClick={() => setIsAddActivityModalOpen(false)}
+              >
+                ยกเลิก
+              </button>
+              <button 
+                type="button" 
+                className="btn-filled-primary"
+                style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flex: 'none', minWidth: '150px' }}
+                onClick={() => {
+                  alert('สร้างกิจกรรมแทรกเพิ่มเติมเรียบร้อยแล้ว');
+                  setIsAddActivityModalOpen(false);
+                  setIsActivityAdded(true);
+                  setActiveDetailTab('timeline'); // Switch to Timeline view so the user sees the newly added activity
+                }}
+              >
+                <Save size={16} />
+                <span>บันทึกกิจกรรม</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -79,10 +582,6 @@ function ContactAndProcedures({ patient }) {
   </section>
 }
 
-function FollowUpTimeline() {
-  return <section className="mt-3 rounded-lg border border-[#e2e8f0] bg-white p-6 shadow-sm"><div className="flex items-center gap-2"><h3 className="text-[16px] font-semibold text-[#002d73]">การติดตามที่แนะนำ</h3><span className="text-[14px] text-[#424752]">(ยังไม่ได้สร้าง Follow-up)</span></div><p className="text-[14px] text-[#424752]">ระบบแนะนำรอบการติดตามมาตรฐานสำหรับหัตถการนี้</p><div className="relative mx-4 mt-8 flex h-[111px] items-start justify-between before:absolute before:top-2 before:right-4 before:left-4 before:h-0.5 before:bg-[#696969]">{followUpDays.map(day=><div key={day} className="relative z-10 flex flex-col items-center"><i className="size-4 rounded-full bg-[#696969] shadow-[0_0_0_4px_white]"/><strong className="mt-2 text-[12px] font-semibold text-[#3b82f6]">{day}</strong><span className="text-[10px] text-[#424752]">ยังไม่เริ่ม</span></div>)}</div><div className="flex gap-[13px] text-[14px]">{[['#16a34a','ดำเนินการสำเร็จ'],['#3b82f6','อยู่ระหว่างติดตามดำเนินการ'],['#696969','ยังไม่เริ่มติดตาม']].map(([c,l])=><span key={l} className="flex items-center gap-2"><i className="size-[10px] rounded-full" style={{backgroundColor:c}}/>{l}</span>)}</div><p className="mt-3 rounded-md bg-[#f2f4f6] p-2 text-[12px] text-[#424752]">หมายเหตุ: วันที่อาจเปลี่ยนแปลงได้ตามการกำหนดของโรงพยาบาล</p></section>
-}
-
 function ExcludeCaseModal({ patient, onClose }) {
   const [reason, setReason] = useState('')
   const [confirmed, setConfirmed] = useState(false)
@@ -94,7 +593,7 @@ function ExcludeCaseModal({ patient, onClose }) {
         <div className="mx-auto grid size-[64px] place-items-center rounded-full border-4 border-[#fda4af] bg-[#fee2e2] text-[#ef191f]"><AlertTriangle size={25} strokeWidth={2.5}/></div>
         <h2 id="exclude-title" className="mt-4 text-[24px] font-semibold leading-8 text-[#202124]">ไม่เข้าเงื่อนไขการเฝ้าระวัง SSI</h2>
         <p className="mt-2 text-[16px] text-[#6b7280]">คุณต้องการนำผู้ป่วยออกจากระบบการเฝ้าระวังหรือไม่</p>
-        <div className="mt-4 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-4 py-4 text-left text-[#20242b]"><div className="flex items-baseline gap-x-5"><strong className="text-[17px]">HN {patient.id}</strong><strong className="text-[18px]">{patient.name}</strong></div><p className="mt-2 text-[14px] font-medium text-[#4b5563]">{patient.sex} • อายุ {patient.age} ปี (17 ม.ค. 2501)</p><p className="mt-2 text-[14px] font-medium text-[#4b5563]">หัตถการ: TKA (เข่าขวา)</p><div className="mt-2 flex gap-x-6 text-[14px] font-medium text-[#4b5563]"><span>วันที่ผ่าตัด: 10 มิ.ย. 2569</span><span>วันที่จำหน่าย: 15 มิ.ย. 2569</span></div></div>
+        <div className="mt-4 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-4 py-4 text-left text-[#20242b]"><div className="flex items-baseline gap-x-5"><strong className="text-[17px]">HN {patient.id}</strong><strong className="text-[18px]">{patient.name}</strong></div><p className="mt-2 text-[14px] font-medium text-[#4b5563]">{patient.sex} • อายุ {patient.age} ปี (17 ม.ค. 2501)</p><p className="mt-2 text-[14px] font-medium text-[#4b5563]">หัตถการ: TKA (เข่าขวา)</p><div className="mt-2 flex gap-x-6 text-[14px] font-medium text-[#4b5563]"><span>วันที่ผ่าตัด: {patient.surgeryDate}</span><span>วันที่จำหน่าย: 15 มิ.ย. 2569</span></div></div>
         <label className="mt-4 block text-left text-[14px] font-medium text-[#334155]">เหตุผลที่ไม่เข้าเงื่อนไข <span className="text-red-500">*</span><select value={reason} onChange={event=>setReason(event.target.value)} className="mt-2 h-[44px] w-full rounded-lg border border-[#cbd5e1] bg-white px-3 text-[14px] text-[#64748b] shadow-sm outline-none focus:border-[#175beb]"><option value="">เลือกเหตุผล</option><option>หัตถการไม่เข้าเกณฑ์ SSI Surveillance</option><option>ข้อมูลผู้ป่วยซ้ำ</option><option>ยกเลิกการผ่าตัด</option><option>เหตุผลอื่น</option></select></label>
         <label className="mt-4 block text-left text-[14px] font-medium text-[#334155]">รายละเอียดเพิ่มเติม (ถ้ามี)<textarea className="mt-2 h-[78px] w-full resize-none rounded-lg border border-[#cbd5e1] p-3 text-[14px] shadow-sm outline-none focus:border-[#175beb]" placeholder="ระบุรายละเอียดเพิ่มเติม"/></label>
         <label className="mt-4 flex items-center gap-3 text-left text-[14px] font-medium text-[#334155]"><input checked={confirmed} onChange={event=>setConfirmed(event.target.checked)} type="checkbox" className="size-5 rounded accent-[#175beb]"/>ยืนยันว่าข้อมูลถูกต้องและไม่เข้าเกณฑ์การเฝ้าระวัง</label>

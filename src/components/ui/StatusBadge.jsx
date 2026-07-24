@@ -13,5 +13,5 @@ const styles = {
 }
 
 export default function StatusBadge({ children }) {
-  return <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-1 text-[10px] font-semibold ring-1 ring-inset ${styles[children] ?? 'bg-slate-100 text-slate-600 ring-slate-200'}`}>{children}</span>
+  return <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-1 text-[16px] font-semibold ring-1 ring-inset ${styles[children] ?? 'bg-slate-100 text-slate-600 ring-slate-200'}`}>{children}</span>
 }
