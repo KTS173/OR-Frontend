@@ -64,9 +64,9 @@ export default function SetupFollowUpView({ selectedPatient, onClose }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <strong style={{ fontSize: '13px' }}>Follow-up Day 30</strong>
-                  <span className="badge" style={{ backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary)', fontSize: '16px', padding: '2px 6px' }}>มาตรฐาน</span>
+                  <span className="badge" style={{ backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary)', fontSize: '10px', padding: '2px 6px' }}>มาตรฐาน</span>
                 </div>
-                <span style={{ fontSize: '16px', color: 'var(--text-light)', lineHeight: '1.4' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-light)', lineHeight: '1.4' }}>
                   ชุดการติดตามมาตรฐานสำหรับหัตถการทางออร์โธปิดิกส์ (CDC SSI Guideline) (30 วัน)
                 </span>
               </div>
@@ -84,9 +84,9 @@ export default function SetupFollowUpView({ selectedPatient, onClose }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <strong style={{ fontSize: '13px' }}>Follow-up Day 90</strong>
-                  <span className="badge" style={{ backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary)', fontSize: '16px', padding: '2px 6px' }}>มาตรฐาน</span>
+                  <span className="badge" style={{ backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary)', fontSize: '10px', padding: '2px 6px' }}>มาตรฐาน</span>
                 </div>
-                <span style={{ fontSize: '16px', color: 'var(--text-light)', lineHeight: '1.4' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-light)', lineHeight: '1.4' }}>
                   ชุดการติดตามมาตรฐานสำหรับหัตถการทางออร์โธปิดิกส์ (CDC SSI Guideline) (90 วัน)
                 </span>
               </div>

@@ -644,14 +644,14 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 <span className="stats-col-label">รอบปัจจุบัน</span>
                 <span className="stats-col-value" style={{ display: 'flex', flexDirection: 'column' }}>
                   <span>{selectedPatient.round} (รอบที่ 1/6)</span>
-                  <span style={{ fontSize: '16px', color: 'var(--text-light)', fontWeight: 'normal' }}>15 มิ.ย. 2569</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-light)', fontWeight: 'normal' }}>15 มิ.ย. 2569</span>
                 </span>
               </div>
               <div className="stats-col">
                 <span className="stats-col-label">นัดติดตามถัดไป</span>
                 <span className="stats-col-value" style={{ display: 'flex', flexDirection: 'column' }}>
                   <span>Day 7 (รอบที่ 2/6)</span>
-                  <span style={{ fontSize: '16px', color: 'var(--color-primary)', fontWeight: 'normal' }}>22 มิ.ย. 2569 | 09:00 น.</span>
+                  <span style={{ fontSize: '10px', color: 'var(--color-primary)', fontWeight: 'normal' }}>22 มิ.ย. 2569 | 09:00 น.</span>
                 </span>
               </div>
             </div>
@@ -706,7 +706,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
 
                   {notifySMS && (
                     <div className="form-group" style={{ width: '100%' }}>
-                      <label style={{ fontSize: '16px', color: 'var(--text-medium)', fontWeight: '500' }}>แจ้งเตือนแพทย์ผ่านเบอร์ SMS *</label>
+                      <label style={{ fontSize: '11px', color: 'var(--text-medium)', fontWeight: '500' }}>แจ้งเตือนแพทย์ผ่านเบอร์ SMS *</label>
                       <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
                         <select 
                           className="form-select" 

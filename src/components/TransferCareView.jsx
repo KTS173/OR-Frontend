@@ -34,25 +34,25 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
-            <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>วันที่ส่งต่อ</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>วันที่ส่งต่อ</span>
             <span style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-dark)' }}>
               {isTransferCompleted ? '15 มิ.ย. 2569 10:15' : 'ไม่มีข้อมูล'}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
-            <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>เหตุผลการส่งต่อ</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>เหตุผลการส่งต่อ</span>
             <span style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-dark)' }}>
               {isTransferCompleted ? reason : 'ไม่มีข้อมูล'}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
-            <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>วันที่เริ่มติดตามโดยแผนกรับ</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>วันที่เริ่มติดตามโดยแผนกรับ</span>
             <span style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-dark)' }}>
               {isTransferCompleted ? startDate : 'ไม่มีข้อมูล'}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
-            <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>สถานะการส่งต่อ</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>สถานะการส่งต่อ</span>
             <span style={{ fontSize: '13.5px', fontWeight: '600', color: isTransferCompleted ? 'var(--color-primary)' : 'var(--text-medium)' }}>
               {isTransferCompleted ? 'รอแผนกรับการดูแล' : 'ไม่มีข้อมูล'}
             </span>
@@ -119,7 +119,7 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <strong style={{ fontSize: '13px', color: 'var(--text-dark)' }}>Discharge Summary.pdf</strong>
-              <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>15 มิ.ย. 2569 10:10 • 245 KB</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>15 มิ.ย. 2569 10:10 • 245 KB</span>
             </div>
           </div>
         ) : (
@@ -179,14 +179,14 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
                   <div className="wizard-circle" style={{ backgroundColor: 'var(--color-primary)', color: 'white', borderColor: 'var(--color-primary)' }}>
                     {wizardStep >= 1 ? <Check size={14} /> : '1'}
                   </div>
-                  <span style={{ fontSize: '16px', color: wizardStep >= 1 ? 'var(--color-primary)' : 'var(--text-light)' }}>ระบุข้อมูลการส่งต่อ</span>
+                  <span style={{ fontSize: '11px', color: wizardStep >= 1 ? 'var(--color-primary)' : 'var(--text-light)' }}>ระบุข้อมูลการส่งต่อ</span>
                 </div>
                 <div className="wizard-line" style={{ backgroundColor: wizardStep >= 2 ? 'var(--color-primary)' : 'var(--border-color)' }}></div>
                 <div className={`wizard-step ${wizardStep >= 2 ? 'active' : ''}`}>
                   <div className="wizard-circle" style={{ backgroundColor: wizardStep >= 2 ? 'var(--color-primary)' : '#f1f5f9', color: wizardStep >= 2 ? 'white' : 'var(--text-medium)', borderColor: wizardStep >= 2 ? 'var(--color-primary)' : 'var(--border-color)' }}>
                     {wizardStep >= 2 ? <Check size={14} /> : '2'}
                   </div>
-                  <span style={{ fontSize: '16px', color: wizardStep >= 2 ? 'var(--color-primary)' : 'var(--text-light)' }}>ตรวจสอบข้อมูล</span>
+                  <span style={{ fontSize: '11px', color: wizardStep >= 2 ? 'var(--color-primary)' : 'var(--text-light)' }}>ตรวจสอบข้อมูล</span>
                 </div>
               </div>
 
@@ -199,19 +199,19 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
                     <h5 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-medium)', marginBottom: '12px' }}>ข้อมูลผู้ป่วย</h5>
                     <div className="patient-info-summary">
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>HN</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>HN</span>
                         <strong>{selectedPatient.hn}</strong>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>ชื่อ-สกุล</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>ชื่อ-สกุล</span>
                         <strong>{selectedPatient.name}</strong>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', marginTop: '8px' }}>
-                        <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>วันที่ผ่าตัด</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>วันที่ผ่าตัด</span>
                         <strong>10 มิ.ย. 2569</strong>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', marginTop: '8px' }}>
-                        <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>วันที่จำหน่าย</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>วันที่จำหน่าย</span>
                         <strong>15 มิ.ย. 2569</strong>
                       </div>
                     </div>
@@ -292,7 +292,7 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
                         <strong style={{ fontSize: '12.5px', color: 'var(--text-dark)' }}>Discharge Summary.pdf</strong>
-                        <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>15 มิ.ย. 2569 10:10 • 245 KB</span>
+                        <span style={{ fontSize: '10.5px', color: 'var(--text-light)' }}>15 มิ.ย. 2569 10:10 • 245 KB</span>
                       </div>
                     </div>
                   </div>
@@ -306,19 +306,19 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
                     <h5 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-medium)', marginBottom: '12px' }}>ข้อมูลผู้ป่วย</h5>
                     <div className="patient-info-summary">
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>HN</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>HN</span>
                         <strong>{selectedPatient.hn}</strong>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>ชื่อ-สกุล</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>ชื่อ-สกุล</span>
                         <strong>{selectedPatient.name}</strong>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', marginTop: '8px' }}>
-                        <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>วันที่ผ่าตัด</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>วันที่ผ่าตัด</span>
                         <strong>10 มิ.ย. 2569</strong>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', marginTop: '8px' }}>
-                        <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>วันที่จำหน่าย</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>วันที่จำหน่าย</span>
                         <strong>15 มิ.ย. 2569</strong>
                       </div>
                     </div>
@@ -330,42 +330,42 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>จากแผนก (ผู้ส่งต่อ)</span>
+                        <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>จากแผนก (ผู้ส่งต่อ)</span>
                         <strong>{currentDept}</strong>
                       </div>
                       
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>ผู้ส่งต่อ</span>
+                        <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>ผู้ส่งต่อ</span>
                         <strong>อรวรรณดี จ. (IPD Staff)</strong>
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>ไปยังแผนก (ผู้รับเคส)</span>
+                        <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>ไปยังแผนก (ผู้รับเคส)</span>
                         <strong>{targetDept}</strong>
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>ผู้รับผิดชอบปลายทาง</span>
+                        <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>ผู้รับผิดชอบปลายทาง</span>
                         <strong>-</strong>
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>เหตุผลการส่งต่อ</span>
+                        <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>เหตุผลการส่งต่อ</span>
                         <strong>{reason}</strong>
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>วันที่เริ่มติดตามโดยแผนกรับ</span>
+                        <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>วันที่เริ่มติดตามโดยแผนกรับ</span>
                         <strong>{startDate}</strong>
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>วันที่ส่งต่อ</span>
+                        <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>วันที่ส่งต่อ</span>
                         <strong>15 มิ.ย. 2569 10:15</strong>
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                        <span style={{ color: 'var(--text-light)', fontSize: '16px' }}>เอกสารแนบ (1 ไฟล์)</span>
+                        <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>เอกสารแนบ (1 ไฟล์)</span>
                         <div className="file-box-item" style={{ marginTop: 0 }}>
                           <div style={{ color: '#ef4444', backgroundColor: '#fee2e2', padding: '8px', borderRadius: '6px' }}>
                             <File size={18} />

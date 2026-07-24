@@ -204,7 +204,7 @@ export default function TimelineView({ selectedPatient, setActiveDetailTab, isAc
 
       {/* Table responsive */}
       <div className="table-responsive">
-        <table className="data-table" style={{ fontSize: '14px' }}>
+        <table className="data-table" style={{ fontSize: '13.5px' }}>
           <thead>
             <tr>
               <th>รอบ</th>
@@ -224,14 +224,14 @@ export default function TimelineView({ selectedPatient, setActiveDetailTab, isAc
                     <strong style={{ color: row.isIntervening ? 'var(--color-orange)' : 'inherit' }}>
                       {row.round}
                     </strong>
-                    <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>{row.date}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>{row.date}</span>
                   </div>
                 </td>
                 <td>{row.time}</td>
                 <td>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span>{row.staffName}</span>
-                    <span style={{ fontSize: '16px', color: 'var(--text-light)' }}>{row.staffRole}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>{row.staffRole}</span>
                   </div>
                 </td>
                 <td>
