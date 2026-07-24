@@ -46,6 +46,7 @@
 .or-scrollbar { scrollbar-color: rgb(255 255 255 / 24%) transparent; scrollbar-width: thin; }
 .or-scrollbar::-webkit-scrollbar { width: 5px; }
 .or-scrollbar::-webkit-scrollbar-thumb { border-radius: 99px; background: rgb(255 255 255 / 24%); }
+table :is(thead, tbody, tfoot, tr)[class*="border-slate-100"] { border-color: #e2e8f0; }
 .dashboard-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: 17px; row-gap: 16px; }
 .dashboard-lower { display: grid; grid-template-columns: minmax(320px, .64fr) minmax(0, 1.36fr); gap: var(--or-content-gap); }
 .dashboard-charts { display: grid; grid-template-columns: minmax(0, 1.528fr) minmax(0, 1fr); gap: 17px; }
