@@ -7,14 +7,14 @@ export default function PatientTable({ patients, loading = false, dashboard = fa
   const columns = dashboard ? 5 : validation ? 14 : 9
   const openPatient = (patient) => navigate(`/cases/${patient.id}`)
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className={`flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 ${validation ? 'min-h-[75px] px-4 py-3 sm:px-6' : 'px-4 py-3'}`}>
-        <div><h2 className={`${dashboard || validation ? 'text-base text-[#002d73]' : 'text-sm text-slate-800'} font-medium`}>{dashboard ? <>รายการติดตามผู้ป่วย <span className="text-sm text-slate-400">(1,250 ราย)</span></> : validation ? 'รายการติดตามผู้ป่วย (58 ราย)' : 'รายการผู้ป่วย'}</h2>{!dashboard && !validation && <p className="mt-0.5 text-[10px] text-slate-400">ข้อมูลตัวอย่างสำหรับเชื่อมต่อ API</p>}</div>
-        {dashboard ? <select className="h-9 rounded-lg border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-500"><option>2569</option></select> : validation ? <select className="h-[42px] w-[154px] rounded-lg border border-[#e2e8f0] bg-white px-[17px] text-[14px]"><option>วันนี้</option></select> : <button className="rounded-lg p-2 text-slate-400 hover:bg-slate-50"><MoreHorizontal size={18} /></button>}
+    <section className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm ${dashboard ? 'patient-table-dashboard' : ''}`}>
+      <div className={`flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 ${dashboard ? 'min-h-[86px] px-8 py-3' : validation ? 'min-h-[75px] px-4 py-3 sm:px-6' : 'px-4 py-3'}`}>
+        <div><h2 className={`${dashboard || validation ? 'text-base text-[#002d73]' : 'text-sm text-slate-800'} font-medium`}>{dashboard ? 'รายการติดตามผู้ป่วย (1,250 ราย)' : validation ? 'รายการติดตามผู้ป่วย (58 ราย)' : 'รายการผู้ป่วย'}</h2>{!dashboard && !validation && <p className="mt-0.5 text-[16px] text-slate-400">ข้อมูลตัวอย่างสำหรับเชื่อมต่อ API</p>}</div>
+        {dashboard ? <select className="h-[43px] w-[142px] rounded-xl border border-slate-300 bg-white px-6 text-[16px] font-medium text-slate-600"><option>2569</option></select> : validation ? <select className="h-[42px] w-[154px] rounded-lg border border-[#e2e8f0] bg-white px-[17px] text-[14px]"><option>วันนี้</option></select> : <button className="rounded-lg p-2 text-slate-400 hover:bg-slate-50"><MoreHorizontal size={18} /></button>}
       </div>
       <div className="overflow-x-auto">
-        <table className={`w-full text-left ${dashboard ? 'min-w-[520px] text-[14px]' : validation ? 'min-w-[2258px] text-[14px]' : 'min-w-[980px] text-[14px]'}`}>
-          <thead className="border-b border-slate-100 bg-slate-50 text-[12px] font-semibold uppercase tracking-[.6px] text-[#1e293b]">{dashboard ? <tr><th className="table-cell">HN</th><th className="table-cell">ชื่อผู้ป่วย</th><th className="table-cell">หัตถการ</th><th className="table-cell">ศัลยแพทย์</th><th className="table-cell">วันผ่าตัด</th></tr> : validation ? <tr>{['ข้อมูล HN', 'ชื่อผู้ป่วย', 'อายุ/เพศ', 'หัตถการ', 'ศัลยแพทย์', 'แผนก', 'วันที่จำหน่าย', 'วันที่ Admit', 'วันที่ผ่าตัด', 'สถานะจำหน่าย', 'ช่องทางติดต่อ', 'ความเสี่ยง SSI', 'สถานะตรวจสอบ', 'จัดการ'].map((h) => <th key={h} className="h-10 px-6 whitespace-nowrap text-center first:w-[110px] first:text-left">{h}</th>)}</tr> : <tr><th className="table-cell">HN</th><th className="table-cell">ชื่อผู้ป่วย</th><th className="table-cell">อายุ/เพศ</th><th className="table-cell">หัตถการ</th><th className="table-cell">ศัลยแพทย์</th><th className="table-cell">แผนก</th><th className="table-cell">วันผ่าตัด</th><th className="table-cell">สถานะ</th><th className="table-cell" /></tr>}</thead>
+        <table className={`w-full text-left ${dashboard ? 'min-w-[520px] text-[15px]' : validation ? 'min-w-[2258px] text-[15px]' : 'min-w-[980px] text-[15px]'}`}>
+          <thead className="border-b border-slate-100 bg-slate-50 text-[12px] font-semibold uppercase tracking-[.6px] text-[#1e293b]">{dashboard ? <tr className="h-14"><th className="px-8">HN</th><th className="px-8">ชื่อผู้ป่วย</th><th className="px-8">หัตถการ</th><th className="px-8">ศัลยแพทย์</th><th className="px-8">วันผ่าตัด</th></tr> : validation ? <tr>{['ข้อมูล HN', 'ชื่อผู้ป่วย', 'อายุ/เพศ', 'หัตถการ', 'ศัลยแพทย์', 'แผนก', 'วันที่จำหน่าย', 'วันที่ Admit', 'วันที่ผ่าตัด', 'สถานะจำหน่าย', 'ช่องทางติดต่อ', 'ความเสี่ยง SSI', 'สถานะตรวจสอบ', 'จัดการ'].map((h) => <th key={h} className="h-10 px-6 whitespace-nowrap text-center first:w-[110px] first:text-left">{h}</th>)}</tr> : <tr><th className="table-cell">HN</th><th className="table-cell">ชื่อผู้ป่วย</th><th className="table-cell">อายุ/เพศ</th><th className="table-cell">หัตถการ</th><th className="table-cell">ศัลยแพทย์</th><th className="table-cell">แผนก</th><th className="table-cell">วันผ่าตัด</th><th className="table-cell">สถานะ</th><th className="table-cell" /></tr>}</thead>
           <tbody
             className="divide-y divide-slate-100 [&_tr]:cursor-pointer"
             onClick={(event) => {
@@ -23,11 +23,11 @@ export default function PatientTable({ patients, loading = false, dashboard = fa
               if (patient) openPatient(patient)
             }}
           >
-            {loading ? Array.from({ length: 5 }).map((_, i) => <tr key={i}>{Array.from({ length: columns }).map((__, c) => <td key={c} className="table-cell"><div className="h-3 animate-pulse rounded bg-slate-100" /></td>)}</tr>) : patients.map((p) => {
+            {loading ? Array.from({ length: 5 }).map((_, i) => <tr key={i}>{Array.from({ length: columns }).map((__, c) => <td key={c} className="table-cell"><div className="h-3 animate-pulse rounded bg-slate-100" /></td>)}</tr>) : (dashboard ? patients.slice(0, 5) : patients).map((p) => {
               return dashboard ? (
-                <tr key={p.id} className="hover:bg-blue-50/35">
-                  <td className="table-cell font-semibold">{p.id}</td>
-                  <td className="table-cell font-medium">
+                <tr key={p.id} className="h-28 text-[15px] text-[#4b5563] hover:bg-blue-50/35">
+                  <td className="px-8 font-semibold">{p.id}</td>
+                  <td className="px-8 font-medium whitespace-nowrap">
                     <span
                       className="patient-name"
                       style={{ cursor: 'pointer', color: '#175beb', textDecoration: 'underline', fontWeight: '500' }}
@@ -39,9 +39,9 @@ export default function PatientTable({ patients, loading = false, dashboard = fa
                       {p.name}
                     </span>
                   </td>
-                  <td className="table-cell">{p.abbrev ?? p.procedure}</td>
-                  <td className="table-cell">{p.surgeon}</td>
-                  <td className="table-cell whitespace-nowrap">{p.surgeryDate}</td>
+                  <td className="px-8 whitespace-nowrap">{p.abbrev ?? p.procedure}</td>
+                  <td className="px-8 whitespace-nowrap">{p.surgeon}</td>
+                  <td className="px-8 whitespace-nowrap">{p.surgeryDate}</td>
                 </tr>
               ) : validation ? (
                 <tr key={p.id} className="h-[88px] border-b border-slate-100 text-[#434651] hover:bg-blue-50/35">
@@ -105,7 +105,7 @@ export default function PatientTable({ patients, loading = false, dashboard = fa
           </tbody>
         </table>
       </div>
-      <div className={`flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-3 sm:px-6 ${validation ? 'min-h-[47px] py-2 text-[12px] sm:text-[14px]' : 'py-2.5 text-[10px]'} text-slate-400`}><span>{dashboard || validation ? 'Showing 10 of 10 Historical Log' : `แสดง ${patients.length} จาก ${patients.length} รายการ`}</span><div className="flex items-center gap-1 sm:gap-2"><button className="page-button"><ChevronLeft size={13} /></button><button className="page-button bg-[#175beb] text-white">1</button><button className="page-button">2</button><button className="page-button">3</button><button className="page-button"><ChevronRight size={13} /></button></div></div>
+      <div className={`flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-3 sm:px-6 ${dashboard ? 'min-h-[66px] text-[14px]' : validation ? 'min-h-[47px] py-2 text-[12px] sm:text-[14px]' : 'py-2.5 text-[16px]'} text-slate-400`}><span>{dashboard || validation ? 'Showing 10 of 10 Historical Log' : `แสดง ${patients.length} จาก ${patients.length} รายการ`}</span><div className="flex items-center gap-1 sm:gap-2">{dashboard ? <><button className="h-[42px] rounded-lg border border-slate-200 px-4 text-[14px] font-medium text-slate-500">Previous</button><button className="page-button h-[42px] min-w-[42px] bg-[#175beb] text-[14px] text-white">1</button><button className="page-button h-[42px] min-w-[42px] text-[14px]">2</button><button className="page-button h-[42px] min-w-[42px] text-[14px]">3</button><button className="h-[42px] rounded-lg border border-slate-200 px-4 text-[14px] font-medium text-slate-500">Next</button></> : <><button className="page-button"><ChevronLeft size={13} /></button><button className="page-button bg-[#175beb] text-white">1</button><button className="page-button">2</button><button className="page-button">3</button><button className="page-button"><ChevronRight size={13} /></button></>}</div></div>
     </section>
   )
 }

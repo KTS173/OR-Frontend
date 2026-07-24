@@ -90,10 +90,10 @@ export default function Sidebar({ open, onClose }) {
       <aside className={`or-sidebar fixed inset-y-0 left-0 z-40 flex h-dvh flex-col text-white transition-transform lg:static lg:h-auto lg:min-h-[1368px] lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex min-h-[158px] items-start justify-between border-b border-white/10 px-9 pt-9">
           <div className="flex items-center gap-3">
-            <img src="/assets/images/smalllogo.png" alt="Bangkok Hospital" className="h-11 w-11 rounded-[9px] object-contain" />
+            <img src="/assets/images/smalllogo.png" alt="Bangkok Hospital" className="h-[51px] w-[49.11px] shrink-0 rounded-[9px] object-contain" />
             <div>
-              <p className="text-[22px] leading-[22px] font-bold tracking-[0.08em]">BANGKOK</p>
-              <p className="text-[22px] leading-[23px] font-bold tracking-[0.08em]">HOSPITAL</p>
+              <p className="font-['Inter'] text-[24px] leading-[28px] font-semibold tracking-[1px]">BANGKOK</p>
+              <p className="font-['Inter'] text-[20px] leading-[28px] font-semibold tracking-[1px]">HOSPITAL</p>
             </div>
           </div>
           <button onClick={onClose} className="rounded-md p-1.5 text-blue-200 hover:bg-white/10 lg:hidden"><ChevronLeft size={18} /></button>

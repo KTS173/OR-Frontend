@@ -41,6 +41,7 @@ function App() {
         <Route path="users" element={<UserManagementPage />} />
         <Route path="cases/:id" element={<CaseDetailPage />} />
         <Route path="cases/:id/create-follow-up" element={<CreateFollowUpPage />} />
+        <Route path="follow-ups/:id" element={<CaseDetailPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

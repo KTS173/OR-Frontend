@@ -1,4 +1,4 @@
-import { ArrowRight, ClipboardCheck, Image, Phone, Stethoscope } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Line, LineChart, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Link } from 'react-router-dom'
 import MetricCard from '../components/ui/MetricCard.jsx'
@@ -13,14 +13,7 @@ const followUpSummary = [
   { name: 'ยกเลิกเคส',      value: 8,   color: '#9ca3af' },
 ]
 
-const taskIcons = [Phone, ClipboardCheck, Image, Stethoscope]
-
-const taskIconBg = {
-  blue:   'bg-blue-50   text-blue-600',
-  green:  'bg-green-50  text-green-600',
-  orange: 'bg-orange-50 text-orange-500',
-  purple: 'bg-purple-50 text-purple-600',
-}
+const taskIcons = ['phone.png', 'icon3.png', 'image.png', '2.png']
 
 const metaBadge = {
   red:   'bg-red-50   text-red-600',
@@ -130,11 +123,18 @@ export default function DashboardPage() {
             <div className="border-b border-slate-100 px-5 py-4 text-base font-bold text-[#10386f]">งานของฉันวันนี้</div>
             <div className="divide-y divide-slate-100 px-5">
               {followUpTasks.map((task, i) => {
-                const Icon = taskIcons[i]
+                const iconUrl = `/assets/icon/dashboard/${taskIcons[i]}`
                 return (
                   <div key={task.label} className="flex items-center gap-3 py-4">
-                    <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${taskIconBg[task.tone]}`}>
-                      <Icon size={17} />
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-50">
+                      <span
+                        className="dashboard-task-icon"
+                        aria-hidden="true"
+                        style={{
+                          WebkitMaskImage: `url("${iconUrl}")`,
+                          maskImage: `url("${iconUrl}")`,
+                        }}
+                      />
                     </span>
                     <p className="min-w-0 flex-1 text-xs font-semibold text-slate-700">{task.label}</p>
                     <span className="text-[16px] text-slate-500">{task.count} รายการ</span>
