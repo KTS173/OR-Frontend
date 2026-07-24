@@ -66,7 +66,7 @@ export default function MetricCard({ label, value, unit, trend, tone = 'blue', d
         <span>{value}</span>
         <span className="whitespace-nowrap text-[14px] font-semibold">{unit}</span>
       </p>
-      <p className="flex items-center gap-0.5 text-[12px] leading-4 font-medium" style={{ color: visual.trend }}>
+      <p className="flex items-center gap-0.5 text-[14px] leading-4 font-medium" style={{ color: visual.trend }}>
         <img src={arrowUrl} alt="" className="h-[9px] w-3 shrink-0 object-contain" />
         {trend?.replace('+', '')}{visual.trendUnit ? ` ${visual.trendUnit}` : ''}
         <span className="ml-1" style={{ color: visual.trendSuffix ?? '#6b7280' }}>จากเมื่อวาน</span>
