@@ -272,7 +272,7 @@ export default function SetupFollowUpView({ selectedPatient, onClose }) {
           </div>
 
           {/* Notice bottom */}
-          <div style={{ fontSize: '12px', color: 'var(--text-light)', borderTop: '1px solid var(--border-color)', paddingTop: '12px', marginTop: '12px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-light)', borderTop: '1px solid var(--border-color)', paddingTop: '12px', marginTop: '12px' }}>
             หมายเหตุ: สามารถปรับเปลี่ยนรอบติดตามภายหลังใน Timeline ของผู้ป่วยได้
           </div>
         </div>

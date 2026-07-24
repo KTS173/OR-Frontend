@@ -35,7 +35,7 @@ export default function CaseDetailPage() {
 
   return (
     <>
-      <div className="flex h-6 items-center justify-between"><Link to="/or-validation" className="inline-flex items-center gap-2 text-[14px] font-medium text-[#175beb]"><ArrowLeft size={12}/>กลับไปหน้ารายการ</Link><div className="flex items-center gap-2"><span className="rounded-full bg-blue-50 px-2 py-1 text-[12px] text-blue-600">ข้อมูลจาก HIS / TrackCare</span><StatusBadge>{patient.status}</StatusBadge></div></div>
+      <div className="flex h-6 items-center justify-between"><Link to="/or-validation" className="inline-flex items-center gap-2 text-[14px] font-medium text-[#175beb]"><ArrowLeft size={12}/>กลับไปหน้ารายการ</Link><div className="flex items-center gap-2"><span className="rounded-full bg-blue-50 px-2 py-1 text-[13px] text-blue-600">ข้อมูลจาก HIS / TrackCare</span><StatusBadge>{patient.status}</StatusBadge></div></div>
       <PatientSummary patient={patient}/>
       <nav className="mt-3 flex h-[73px] items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-[17px]"><div className="flex h-[39px] gap-6 border-b border-[#e2e8f0]"><button className="border-b-2 border-[#175beb] text-[16px] font-medium text-[#175beb]">ข้อมูลคนไข้</button><button className="text-[16px] text-[#424752]">เอกสารอ้างอิง</button></div><button className="inline-flex h-[38px] items-center gap-2 rounded-lg border border-[#e2e8f0] px-[13px] text-[14px]"><RefreshCw size={14}/>รีเฟรช</button></nav>
       <SurgerySection patient={patient}/>
@@ -59,8 +59,8 @@ function FollowUpCaseDetail({ patient }) {
       <div className="flex min-h-6 flex-wrap items-center justify-between gap-2">
         <Link to="/my-follow-ups" className="inline-flex items-center gap-2 text-[14px] font-medium text-[#175beb]"><ArrowLeft size={12}/>กลับไปหน้ารายการ</Link>
         <div className="flex items-center gap-2">
-          <span className="rounded border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[12px] text-emerald-600">สร้าง Follow-up สำเร็จ</span>
-          <span className="rounded border border-orange-200 bg-orange-50 px-2.5 py-1 text-[12px] text-orange-500">ต้องติดตามวันนี้</span>
+          <span className="rounded border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[13px] text-emerald-600">สร้าง Follow-up สำเร็จ</span>
+          <span className="rounded border border-orange-200 bg-orange-50 px-2.5 py-1 text-[13px] text-orange-500">ต้องติดตามวันนี้</span>
         </div>
       </div>
 
@@ -136,7 +136,7 @@ function ActionBar({ onExclude, onQueue }) {
 }
 
 function PatientSummary({ patient }) {
-  return <section className="mt-3 grid gap-3 xl:grid-cols-[827fr_273fr]"><PatientInfoCard patient={patient}/><aside className="h-[273px] rounded-xl border border-[#e2e8f0] bg-white px-[25px] py-[13px] shadow-sm"><h2 className="text-[16px] font-medium leading-7 text-[#424752]">สถานะข้อมูล (Validation)</h2><div className="mt-2 space-y-2">{validationItems.map(item=><p key={item} className="flex items-center gap-2 text-[14px] leading-5 text-[#424752]"><span className="grid size-[18px] place-items-center rounded-full bg-[#16a34a] text-white"><Check size={12} strokeWidth={3}/></span>{item}</p>)}</div><div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-[5px] text-center text-[12px] leading-6 text-emerald-700">ข้อมูลพร้อมสำหรับสร้าง Follow-up</div></aside></section>
+  return <section className="mt-3 grid gap-3 xl:grid-cols-[827fr_273fr]"><PatientInfoCard patient={patient}/><aside className="h-[273px] rounded-xl border border-[#e2e8f0] bg-white px-[25px] py-[13px] shadow-sm"><h2 className="text-[16px] font-medium leading-7 text-[#424752]">สถานะข้อมูล (Validation)</h2><div className="mt-2 space-y-2">{validationItems.map(item=><p key={item} className="flex items-center gap-2 text-[14px] leading-5 text-[#424752]"><span className="grid size-[18px] place-items-center rounded-full bg-[#16a34a] text-white"><Check size={12} strokeWidth={3}/></span>{item}</p>)}</div><div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-[5px] text-center text-[13px] leading-6 text-emerald-700">ข้อมูลพร้อมสำหรับสร้าง Follow-up</div></aside></section>
 }
 
 export function PatientInfoCard({ patient }) {
@@ -145,7 +145,7 @@ export function PatientInfoCard({ patient }) {
     <div className="min-w-0 flex-1">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><p className="text-[14px] font-medium leading-7 text-[#424752]">HN <span className="ml-1">{patient.id}</span></p><h2 className="text-[24px] font-semibold leading-8 text-[#191c1e]">{patient.name}</h2></div>
-        <div className="flex flex-wrap items-center gap-2 pt-1 text-[13px] text-[#424752]"><span>ประเภทผู้ป่วย</span><span className="rounded-md bg-blue-50 px-2.5 py-1 text-[12px] font-medium text-[#175beb]">OPD</span><span className="ml-2">สถานะเคส</span><span className="rounded-md bg-blue-50 px-2.5 py-1 text-[12px] font-medium text-[#175beb]">ติดตามโดยOPD</span></div>
+        <div className="flex flex-wrap items-center gap-2 pt-1 text-[13px] text-[#424752]"><span>ประเภทผู้ป่วย</span><span className="rounded-md bg-blue-50 px-2.5 py-1 text-[13px] font-medium text-[#175beb]">OPD</span><span className="ml-2">สถานะเคส</span><span className="rounded-md bg-blue-50 px-2.5 py-1 text-[13px] font-medium text-[#175beb]">ติดตามโดยOPD</span></div>
       </div>
       <div className="mt-[11px] grid grid-cols-[177px_161px_1fr]">
         <div className="space-y-2"><DetailRow label="เพศ" value={patient.sex ?? 'ชาย'}/><DetailRow label="อายุ" value={`${patient.age ?? 68} ปี`}/><DetailRow label="เบอร์โทร" value="081-234-5678"/><DetailRow label="วันเกิด" value="17 ม.ค. 2501"/></div>
@@ -176,14 +176,14 @@ function ContactAndProcedures({ patient }) {
     </article>
     <article className="flex flex-col gap-3 rounded-xl border border-[#e2e8f0] bg-white p-[13px] shadow-sm">
       <h3 className="inline-flex items-center gap-1 text-[16px] font-medium leading-7 text-[#002d73]">รายการหัตถการในเคส (มี 1 รายการ)<Info size={17} className="text-[#64748b]"/></h3>
-      <div className="overflow-hidden border border-black/10 shadow-sm"><table className="w-full table-fixed text-[12px] text-[#434651]"><thead className="h-[40px] bg-[#f8fafc] font-semibold uppercase tracking-[.6px] text-[#1e293b]"><tr><th className="w-[110px] text-center">ลำดับ</th><th className="text-left">หัตถการ</th><th className="text-left">ศัลยแพทย์</th><th className="w-[140px] text-center">สถานะ SSI</th></tr></thead><tbody><tr className="h-[57px]"><td className="text-center font-medium">1</td><td>TKA (เข่าขวา)</td><td>{patient.surgeon.replace('นพ.', 'นพ')}</td><td className="text-center"><span className="inline-flex items-center gap-1 text-[#16a34a]"><i className="size-[7px] rounded-full bg-[#16a34a]"/>เข้าเกณฑ์</span></td></tr></tbody></table></div>
-      <div className="flex min-h-[34px] items-center gap-2 rounded border border-[#0057b8]/10 bg-[#eff6ff] px-[13px] py-[5px] text-[12px] leading-6 text-[#0057b8]"><Info size={17} className="shrink-0"/>เฉพาะหัตถการที่เข้าเกณฑ์ SSI Surveillance เท่านั้นที่ต้องสร้าง Follow-up</div>
+      <div className="overflow-hidden border border-black/10 shadow-sm"><table className="w-full table-fixed text-[13px] text-[#434651]"><thead className="h-[40px] bg-[#f8fafc] font-semibold uppercase tracking-[.6px] text-[#1e293b]"><tr><th className="w-[110px] text-center">ลำดับ</th><th className="text-left">หัตถการ</th><th className="text-left">ศัลยแพทย์</th><th className="w-[140px] text-center">สถานะ SSI</th></tr></thead><tbody><tr className="h-[57px]"><td className="text-center font-medium">1</td><td>TKA (เข่าขวา)</td><td>{patient.surgeon.replace('นพ.', 'นพ')}</td><td className="text-center"><span className="inline-flex items-center gap-1 text-[#16a34a]"><i className="size-[7px] rounded-full bg-[#16a34a]"/>เข้าเกณฑ์</span></td></tr></tbody></table></div>
+      <div className="flex min-h-[34px] items-center gap-2 rounded border border-[#0057b8]/10 bg-[#eff6ff] px-[13px] py-[5px] text-[13px] leading-6 text-[#0057b8]"><Info size={17} className="shrink-0"/>เฉพาะหัตถการที่เข้าเกณฑ์ SSI Surveillance เท่านั้นที่ต้องสร้าง Follow-up</div>
     </article>
   </section>
 }
 
 function FollowUpTimeline() {
-  return <section className="mt-3 rounded-lg border border-[#e2e8f0] bg-white p-6 shadow-sm"><div className="flex items-center gap-2"><h3 className="text-[16px] font-semibold text-[#002d73]">การติดตามที่แนะนำ</h3><span className="text-[14px] text-[#424752]">(ยังไม่ได้สร้าง Follow-up)</span></div><p className="text-[14px] text-[#424752]">ระบบแนะนำรอบการติดตามมาตรฐานสำหรับหัตถการนี้</p><div className="relative mx-4 mt-8 flex h-[111px] items-start justify-between before:absolute before:top-2 before:right-4 before:left-4 before:h-0.5 before:bg-[#696969]">{followUpDays.map(day=><div key={day} className="relative z-10 flex flex-col items-center"><i className="size-4 rounded-full bg-[#696969] shadow-[0_0_0_4px_white]"/><strong className="mt-2 text-[12px] font-semibold text-[#3b82f6]">{day}</strong><span className="text-[10px] text-[#424752]">ยังไม่เริ่ม</span></div>)}</div><div className="flex gap-[13px] text-[14px]">{[['#16a34a','ดำเนินการสำเร็จ'],['#3b82f6','อยู่ระหว่างติดตามดำเนินการ'],['#696969','ยังไม่เริ่มติดตาม']].map(([c,l])=><span key={l} className="flex items-center gap-2"><i className="size-[10px] rounded-full" style={{backgroundColor:c}}/>{l}</span>)}</div><p className="mt-3 rounded-md bg-[#f2f4f6] p-2 text-[12px] text-[#424752]">หมายเหตุ: วันที่อาจเปลี่ยนแปลงได้ตามการกำหนดของโรงพยาบาล</p></section>
+  return <section className="mt-3 rounded-lg border border-[#e2e8f0] bg-white p-6 shadow-sm"><div className="flex items-center gap-2"><h3 className="text-[16px] font-semibold text-[#002d73]">การติดตามที่แนะนำ</h3><span className="text-[14px] text-[#424752]">(ยังไม่ได้สร้าง Follow-up)</span></div><p className="text-[14px] text-[#424752]">ระบบแนะนำรอบการติดตามมาตรฐานสำหรับหัตถการนี้</p><div className="relative mx-4 mt-8 flex h-[111px] items-start justify-between before:absolute before:top-2 before:right-4 before:left-4 before:h-0.5 before:bg-[#696969]">{followUpDays.map(day=><div key={day} className="relative z-10 flex flex-col items-center"><i className="size-4 rounded-full bg-[#696969] shadow-[0_0_0_4px_white]"/><strong className="mt-2 text-[13px] font-semibold text-[#3b82f6]">{day}</strong><span className="text-[10px] text-[#424752]">ยังไม่เริ่ม</span></div>)}</div><div className="flex gap-[13px] text-[14px]">{[['#16a34a','ดำเนินการสำเร็จ'],['#3b82f6','อยู่ระหว่างติดตามดำเนินการ'],['#696969','ยังไม่เริ่มติดตาม']].map(([c,l])=><span key={l} className="flex items-center gap-2"><i className="size-[10px] rounded-full" style={{backgroundColor:c}}/>{l}</span>)}</div><p className="mt-3 rounded-md bg-[#f2f4f6] p-2 text-[13px] text-[#424752]">หมายเหตุ: วันที่อาจเปลี่ยนแปลงได้ตามการกำหนดของโรงพยาบาล</p></section>
 }
 
 function ExcludeCaseModal({ patient, onClose }) {
@@ -220,7 +220,7 @@ function QueueModal({ patient, onClose, onSend }) {
         <button onClick={onClose} className="btn-secondary h-[38px] px-6">ยกเลิก</button>
         <button onClick={onSend} className="btn-primary inline-flex h-[38px] items-center gap-2 px-6"><Send size={14}/>ส่งเคส</button>
       </div>
-      <section><h3 className="mb-4 text-[16px] font-semibold">ประวัติการส่งข้อมูล</h3><div className="overflow-hidden rounded-lg border border-slate-200"><table className="w-full text-[12px]"><thead className="h-10 bg-slate-50"><tr>{['ส่งโดย','วันที่/เวลา','ปลายทาง','สถานะปัจจุบัน','แผนกรับเคส'].map(h=><th key={h} className="px-4 text-left">{h}</th>)}</tr></thead><tbody>{Array.from({length:4}).map((_,i)=><tr key={i} className="h-[61px] border-t border-slate-100"><td className="px-4">พญ.อัญชลีกิตติวรานันท์</td><td className="px-4">08/05/2567<br/><span className="text-slate-400">14:20 น.</span></td><td className="px-4">{i?'IPD':'OPD'}</td><td className="px-4"><span className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-600">{i?'ส่งสำเร็จ':'รอรับเคส'}</span></td><td className="px-4">ศัลยกรรมทั่วไป</td></tr>)}</tbody></table></div></section>
+      <section><h3 className="mb-4 text-[16px] font-semibold">ประวัติการส่งข้อมูล</h3><div className="overflow-hidden rounded-lg border border-slate-200"><table className="w-full text-[13px]"><thead className="h-10 bg-slate-50"><tr>{['ส่งโดย','วันที่/เวลา','ปลายทาง','สถานะปัจจุบัน','แผนกรับเคส'].map(h=><th key={h} className="px-4 text-left">{h}</th>)}</tr></thead><tbody>{Array.from({length:4}).map((_,i)=><tr key={i} className="h-[61px] border-t border-slate-100"><td className="px-4">พญ.อัญชลีกิตติวรานันท์</td><td className="px-4">08/05/2567<br/><span className="text-slate-400">14:20 น.</span></td><td className="px-4">{i?'IPD':'OPD'}</td><td className="px-4"><span className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-600">{i?'ส่งสำเร็จ':'รอรับเคส'}</span></td><td className="px-4">ศัลยกรรมทั่วไป</td></tr>)}</tbody></table></div></section>
     </div>
   </aside>
   </div>
@@ -310,7 +310,7 @@ function AddActivityModal({ onClose, onSave }) {
 
         <div className="space-y-4">
           <div className="form-group">
-            <label className="text-[12px] font-medium text-slate-600">วันที่ทำกิจกรรม</label>
+            <label className="text-[13px] font-medium text-slate-600">วันที่ทำกิจกรรม</label>
             <div className="input-container">
               <Calendar size={16} className="input-icon" />
               <select 
@@ -326,7 +326,7 @@ function AddActivityModal({ onClose, onSave }) {
           </div>
 
           <div className="form-group">
-            <label className="text-[12px] font-medium text-slate-600">เวลา</label>
+            <label className="text-[13px] font-medium text-slate-600">เวลา</label>
             <div className="input-container">
               <Clock size={16} className="input-icon" />
               <select 
@@ -344,7 +344,7 @@ function AddActivityModal({ onClose, onSave }) {
           </div>
 
           <div className="form-group">
-            <label className="text-[12px] font-medium text-slate-600">ประเภทกิจกรรม</label>
+            <label className="text-[13px] font-medium text-slate-600">ประเภทกิจกรรม</label>
             <select 
               value={type} 
               onChange={(e) => setType(e.target.value)} 
@@ -359,7 +359,7 @@ function AddActivityModal({ onClose, onSave }) {
           </div>
 
           <div className="form-group">
-            <label className="text-[12px] font-medium text-slate-600">ผู้รับผิดชอบ</label>
+            <label className="text-[13px] font-medium text-slate-600">ผู้รับผิดชอบ</label>
             <div className="input-container">
               <UserRound size={16} className="input-icon" />
               <select 
@@ -375,7 +375,7 @@ function AddActivityModal({ onClose, onSave }) {
           </div>
 
           <div className="form-group">
-            <label className="text-[12px] font-medium text-slate-600">รายละเอียดกิจกรรม</label>
+            <label className="text-[13px] font-medium text-slate-600">รายละเอียดกิจกรรม</label>
             <textarea 
               value={detail} 
               onChange={(e) => setDetail(e.target.value)} 

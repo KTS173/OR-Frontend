@@ -355,7 +355,7 @@ table :is(thead, tbody, tfoot, tr)[class*="border-slate-100"] { border-color: #e
 }
 
 .form-group label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-medium);
 }
