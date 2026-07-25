@@ -410,106 +410,205 @@ function SuccessModal({ patient, onClose }) {
 }
 
 function AddActivityModal({ onClose, onSave }) {
-  const [date, setDate] = useState('18 พ.ค. 2569')
-  const [time, setTime] = useState('09:00')
-  const [type, setType] = useState('โทรศัพท์ติดตามอาการ (Day 1)')
-  const [staff, setStaff] = useState('พญ. ปิยะนันท์ ประเสริฐกุล')
-  const [detail, setDetail] = useState('')
+  const [date, setDate] = useState('22 มิ.ย. 2569')
+  const [time, setTime] = useState('13:30')
+  const [type, setType] = useState('โทรติดตามอาการ')
+  const [purpose, setPurpose] = useState('ติดตามอาการหลังผ่าตัด')
+  const [location, setLocation] = useState('')
+  const [staff, setStaff] = useState('OPD Nurse B')
+  const [contact1, setContact1] = useState('081-234-5678')
+  const [contact2, setContact2] = useState('-')
+  const [detail, setDetail] = useState('คนไข้แจ้งปวดแผลบริเวณเข่าขวาเพิ่มขึ้นเล็กน้อย ต้องการติดตามอาการก่อนถึง Day 7')
+  const [notifyPatient, setNotifyPatient] = useState(true)
+  const [notifyPeriod, setNotifyPeriod] = useState('ก่อนถึงเวลานัด 24 ชั่วโมง')
+  const [notifySMS, setNotifySMS] = useState(true)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-      <section className="relative w-full max-w-[480px] rounded-2xl bg-white p-6 shadow-2xl text-left">
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 p-4">
+      <section className="relative w-full max-w-[800px] max-h-[95vh] rounded-2xl bg-white p-7 shadow-2xl text-left overflow-y-auto">
+        <button onClick={onClose} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
           <X size={20} />
         </button>
 
-        <h2 className="text-[18px] font-semibold text-[#1e293b] flex items-center gap-2 mb-4">
-          <Plus size={20} className="text-[#175beb]" />
-          สร้างกิจกรรมเพิ่ม (Add Intervening Activity)
+        <h2 className="text-[20px] font-semibold text-[#1e293b]">
+          สร้างกิจกรรมเพิ่ม (ก่อนรอบนัดถัดไป)
         </h2>
+        <p className="text-[13px] text-slate-500 mt-1">
+          กำหนดกิจกรรมเพิ่มเติมในระหว่างรอบติดตาม
+        </p>
 
-        <div className="space-y-4">
-          <div className="form-group">
-            <label className="text-[13px] font-medium text-slate-600">วันที่ทำกิจกรรม</label>
-            <div className="input-container">
-              <Calendar size={16} className="input-icon" />
-              <select 
-                value={date} 
-                onChange={(e) => setDate(e.target.value)} 
-                className="form-select form-input-with-icon"
-              >
-                <option value="18 พ.ค. 2569">18 พ.ค. 2569</option>
-                <option value="19 พ.ค. 2569">19 พ.ค. 2569</option>
-                <option value="20 พ.ค. 2569">20 พ.ค. 2569</option>
-              </select>
+        {/* Patient Summary Gray Card */}
+        <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200/60 p-4 flex gap-4 items-center text-[13px] text-[#424752]">
+          <div className="grid size-[64px] shrink-0 place-items-center rounded-full border border-blue-100 bg-blue-50 text-[#175beb]">
+            <UserRound size={32} strokeWidth={1.8} />
+          </div>
+          <div className="flex-1 grid grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-4">
+            <div>
+              <p className="text-[11px] text-slate-400">HN 0123456</p>
+              <strong className="text-[15px] font-semibold text-[#191c1e]">นายสมชาย ใจดี</strong>
+              <p className="text-[12px] text-slate-500 mt-0.5">ชาย • อายุ 68 ปี (17 ม.ค. 2501)</p>
+              <p className="text-[12px] text-slate-500">เบอร์โทร 081-234-5678</p>
+            </div>
+            <div className="space-y-1 border-l border-slate-200 pl-4">
+              <p className="flex justify-between"><span>หัตถการ:</span> <strong className="font-semibold text-slate-700">TKA</strong></p>
+              <p className="flex justify-between"><span>ศัลยแพทย์:</span> <strong className="font-semibold text-slate-700">นพ อธิวัฒน์ ศรีกมล</strong></p>
+              <p className="flex justify-between"><span>แผนก:</span> <strong className="font-semibold text-slate-700">Orthopedic OR</strong></p>
+              <p className="flex justify-between"><span>ความเสี่ยง:</span> <strong className="font-semibold text-orange-500">● ปานกลาง</strong></p>
+            </div>
+            <div className="space-y-1 border-l border-slate-200 pl-4 col-span-2 lg:col-span-1">
+              <p className="flex justify-between"><span>วันเริ่มติดตาม:</span> <strong className="font-semibold text-slate-700">15 มิ.ย. 2569</strong></p>
+              <p className="flex justify-between"><span>รอบติดตาม:</span> <strong className="font-semibold text-slate-700">Day 30 (6 รอบ)</strong></p>
+              <p className="flex justify-between"><span>รอบปัจจุบัน:</span> <strong className="font-semibold text-slate-700">Day 1 (รอบที่ 1/6)</strong></p>
+              <p className="flex justify-between"><span>นัดติดตามถัดไป:</span> <strong className="font-semibold text-slate-700">Day 7 (22 มิ.ย. 2569)</strong></p>
             </div>
           </div>
+        </div>
 
-          <div className="form-group">
-            <label className="text-[13px] font-medium text-slate-600">เวลา</label>
-            <div className="input-container">
-              <Clock size={16} className="input-icon" />
-              <select 
-                value={time} 
-                onChange={(e) => setTime(e.target.value)} 
-                className="form-select form-input-with-icon"
-              >
-                <option value="09:00">09:00 น.</option>
-                <option value="10:00">10:00 น.</option>
-                <option value="11:00">11:00 น.</option>
-                <option value="13:00">13:00 น.</option>
-                <option value="14:00">14:00 น.</option>
-              </select>
-            </div>
-          </div>
+        {/* รายละเอียดกิจกรรม */}
+        <h3 className="text-[15px] font-semibold text-[#002d73] border-b border-slate-100 pb-2 mt-5">
+          รายละเอียดกิจกรรม
+        </h3>
 
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="form-group">
-            <label className="text-[13px] font-medium text-slate-600">ประเภทกิจกรรม</label>
-            <select 
-              value={type} 
-              onChange={(e) => setType(e.target.value)} 
-              className="form-select"
-            >
-              <option value="โทรศัพท์ติดตามอาการ (Day 1)">โทรศัพท์ติดตามอาการ (Day 1)</option>
-              <option value="โทรศัพท์ติดตามอาการ (Day 7)">โทรศัพท์ติดตามอาการ (Day 7)</option>
-              <option value="โทรศัพท์ติดตามอาการ (Day 14)">โทรศัพท์ติดตามอาการ (Day 14)</option>
-              <option value="ส่งแบบสอบถามผ่าน Line">ส่งแบบสอบถามผ่าน Line</option>
-              <option value="ตรวจแผลที่คลินิกผ่าตัด">ตรวจแผลที่คลินิกผ่าตัด</option>
+            <label className="text-[13px] font-medium text-slate-600">ประเภทกิจกรรม *</label>
+            <select value={type} onChange={(e) => setType(e.target.value)} className="form-select">
+              <option value="โทรติดตามอาการ">โทรติดตามอาการ</option>
+              <option value="ส่งแบบประเมิน">ส่งแบบประเมิน</option>
+              <option value="พบแพทย์ที่รพ.">พบแพทย์ที่รพ.</option>
             </select>
           </div>
 
           <div className="form-group">
-            <label className="text-[13px] font-medium text-slate-600">ผู้รับผิดชอบ</label>
-            <div className="input-container">
-              <UserRound size={16} className="input-icon" />
-              <select 
-                value={staff} 
-                onChange={(e) => setStaff(e.target.value)} 
-                className="form-select form-input-with-icon"
-              >
-                <option value="พญ. ปิยะนันท์ ประเสริฐกุล">พญ. ปิยะนันท์ ประเสริฐกุล (แพทย์ศัลยกรรม)</option>
-                <option value="นพ. กมลชนก อัศวรุ่งโรจน์">นพ. กมลชนก อัศวรุ่งโรจน์ (ศัลยแพทย์ผู้ผ่าตัด)</option>
-                <option value="คุณ อมรรัตน์ สายสมบูรณ์">คุณ อมรรัตน์ สายสมบูรณ์ (พยาบาลประสานงาน)</option>
+            <label className="text-[13px] font-medium text-slate-600">วัตถุประสงค์ *</label>
+            <select value={purpose} onChange={(e) => setPurpose(e.target.value)} className="form-select">
+              <option value="ติดตามอาการหลังผ่าตัด">ติดตามอาการหลังผ่าตัด</option>
+              <option value="ประเมินอาการสงสัย SSI">ประเมินอาการสงสัย SSI</option>
+              <option value="ทำแผลผ่าตัด">ทำแผลผ่าตัด</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="text-[13px] font-medium text-slate-600">วันที่นัดหมายกิจกรรม *</label>
+            <select value={date} onChange={(e) => setDate(e.target.value)} className="form-select">
+              <option value="22 มิ.ย. 2569">22 มิ.ย. 2569</option>
+              <option value="23 มิ.ย. 2569">23 มิ.ย. 2569</option>
+              <option value="24 มิ.ย. 2569">24 มิ.ย. 2569</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="text-[13px] font-medium text-slate-600">เวลานัดหมาย *</label>
+            <select value={time} onChange={(e) => setTime(e.target.value)} className="form-select">
+              <option value="09:00">09:00</option>
+              <option value="10:00">10:00</option>
+              <option value="11:00">11:00</option>
+              <option value="13:30">13:30</option>
+              <option value="14:00">14:00</option>
+            </select>
+          </div>
+
+          <div className="form-group lg:col-span-2">
+            <label className="text-[13px] font-medium text-slate-600">สถานที่ (ถ้ามี)</label>
+            <input 
+              type="text" 
+              value={location} 
+              onChange={(e) => setLocation(e.target.value)} 
+              className="form-input" 
+              placeholder="เช่น โรงพยาบาล / ที่บ้าน / อื่นๆ" 
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="text-[13px] font-medium text-slate-600">ผู้รับผิดชอบกิจกรรม *</label>
+            <select value={staff} onChange={(e) => setStaff(e.target.value)} className="form-select">
+              <option value="OPD Nurse B">OPD Nurse B</option>
+              <option value="OPD Nurse A">OPD Nurse A</option>
+              <option value="IPD Staff">IPD Staff</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="text-[13px] font-medium text-slate-600">ช่องทางการติดต่อที่ 1 *</label>
+            <input 
+              type="text" 
+              value={contact1} 
+              onChange={(e) => setContact1(e.target.value)} 
+              className="form-input" 
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="text-[13px] font-medium text-slate-600">ช่องทางการติดต่อสำรอง</label>
+            <input 
+              type="text" 
+              value={contact2} 
+              onChange={(e) => setContact2(e.target.value)} 
+              className="form-input" 
+            />
+          </div>
+
+          <div className="form-group md:col-span-2 lg:col-span-3 relative">
+            <label className="text-[13px] font-medium text-slate-600">รายละเอียดกิจกรรม *</label>
+            <textarea 
+              value={detail} 
+              onChange={(e) => setDetail(e.target.value)} 
+              className="form-input min-h-[90px] resize-none pr-16" 
+              maxLength={500}
+            />
+            <span className="absolute right-3 bottom-2 text-[11px] text-slate-400">
+              {detail.length}/500
+            </span>
+          </div>
+        </div>
+
+        {/* การแจ้งเตือน */}
+        <h3 className="text-[15px] font-semibold text-[#002d73] border-b border-slate-100 pb-2 mt-5">
+          การแจ้งเตือน
+        </h3>
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/60 border border-slate-150 rounded-xl p-4">
+          <div className="space-y-3">
+            <label className="flex items-center gap-2 text-[13px] font-medium text-slate-700 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={notifyPatient} 
+                onChange={(e) => setNotifyPatient(e.target.checked)} 
+                className="w-4 h-4 accent-[#175beb]"
+              />
+              แจ้งเตือนผู้ป่วย
+            </label>
+            <div className="form-group">
+              <label className="text-[12px] text-slate-500">ช่วงเวลาแจ้งเตือน *</label>
+              <select value={notifyPeriod} onChange={(e) => setNotifyPeriod(e.target.value)} className="form-select mt-1 h-9 py-1">
+                <option value="ก่อนถึงเวลานัด 24 ชั่วโมง">ก่อนถึงเวลานัด 24 ชั่วโมง</option>
+                <option value="ก่อนถึงเวลานัด 12 ชั่วโมง">ก่อนถึงเวลานัด 12 ชั่วโมง</option>
+                <option value="ก่อนถึงเวลานัด 2 ชั่วโมง">ก่อนถึงเวลานัด 2 ชั่วโมง</option>
               </select>
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="text-[13px] font-medium text-slate-600">รายละเอียดกิจกรรม</label>
-            <textarea 
-              value={detail} 
-              onChange={(e) => setDetail(e.target.value)} 
-              className="form-input min-h-[80px] resize-none"
-              placeholder="กรอกรายละเอียดกิจกรรมเพิ่มเติม..."
-            />
+          <div className="space-y-3 md:border-l md:border-slate-200 md:pl-6">
+            <label className="flex items-center gap-2 text-[13px] font-medium text-slate-700 cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={notifySMS} 
+                onChange={(e) => setNotifySMS(e.target.checked)} 
+                className="w-4 h-4 accent-[#175beb]"
+              />
+              ช่องทางแจ้งเตือนผู้ป่วย
+            </label>
+            <div className="text-[13px] text-slate-600 pl-6 mt-1 font-semibold">
+              SMS
+            </div>
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end gap-3">
-          <button onClick={onClose} className="btn-secondary h-[42px] px-5 text-[14px]">
+        <div className="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
+          <button onClick={onClose} className="rounded-xl border border-slate-200 bg-white px-6 py-2.5 text-[14px] font-semibold text-slate-600 hover:bg-slate-50">
             ยกเลิก
           </button>
-          <button onClick={onSave} className="btn-primary h-[42px] px-5 text-[14px] inline-flex items-center gap-2">
+          <button onClick={onSave} className="rounded-xl bg-[#175beb] px-6 py-2.5 text-[14px] font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
             <Save size={16} />
             บันทึกกิจกรรม
           </button>
