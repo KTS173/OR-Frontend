@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Info, MinusCircle, RefreshCw, Send, UserRound, Users, X, Plus, Calendar, Clock, Save, Search, File } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Eye, Info, MinusCircle, RefreshCw, Send, UserRound, Users, X, Plus, Calendar, Clock, Save, Search, File } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import StatusBadge from '../components/ui/StatusBadge.jsx'
@@ -812,7 +812,10 @@ function SuspectedCaseDetail({ patient }) {
             </h3>
 
             {/* Round 1 Day 1 */}
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col md:flex-row justify-between gap-4">
+            <div 
+              onClick={() => navigate(`/suspected-cases/${id}/eval-detail`)}
+              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col md:flex-row justify-between gap-4 cursor-pointer hover:bg-slate-50/50 transition-colors"
+            >
               <div className="flex-1 text-[13.5px]">
                 <div className="flex items-center gap-3">
                   <strong className="text-[15px] font-semibold text-[#1e293b]">รอบที่ 1 (Day 1)</strong>
@@ -824,7 +827,7 @@ function SuspectedCaseDetail({ patient }) {
                   <span className="text-[12px] text-slate-500 mt-1 block">ความเสี่ยง SSI: ปานกลาง | อาการอื่นๆ: ไม่มีไข้, ไม่ปวดแผล</span>
                 </div>
               </div>
-              <div className="flex md:flex-col justify-between items-end text-right text-[12px] text-slate-500 min-w-[200px]">
+              <div className="flex md:flex-col justify-between items-end text-right text-[12px] text-slate-500 min-w-[200px]" onClick={e => e.stopPropagation()}>
                 <div>
                   <p>ช่องทางการติดตาม: <strong className="text-slate-700">โทรศัพท์</strong></p>
                   <p className="mt-1">ไฟล์เอกสาร: <strong className="text-slate-700">1 ไฟล์</strong></p>
@@ -834,13 +837,16 @@ function SuspectedCaseDetail({ patient }) {
                   onClick={() => navigate(`/suspected-cases/${id}/eval-detail`)}
                   className="rounded-full border border-slate-200 p-2 text-blue-600 hover:bg-slate-50"
                 >
-                  <Search size={16} />
+                  <Eye size={16} />
                 </button>
               </div>
             </div>
 
             {/* round activity */}
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col md:flex-row justify-between gap-4">
+            <div 
+              onClick={() => navigate(`/suspected-cases/${id}/eval-detail`)}
+              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col md:flex-row justify-between gap-4 cursor-pointer hover:bg-slate-50/50 transition-colors"
+            >
               <div className="flex-1 text-[13.5px]">
                 <div className="flex items-center gap-3">
                   <strong className="text-[15px] font-semibold text-orange-500">กิจกรรมแทรก</strong>
@@ -852,7 +858,7 @@ function SuspectedCaseDetail({ patient }) {
                   <span className="text-[12px] text-slate-500 mt-1 block">เหตุผล: ปวดแผลและบวมมากขึ้น</span>
                 </div>
               </div>
-              <div className="flex md:flex-col justify-between items-end text-right text-[12px] text-slate-500 min-w-[200px]">
+              <div className="flex md:flex-col justify-between items-end text-right text-[12px] text-slate-500 min-w-[200px]" onClick={e => e.stopPropagation()}>
                 <div>
                   <p>ช่องทางการติดตาม: <strong className="text-slate-700">โทรศัพท์</strong></p>
                   <p className="mt-1">ไฟล์เอกสาร: <strong className="text-slate-700">-</strong></p>
@@ -862,13 +868,16 @@ function SuspectedCaseDetail({ patient }) {
                   onClick={() => navigate(`/suspected-cases/${id}/eval-detail`)}
                   className="rounded-full border border-slate-200 p-2 text-blue-600 hover:bg-slate-50"
                 >
-                  <Search size={16} />
+                  <Eye size={16} />
                 </button>
               </div>
             </div>
 
             {/* Round 2 Day 7 */}
-            <div className="rounded-xl border border-orange-200 bg-white p-5 shadow-sm flex flex-col md:flex-row justify-between gap-4 ring-1 ring-orange-200">
+            <div 
+              onClick={() => navigate(`/suspected-cases/${id}/eval-detail`)}
+              className="rounded-xl border border-orange-200 bg-white p-5 shadow-sm flex flex-col md:flex-row justify-between gap-4 ring-1 ring-orange-200 cursor-pointer hover:bg-orange-50/20 transition-colors"
+            >
               <div className="flex-1 text-[13.5px]">
                 <div className="flex items-center gap-3">
                   <strong className="text-[15px] font-semibold text-[#1e293b]">รอบที่ 2 (Day 7)</strong>
@@ -881,7 +890,7 @@ function SuspectedCaseDetail({ patient }) {
                   <span className="text-[12px] text-slate-500 mt-1 block">ความเสี่ยง SSI: ปานกลาง | อาการอื่นๆ: ไม่มีไข้, ไม่ปวดแผล</span>
                 </div>
               </div>
-              <div className="flex md:flex-col justify-between items-end text-right text-[12px] text-slate-500 min-w-[200px]">
+              <div className="flex md:flex-col justify-between items-end text-right text-[12px] text-slate-500 min-w-[200px]" onClick={e => e.stopPropagation()}>
                 <div>
                   <p>ช่องทางการติดตาม: <strong className="text-slate-700">โทรศัพท์</strong></p>
                   <p className="mt-1">ไฟล์เอกสาร: <strong className="text-slate-700">1 ไฟล์</strong></p>
@@ -889,9 +898,9 @@ function SuspectedCaseDetail({ patient }) {
                 </div>
                 <button 
                   onClick={() => navigate(`/suspected-cases/${id}/eval-detail`)}
-                  className="rounded-full border border-slate-200 bg-blue-50 p-2 text-blue-600 hover:bg-blue-100"
+                  className="rounded-full border border-slate-200 bg-[#175beb] p-2 text-white hover:bg-blue-700 shadow-sm"
                 >
-                  <Search size={16} />
+                  <Eye size={16} />
                 </button>
               </div>
             </div>
