@@ -19,6 +19,26 @@
     --or-canvas: #f7f9fc;
     --or-text: #17223b;
     --or-muted: #667085;
+
+    /* Custom variables for subviews */
+    --color-primary: #175beb;
+    --color-primary-light: #eff6ff;
+    --color-success: #10b981;
+    --color-success-light: #ecfdf5;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+    --color-info: #3b82f6;
+    --color-purple: #8b5cf6;
+    --color-orange: #f97316;
+    --color-teal: #14b8a6;
+    
+    --text-dark: #0f172a;
+    --text-medium: #475569;
+    --text-light: #94a3b8;
+    --text-white: #ffffff;
+    
+    --border-color: #e2e8f0;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   }
   * { box-sizing: border-box; }
   html { width: 100%; min-width: 320px; background: #f5f7fb; overflow-x: clip; }
