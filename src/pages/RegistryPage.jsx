@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Download, History, PhoneCall, Plus, RefreshCw, Search, ShieldCheck, TimerReset, UserRound, X } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Calendar, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Download, History, PhoneCall, Plus, RefreshCw, Search, ShieldCheck, TimerReset, UserRound, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Filters from '../components/ui/Filters.jsx'
@@ -31,6 +31,7 @@ export default function RegistryPage({ type }) {
   if (type === 'validation') return <ValidationPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'opd') return <OpdQueuePage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'followUp') return <MyFollowUpsPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
+  if (type === 'history') return <HistoryPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   return (
     <>
       <PageHeader title={config.title} description={config.description} actions={<><button className="btn-secondary"><Download size={14} />ส่งออก</button><button className="btn-primary">{type === 'sync' ? <RefreshCw size={14} /> : <Plus size={14} />}{type === 'sync' ? 'ซิงค์ข้อมูล' : 'เพิ่มรายการ'}</button></>} />
@@ -140,4 +141,230 @@ function AcceptPatientModal({ patient, onClose }) {
       </section>
     </div>
   )
+}
+
+function HistoryPage({ patients, loading, search, setSearch }) {
+  const [activeTab, setActiveTab] = useState('all')
+
+  const historyMetrics = [
+    { label: 'ประวัติติดตามทั้งหมด', value: '1,118 คน', subtext: 'รายการ', icon: CalendarClock, iconBg: 'bg-blue-50 text-blue-600' },
+    { label: 'ติดตามสำเร็จ', value: '842 คน', subtext: 'รายการ', icon: CheckCircle2, iconBg: 'bg-emerald-50 text-emerald-600' },
+    { label: 'ย้ายไปแผนกอื่น', value: '276 คน', subtext: 'รายการ', icon: PhoneCall, iconBg: 'bg-purple-50 text-purple-600' }
+  ]
+
+  const historyRows = [
+    { time: '15 มิ.ย.2569 10:15', hn: '0123456', name: 'นายสมชาย ใจดี', age: '68 ปี', birth: '17 ม.ค. 2501', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
+    { time: '15 มิ.ย.2569 10:15', hn: '0234567', name: 'นางสาวรวิภา แก้วดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
+    { time: '15 มิ.ย.2569 10:15', hn: '0234567', name: 'นางสาววิภาพร คำดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
+    { time: '15 มิ.ย.2569 10:15', hn: '123459', name: 'นายอนันต์ รัตนกุล', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
+    { time: '15 มิ.ย.2569 10:15', hn: '456789', name: 'นางวรรณา ทองดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
+    { time: '15 มิ.ย.2569 10:15', hn: '456789', name: 'นายธีรดล อัคนิพงศ์', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
+    { time: '15 มิ.ย.2569 10:15', hn: '456789', name: 'นายธีรดล อัคนิพงศ์', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' }
+  ]
+
+  return (
+    <div className="flex flex-col gap-6 text-left pb-10">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-[24px] font-bold text-slate-800">ประวัติการติดตาม</h1>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[14px]">
+            <Calendar size={16} className="text-slate-400" />
+            <span>15 มิ.ย. 2569</span>
+          </div>
+          <button className="relative rounded-full border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50">
+            <span className="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-red-500"></span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Metrics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {historyMetrics.map((card, idx) => {
+          const Icon = card.icon;
+          return (
+            <div 
+              key={idx} 
+              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center justify-between min-h-[110px] transition-all hover:shadow-md"
+            >
+              <div>
+                <span className="text-[13px] font-medium text-slate-500">{card.label}</span>
+                <div className="mt-2 flex items-baseline gap-1.5">
+                  <strong className="text-[26px] font-bold text-slate-800 tracking-tight">{card.value}</strong>
+                  <span className="text-[13px] text-slate-400">{card.subtext}</span>
+                </div>
+              </div>
+              <div className={`p-3 rounded-xl ${card.iconBg}`}>
+                <Icon size={24} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Search Filters Card */}
+      <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
+        <h3 className="flex items-center gap-2 text-[15px] font-semibold text-[#002d73] border-b border-slate-100 pb-3">
+          <Search size={16} />
+          ค้นหาข้อมูล
+        </h3>
+        
+        <div className="mt-4 flex flex-col md:flex-row gap-4 items-stretch md:items-end">
+          <div className="form-group text-left flex-1">
+            <label className="text-[12px] font-medium text-slate-500">เลือกช่วงวันที่</label>
+            <div className="relative mt-1">
+              <input 
+                type="text" 
+                className="form-input text-[13px] h-9 py-1 pr-9" 
+                defaultValue="12 พ.ค. 2569 - 18 พ.ค. 2569" 
+              />
+              <Calendar size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            </div>
+          </div>
+
+          <div className="form-group text-left flex-1">
+            <label className="text-[12px] font-medium text-slate-500">ประเภทประวัติ</label>
+            <select className="form-select mt-1 text-[13px] h-9 py-1">
+              <option>ทั้งหมด</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 flex-[2] w-full">
+            <div className="form-group text-left flex-1">
+              <label className="text-[12px] font-medium text-slate-500">แผนกปัจจุบัน</label>
+              <select className="form-select mt-1 text-[13px] h-9 py-1">
+                <option>OPD-ทั่วไป</option>
+              </select>
+            </div>
+            
+            <span className="text-slate-400 self-end mb-2.5">—</span>
+
+            <div className="form-group text-left flex-1">
+              <label className="text-[12px] font-medium text-slate-500">แผนกปลายทาง</label>
+              <select className="form-select mt-1 text-[13px] h-9 py-1">
+                <option>ทั้งหมด</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div className="form-group text-left md:col-span-3">
+            <label className="text-[12px] font-medium text-slate-500">คำค้นหา</label>
+            <input 
+              type="text" 
+              className="form-input mt-1 text-[13px] h-9 py-1" 
+              placeholder="ค้นหา HN, ชื่อผู้ป่วย, หัตถการ..." 
+            />
+          </div>
+          <div className="flex gap-2">
+            <button className="flex-1 rounded-lg bg-[#175beb] h-9 text-[13px] font-medium text-white shadow-sm hover:bg-blue-700 flex items-center justify-center gap-1.5">
+              <Search size={14} />
+              ค้นหา
+            </button>
+            <button className="rounded-lg border border-slate-200 bg-white px-4 h-9 text-[13px] font-medium text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1.5">
+              <RotateCcw size={14} />
+              ล้างตัวกรอง
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <section className="flex h-[66px] items-center rounded-xl border border-black/10 bg-white px-5 shadow-sm">
+        <div className="flex h-full items-center gap-7">
+          <button 
+            onClick={() => setActiveTab('all')}
+            className={`h-full text-[14px] font-medium transition-all ${
+              activeTab === 'all' ? 'border-b-2 border-[#175beb] text-[#175beb] font-semibold' : 'text-[#424752] hover:text-slate-700'
+            }`}
+          >
+            ทั้งหมด (52)
+          </button>
+          <button 
+            onClick={() => setActiveTab('success')}
+            className={`h-full text-[14px] font-medium transition-all ${
+              activeTab === 'success' ? 'border-b-2 border-[#175beb] text-[#175beb] font-semibold' : 'text-[#424752] hover:text-slate-700'
+            }`}
+          >
+            ติดตามสำเร็จ
+          </button>
+          <button 
+            onClick={() => setActiveTab('transfer')}
+            className={`h-full text-[14px] font-medium transition-all ${
+              activeTab === 'transfer' ? 'border-b-2 border-[#175beb] text-[#175beb] font-semibold' : 'text-[#424752] hover:text-slate-700'
+            }`}
+          >
+            ส่งต่อการติดตามไปแผนกอื่น
+          </button>
+        </div>
+      </section>
+
+      {/* Table Section */}
+      <section className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
+        <header className="flex h-[64px] items-center justify-between border-b border-slate-100 px-6">
+          <h2 className="text-[16px] font-semibold text-[#002d73]">ประวัติการส่งต่อ</h2>
+        </header>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1100px] text-[13px] text-[#434651]">
+            <thead className="h-10 bg-slate-50 font-medium text-slate-700">
+              <tr>
+                <th className="px-4 py-2 text-left">วันที่/เวลา</th>
+                <th className="px-4 py-2 text-left">HN</th>
+                <th className="px-4 py-2 text-left">ชื่อผู้ป่วย</th>
+                <th className="px-4 py-2 text-left">หัตถการ</th>
+                <th className="px-4 py-2 text-left">แผนกติดตามเดิม</th>
+                <th className="px-4 py-2 text-left">ผู้รับผิดชอบ</th>
+                <th className="px-4 py-2 text-left">ผลการประเมินSSIล่าสุด</th>
+              </tr>
+            </thead>
+            <tbody>
+              {historyRows.map((row, idx) => (
+                <tr key={idx} className="h-[70px] border-t border-slate-100 hover:bg-blue-50/20">
+                  <td className="px-4 py-2 font-medium text-slate-700">
+                    {row.time.split(' ')[0]}
+                    <span className="block text-[11px] text-slate-400 mt-0.5">{row.time.split(' ')[1]}</span>
+                  </td>
+                  <td className="px-4 py-2 font-semibold text-slate-700">{row.hn}</td>
+                  <td className="px-4 py-2">
+                    <span className="font-semibold text-[#175beb] block">{row.name}</span>
+                    <span className="text-[11px] text-slate-400 mt-0.5 block">{row.age} ({row.birth})</span>
+                  </td>
+                  <td className="px-4 py-2 font-medium text-slate-700">{row.procedure}</td>
+                  <td className="px-4 py-2 text-slate-600">
+                    {row.dept}
+                  </td>
+                  <td className="px-4 py-2 text-slate-500">{row.staff}</td>
+                  <td className="px-4 py-2">
+                    <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[12px] font-semibold text-emerald-600">
+                      {row.ssi}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <footer className="flex h-[46px] items-center justify-between border-t border-slate-200 px-6 text-[13px] text-slate-500">
+          <span>Showing 10 of 10 Historical Log</span>
+          <div className="flex gap-2">
+            <button className="page-button w-auto px-3">Previous</button>
+            <button className="page-button bg-[#175beb] text-white">1</button>
+            <button className="page-button">2</button>
+            <button className="page-button">3</button>
+            <button className="page-button w-auto px-3">Next</button>
+          </div>
+        </footer>
+      </section>
+
+      {/* Notice Banner */}
+      <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
+        <Calendar size={16} className="text-blue-500" />
+        <span>15 มิ.ย. 2569: ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
+      </div>
+    </div>
+  );
 }
