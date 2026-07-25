@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, Calendar, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Download, History, PhoneCall, Plus, RefreshCw, RotateCcw, Search, ShieldCheck, TimerReset, UserRound, X } from 'lucide-react'
+import { AlertCircle, AlertTriangle, ArrowRight, Calendar, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Download, History, PhoneCall, Plus, RefreshCw, RotateCcw, Search, ShieldCheck, TimerReset, UserRound, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Filters from '../components/ui/Filters.jsx'
@@ -32,6 +32,7 @@ export default function RegistryPage({ type }) {
   if (type === 'opd') return <OpdQueuePage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'followUp') return <MyFollowUpsPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'history') return <HistoryPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
+  if (type === 'suspected') return <SuspectedSSIPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   return (
     <>
       <PageHeader title={config.title} description={config.description} actions={<><button className="btn-secondary"><Download size={14} />ส่งออก</button><button className="btn-primary">{type === 'sync' ? <RefreshCw size={14} /> : <Plus size={14} />}{type === 'sync' ? 'ซิงค์ข้อมูล' : 'เพิ่มรายการ'}</button></>} />
@@ -325,6 +326,214 @@ function HistoryPage({ patients, loading, search, setSearch }) {
                   <td className="px-4 py-2">
                     <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[12px] font-semibold text-emerald-600">
                       {row.ssi}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <footer className="flex h-[46px] items-center justify-between border-t border-slate-200 px-6 text-[13px] text-slate-500">
+          <span>Showing 10 of 10 Historical Log</span>
+          <div className="flex gap-2">
+            <button className="page-button w-auto px-3">Previous</button>
+            <button className="page-button bg-[#175beb] text-white">1</button>
+            <button className="page-button">2</button>
+            <button className="page-button">3</button>
+            <button className="page-button w-auto px-3">Next</button>
+          </div>
+        </footer>
+      </section>
+
+      {/* Notice Banner */}
+      <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
+        <Calendar size={16} className="text-blue-500" />
+        <span>15 มิ.ย. 2569: ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
+      </div>
+    </div>
+  );
+}
+
+function SuspectedSSIPage({ patients, loading, search, setSearch }) {
+  const navigate = useNavigate()
+  const [activeTab, setActiveTab] = useState('all')
+
+  const metrics = [
+    { label: 'เคสรอแพทย์ตรวจ', value: '18 เคส', subtext: 'รอตรวจสอบวันนี้', icon: AlertTriangle, iconBg: 'bg-amber-50 text-amber-600' },
+    { label: 'แพทย์กำลังตรวจสอบ', value: '48 เคส', subtext: 'กำลังดำเนินการตรวจสอบ', icon: TimerReset, iconBg: 'bg-purple-50 text-purple-600' },
+    { label: 'ยืนยัน SSI', value: '11 เคส', subtext: 'เคสติดเชื้อ', icon: AlertCircle, iconBg: 'bg-red-50 text-red-600' }
+  ]
+
+  const ssiRows = [
+    { hn: '0123456', name: 'นายสมชาย ใจดี', age: '68 ปี', birth: '17 ม.ค. 2501', procedure: 'TKA', surgeon: 'นพ กมลชนก อัศวรุ่งโรจน์', date: '10/6/2569', risk: 'ปานกลาง', riskColor: 'text-orange-500', status: 'สงสัย SSI' },
+    { hn: '0123459', name: 'นายอนันต์ รัตนกุล', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', surgeon: 'นพ กมลชนก อัศวรุ่งโรจน์', date: '10/6/2569', risk: 'สูง', riskColor: 'text-red-500', status: 'สงสัย SSI' },
+    { hn: '0456789', name: 'นางวรรณา ทองดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', surgeon: 'นพ กมลชนก อัศวรุ่งโรจน์', date: '10/6/2569', risk: 'สูง', riskColor: 'text-red-500', status: 'สงสัย SSI' },
+    { hn: '0456789', name: 'นายธีรดล อัคนิพงศ์', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', surgeon: 'นพ กมลชนก อัศวรุ่งโรจน์', date: '10/6/2569', risk: 'สูง', riskColor: 'text-red-500', status: 'สงสัย SSI' },
+    { hn: '0234567', name: 'นายปัณณวิชญ์ ศิลาวงศ์ไพร', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', surgeon: 'นพ กมลชนก อัศวรุ่งโรจน์', date: '10/6/2569', risk: 'สูง', riskColor: 'text-red-500', status: 'สงสัย SSI' },
+    { hn: '0234567', name: 'นางสาวรวิภา แก้วดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', surgeon: 'นพ กมลชนก อัศวรุ่งโรจน์', date: '10/6/2569', risk: 'สูง', riskColor: 'text-red-500', status: 'สงสัย SSI' },
+    { hn: '0234567', name: 'นางสาววิภาพร คำดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', surgeon: 'นพ กมลชนก อัศวรุ่งโรจน์', date: '10/6/2569', risk: 'สูง', riskColor: 'text-red-500', status: 'สงสัย SSI' }
+  ]
+
+  return (
+    <div className="flex flex-col gap-6 text-left pb-10">
+      {/* Top Stat Cards Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {metrics.map((card, idx) => {
+          const Icon = card.icon;
+          return (
+            <div 
+              key={idx} 
+              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center justify-between min-h-[110px] transition-all hover:shadow-md"
+            >
+              <div>
+                <span className="text-[13px] font-medium text-slate-500">{card.label}</span>
+                <div className="mt-2 flex items-baseline gap-1.5">
+                  <strong className="text-[26px] font-bold text-slate-800 tracking-tight">{card.value}</strong>
+                  <span className="text-[12px] text-slate-400 mt-0.5">{card.subtext}</span>
+                </div>
+              </div>
+              <div className={`p-3 rounded-xl ${card.iconBg}`}>
+                <Icon size={24} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Search Filters Card */}
+      <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
+        <h3 className="flex items-center gap-2 text-[15px] font-semibold text-[#002d73] border-b border-slate-100 pb-3">
+          <Search size={16} />
+          ค้นหาข้อมูล
+        </h3>
+        
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
+          <div className="form-group text-left">
+            <label className="text-[12px] font-medium text-slate-500">เลือกช่วงวันที่</label>
+            <div className="relative mt-1">
+              <input 
+                type="text" 
+                className="form-input text-[13px] h-9 py-1 pr-9" 
+                defaultValue="12 พ.ค. 2569 - 18 พ.ค. 2569" 
+              />
+              <Calendar size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            </div>
+          </div>
+
+          <div className="form-group text-left">
+            <label className="text-[12px] font-medium text-slate-500">ความเสี่ยง</label>
+            <select className="form-select mt-1 text-[13px] h-9 py-1">
+              <option>ทุกระดับความเสี่ยง</option>
+            </select>
+          </div>
+
+          <div className="form-group text-left">
+            <label className="text-[12px] font-medium text-slate-500">สถานะ</label>
+            <select className="form-select mt-1 text-[13px] h-9 py-1">
+              <option>ทั้งหมด</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div className="form-group text-left md:col-span-3">
+            <label className="text-[12px] font-medium text-slate-500">คำค้นหา</label>
+            <input 
+              type="text" 
+              className="form-input mt-1 text-[13px] h-9 py-1" 
+              placeholder="ค้นหา HN, ชื่อผู้ป่วย, หัตถการ..." 
+            />
+          </div>
+          <div className="flex gap-2">
+            <button className="flex-1 rounded-lg bg-[#175beb] h-9 text-[13px] font-medium text-white shadow-sm hover:bg-blue-700 flex items-center justify-center gap-1.5">
+              <Search size={14} />
+              ค้นหา
+            </button>
+            <button className="rounded-lg border border-slate-200 bg-white px-4 h-9 text-[13px] font-medium text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1.5">
+              <RotateCcw size={14} />
+              ล้างตัวกรอง
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <section className="flex h-[66px] items-center rounded-xl border border-black/10 bg-white px-5 shadow-sm">
+        <div className="flex h-full items-center gap-7">
+          <button 
+            onClick={() => setActiveTab('all')}
+            className={`h-full text-[14px] font-medium transition-all ${
+              activeTab === 'all' ? 'border-b-2 border-[#175beb] text-[#175beb] font-semibold' : 'text-[#424752] hover:text-slate-700'
+            }`}
+          >
+            ทั้งหมด (52)
+          </button>
+          <button 
+            onClick={() => setActiveTab('suspected')}
+            className={`h-full text-[14px] font-medium transition-all ${
+              activeTab === 'suspected' ? 'border-b-2 border-[#175beb] text-[#175beb] font-semibold' : 'text-[#424752] hover:text-slate-700'
+            }`}
+          >
+            รายการสงสัย SSI
+          </button>
+          <button 
+            onClick={() => setActiveTab('confirmed')}
+            className={`h-full text-[14px] font-medium transition-all ${
+              activeTab === 'confirmed' ? 'border-b-2 border-[#175beb] text-[#175beb] font-semibold' : 'text-[#424752] hover:text-slate-700'
+            }`}
+          >
+            รายการติดเชื้อ SSI
+          </button>
+        </div>
+      </section>
+
+      {/* Table Section */}
+      <section className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
+        <header className="flex h-[72px] items-center justify-between border-b border-slate-100 px-6">
+          <h2 className="text-[17px] font-semibold text-[#002d73]">รายการสงสัย SSI วันนี้ (48 ราย)</h2>
+          <button className="inline-flex h-[40px] w-[146px] items-center justify-between rounded-lg border border-[#e2e8f0] px-4 text-[14px]">
+            <span className="inline-flex items-center gap-3"><CalendarDays size={17}/>วันนี้</span>
+            <ChevronRight size={14} className="rotate-90"/>
+          </button>
+        </header>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1100px] text-[13px] text-[#434651]">
+            <thead className="h-10 bg-slate-50 font-semibold text-[#1e293b]">
+              <tr>
+                <th className="px-4 py-2 text-left" style={{ width: '40px' }}><input type="checkbox" /></th>
+                <th className="px-4 py-2 text-left">HN</th>
+                <th className="px-4 py-2 text-left">ชื่อผู้ป่วย</th>
+                <th className="px-4 py-2 text-left">หัตถการ</th>
+                <th className="px-4 py-2 text-left">ศัลยแพทย์</th>
+                <th className="px-4 py-2 text-left">วันผ่าตัด</th>
+                <th className="px-4 py-2 text-left">ความเสี่ยง SSI</th>
+                <th className="px-4 py-2 text-left">สถานะประเมิน SSI</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ssiRows.map((row, idx) => (
+                <tr 
+                  key={idx} 
+                  onClick={() => navigate(`/suspected-cases/${row.hn}/info`)}
+                  className="h-[70px] border-t border-slate-100 hover:bg-blue-50/20 cursor-pointer"
+                >
+                  <td className="px-4 py-2" onClick={e => e.stopPropagation()}><input type="checkbox" /></td>
+                  <td className="px-4 py-2 font-semibold text-slate-700">{row.hn}</td>
+                  <td className="px-4 py-2">
+                    <span className="font-semibold text-[#175beb] block">{row.name}</span>
+                    <span className="text-[11px] text-slate-400 mt-0.5 block">{row.age} ({row.birth})</span>
+                  </td>
+                  <td className="px-4 py-2 font-medium text-slate-700">{row.procedure}</td>
+                  <td className="px-4 py-2 text-slate-600">{row.surgeon}</td>
+                  <td className="px-4 py-2 text-slate-500">{row.date}</td>
+                  <td className="px-4 py-2">
+                    <span className={`inline-flex items-center gap-1 font-semibold ${row.riskColor}`}>
+                      ● {row.risk}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className="rounded-lg bg-orange-50 px-2.5 py-1 text-[12px] font-semibold text-orange-500">
+                      {row.status}
                     </span>
                   </td>
                 </tr>

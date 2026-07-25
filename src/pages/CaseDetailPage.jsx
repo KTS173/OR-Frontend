@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Info, MinusCircle, RefreshCw, Send, UserRound, Users, X, Plus, Calendar, Clock, Save } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Info, MinusCircle, RefreshCw, Send, UserRound, Users, X, Plus, Calendar, Clock, Save, Search, File } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import StatusBadge from '../components/ui/StatusBadge.jsx'
@@ -32,6 +32,7 @@ export default function CaseDetailPage() {
   }
 
   if (pathname.startsWith('/follow-ups/')) return <FollowUpCaseDetail patient={patient}/>
+  if (pathname.startsWith('/suspected-cases/')) return <SuspectedCaseDetail patient={patient}/>
 
   return (
     <>
@@ -624,4 +625,549 @@ function AddActivityModal({ onClose, onSave }) {
       </section>
     </div>
   )
+}
+
+function SuspectedCaseDetail({ patient }) {
+  const { id, subtab } = useParams()
+  const navigate = useNavigate()
+
+  const tabs = [
+    { id: 'info', name: 'ข้อมูลคนไข้' },
+    { id: 'evaluations', name: 'ประวัติการประเมินล่าสุด' },
+    { id: 'docs', name: 'เอกสาร' }
+  ]
+
+  // Image source path mock (using placeholders or styled empty image divs)
+  const woundPhotos = Array.from({ length: 6 }, (_, i) => ({
+    id: i,
+    time: '22 มิ.ย. 2569 09:06น.'
+  }))
+
+  const cdcChecklist = [
+    { label: 'มีไข้ (อุณหภูมิ ≥ 38°C)', status: 'has' },
+    { label: 'ปวดแผล/เจ็บแผลเพิ่มขึ้น', status: 'has' },
+    { label: 'แผลบวม', status: 'has' },
+    { label: 'แผลแดง', status: 'no' },
+    { label: 'มีน้ำเหลือง/หนองจากแผล', status: 'has' },
+    { label: 'กลิ่นผิดปกติจากแผล', status: 'has' },
+    { label: 'แผลแยก', status: 'no' },
+    { label: 'อื่นๆ (ระบุ: แผลมีอาการเลือดไหล)', status: 'has' },
+    { label: 'มีจุดเลือดออก/เลือดซึม', status: 'has' }
+  ]
+
+  return (
+    <div className="text-left pb-10">
+      {/* Back button and badges */}
+      <div className="flex h-6 items-center justify-between">
+        <Link to="/suspected-ssi" className="inline-flex items-center gap-2 text-[14px] font-medium text-[#175beb]">
+          <ArrowLeft size={12}/>กลับไปหน้ารายการ
+        </Link>
+        <div className="flex items-center gap-2">
+          <span className="rounded border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[13px] text-emerald-600">สร้าง Follow-up สำเร็จ</span>
+          <span className="rounded border border-orange-200 bg-orange-50 px-2.5 py-1 text-[13px] text-orange-500">ต้องติดตามวันนี้</span>
+        </div>
+      </div>
+
+      {/* Patient info summary with Validation */}
+      <PatientSummary patient={patient}/>
+
+      {/* Tabs Menu */}
+      <nav className="mt-3 flex h-[73px] items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-5 shadow-sm">
+        <div className="flex h-full items-center gap-6">
+          {tabs.map((tab) => {
+            const isActive = subtab === tab.id || (tab.id === 'evaluations' && subtab === 'eval-detail');
+            return (
+              <button 
+                key={tab.id} 
+                onClick={() => navigate(`/suspected-cases/${id}/${tab.id}`)}
+                className={`h-12 text-[14px] font-medium transition-all ${
+                  isActive ? 'border-b-2 border-[#175beb] text-[#175beb] font-semibold' : 'text-[#424752] hover:text-slate-700'
+                }`}
+              >
+                {tab.name}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* Timeline */}
+      <FollowUpTimeline isActivityAdded={false} />
+
+      {/* Content */}
+      <div className="mt-3">
+        {subtab === 'info' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Left Col (8 spans) */}
+            <div className="lg:col-span-8 space-y-4">
+              <SurgerySection patient={patient} />
+              
+              {/* Contact info card */}
+              <div className="sub-info-card p-5">
+                <div className="sub-info-card-header border-b border-slate-100 pb-3 mb-4">
+                  <h4 className="sub-info-card-title flex items-center gap-2 text-[#002d73] font-semibold">
+                    ข้อมูลติดต่อ (Contact)
+                  </h4>
+                </div>
+                <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-[13.5px]">
+                  <div className="flex justify-between border-b border-slate-100/50 pb-2">
+                    <span className="text-slate-400">เบอร์โทรหลัก</span>
+                    <strong className="text-slate-700">081-234-5678</strong>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-100/50 pb-2">
+                    <span className="text-slate-400">เบอร์โทร 2</span>
+                    <strong className="text-slate-700">-</strong>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-100/50 pb-2">
+                    <span className="text-slate-400">Line</span>
+                    <strong className="text-slate-700">Somchai_jaidee</strong>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-100/50 pb-2">
+                    <span className="text-slate-400">SMS</span>
+                    <strong className="text-slate-700">081-234-5678</strong>
+                  </div>
+                  <div className="flex justify-between col-span-2">
+                    <span className="text-slate-400">อีเมล</span>
+                    <strong className="text-slate-700">-</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Procedures table */}
+              <div className="sub-info-card p-5">
+                <div className="sub-info-card-header border-b border-slate-100 pb-3 mb-4">
+                  <h4 className="sub-info-card-title text-[#002d73] font-semibold">
+                    รายการหัตถการในเคส (มี 2 รายการ)
+                  </h4>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[13px] text-slate-600">
+                    <thead className="h-9 bg-slate-50 font-medium text-slate-700">
+                      <tr>
+                        <th className="px-4 text-left">ลำดับ</th>
+                        <th className="px-4 text-left">หัตถการ</th>
+                        <th className="px-4 text-left">ศัลยแพทย์</th>
+                        <th className="px-4 text-left">สถานะ SSI</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="h-10 border-t border-slate-100">
+                        <td className="px-4">1</td>
+                        <td className="px-4 font-medium text-slate-800">TKA (เข่าขวา)</td>
+                        <td className="px-4">นพ อธิวัฒน์ ศรีกมล</td>
+                        <td className="px-4 text-emerald-600 font-semibold">● เข้าเกณฑ์</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-3 p-3 bg-blue-50/50 rounded-lg text-[12px] text-blue-600 flex items-center gap-1.5">
+                  <Info size={14} />
+                  <span>เฉพาะหัตถการที่เข้าเกณฑ์ SSI Surveillance เท่านั้นที่ต้องสร้าง Follow-up</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Col (4 spans) */}
+            <div className="lg:col-span-4">
+              <div className="sub-info-card p-5">
+                <div className="sub-info-card-header border-b border-slate-100 pb-3 mb-4 flex justify-between items-center">
+                  <h4 className="sub-info-card-title text-[#002d73] font-semibold">
+                    ความเสี่ยง SSI เบื้องต้น
+                  </h4>
+                  <a href="#" className="text-[12px] font-semibold text-blue-600 hover:underline">ดูรายการทั้งหมด</a>
+                </div>
+                
+                <div className="space-y-3 text-[13.5px]">
+                  <div className="flex justify-between border-b border-slate-100/50 pb-2">
+                    <span className="text-slate-500">อายุ &gt; 60 ปี</span>
+                    <span className="text-emerald-600 font-semibold flex items-center gap-1">✓ มี</span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-100/50 pb-2">
+                    <span className="text-slate-500">เบาหวาน</span>
+                    <span className="text-emerald-600 font-semibold flex items-center gap-1">✓ มี</span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-100/50 pb-2">
+                    <span className="text-slate-500">การติดเชื้อก่อนผ่าตัด</span>
+                    <span className="text-slate-400 flex items-center gap-1">✕ ไม่มี</span>
+                  </div>
+                  
+                  <div className="pt-3 flex justify-between items-center">
+                    <strong className="text-slate-800">Risk Score</strong>
+                    <div className="flex items-center gap-2">
+                      <strong className="text-[20px] text-slate-800">72 %</strong>
+                      <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[12px] font-semibold text-orange-500">● ปานกลาง</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* evaluations list tab */}
+        {subtab === 'evaluations' && (
+          <div className="space-y-4">
+            <h3 className="text-[16px] font-semibold text-[#002d73] border-b border-slate-100 pb-2">
+              ประวัติการประเมินล่าสุด
+            </h3>
+
+            {/* Round 1 Day 1 */}
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col md:flex-row justify-between gap-4">
+              <div className="flex-1 text-[13.5px]">
+                <div className="flex items-center gap-3">
+                  <strong className="text-[15px] font-semibold text-[#1e293b]">รอบที่ 1 (Day 1)</strong>
+                  <span className="rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-medium text-emerald-600">ประเมินเสร็จสิ้น</span>
+                </div>
+                <p className="text-[12px] text-slate-400 mt-1">15 มิ.ย. 2569 | 09:00 น. โดย OPD Nurse B</p>
+                <div className="mt-3 bg-slate-50 p-3 rounded-lg">
+                  <strong className="text-slate-700 block">แผลปกติ ไม่บวมแดง ไม่มีน้ำเหลือง</strong>
+                  <span className="text-[12px] text-slate-500 mt-1 block">ความเสี่ยง SSI: ปานกลาง | อาการอื่นๆ: ไม่มีไข้, ไม่ปวดแผล</span>
+                </div>
+              </div>
+              <div className="flex md:flex-col justify-between items-end text-right text-[12px] text-slate-500 min-w-[200px]">
+                <div>
+                  <p>ช่องทางการติดตาม: <strong className="text-slate-700">โทรศัพท์</strong></p>
+                  <p className="mt-1">ไฟล์เอกสาร: <strong className="text-slate-700">1 ไฟล์</strong></p>
+                  <p>ไฟล์รูปภาพ: <strong className="text-slate-700">5 ไฟล์</strong></p>
+                </div>
+                <button 
+                  onClick={() => navigate(`/suspected-cases/${id}/eval-detail`)}
+                  className="rounded-full border border-slate-200 p-2 text-blue-600 hover:bg-slate-50"
+                >
+                  <Search size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* round activity */}
+            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col md:flex-row justify-between gap-4">
+              <div className="flex-1 text-[13.5px]">
+                <div className="flex items-center gap-3">
+                  <strong className="text-[15px] font-semibold text-orange-500">กิจกรรมแทรก</strong>
+                  <span className="rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-medium text-emerald-600">เสร็จสิ้น</span>
+                </div>
+                <p className="text-[12px] text-slate-400 mt-1">18 มิ.ย. 2569 | 13:30 น. โดย OPD Nurse B</p>
+                <div className="mt-3 bg-slate-50 p-3 rounded-lg">
+                  <strong className="text-slate-700 block">โทรติดตามอาการ เนื่องจากผู้ป่วยแจ้งปวดแผล</strong>
+                  <span className="text-[12px] text-slate-500 mt-1 block">เหตุผล: ปวดแผลและบวมมากขึ้น</span>
+                </div>
+              </div>
+              <div className="flex md:flex-col justify-between items-end text-right text-[12px] text-slate-500 min-w-[200px]">
+                <div>
+                  <p>ช่องทางการติดตาม: <strong className="text-slate-700">โทรศัพท์</strong></p>
+                  <p className="mt-1">ไฟล์เอกสาร: <strong className="text-slate-700">-</strong></p>
+                  <p>ไฟล์รูปภาพ: <strong className="text-slate-700">-</strong></p>
+                </div>
+                <button 
+                  onClick={() => navigate(`/suspected-cases/${id}/eval-detail`)}
+                  className="rounded-full border border-slate-200 p-2 text-blue-600 hover:bg-slate-50"
+                >
+                  <Search size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Round 2 Day 7 */}
+            <div className="rounded-xl border border-orange-200 bg-white p-5 shadow-sm flex flex-col md:flex-row justify-between gap-4 ring-1 ring-orange-200">
+              <div className="flex-1 text-[13.5px]">
+                <div className="flex items-center gap-3">
+                  <strong className="text-[15px] font-semibold text-[#1e293b]">รอบที่ 2 (Day 7)</strong>
+                  <span className="rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-medium text-emerald-600">ประเมินเสร็จสิ้น</span>
+                  <span className="rounded bg-orange-50 border border-orange-200 px-2 py-0.5 text-[11px] font-medium text-orange-500">● สงสัย SSI</span>
+                </div>
+                <p className="text-[12px] text-slate-400 mt-1">22 มิ.ย. 2569 | 09:00 น. โดย OPD Nurse B</p>
+                <div className="mt-3 bg-slate-50 p-3 rounded-lg">
+                  <strong className="text-slate-700 block">แผลบวมแดง มีน้ำเหลือง</strong>
+                  <span className="text-[12px] text-slate-500 mt-1 block">ความเสี่ยง SSI: ปานกลาง | อาการอื่นๆ: ไม่มีไข้, ไม่ปวดแผล</span>
+                </div>
+              </div>
+              <div className="flex md:flex-col justify-between items-end text-right text-[12px] text-slate-500 min-w-[200px]">
+                <div>
+                  <p>ช่องทางการติดตาม: <strong className="text-slate-700">โทรศัพท์</strong></p>
+                  <p className="mt-1">ไฟล์เอกสาร: <strong className="text-slate-700">1 ไฟล์</strong></p>
+                  <p>ไฟล์รูปภาพ: <strong className="text-slate-700">5 ไฟล์</strong></p>
+                </div>
+                <button 
+                  onClick={() => navigate(`/suspected-cases/${id}/eval-detail`)}
+                  className="rounded-full border border-slate-200 bg-blue-50 p-2 text-blue-600 hover:bg-blue-100"
+                >
+                  <Search size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Pending Rounds Day 14, 21, 28, 30 */}
+            {[
+              { label: 'รอบที่ 2 (Day 14)', date: '29 มิ.ย. 2569' },
+              { label: 'รอบที่ 2 (Day 21)', date: '6 ก.ค. 2569' },
+              { label: 'รอบที่ 2 (Day 28)', date: '15 มิ.ย. 2569' },
+              { label: 'รอบที่ 2 (Day 30)', date: '15 มิ.ย. 2569' }
+            ].map((round, idx) => (
+              <div key={idx} className="rounded-xl border border-slate-100 bg-slate-50/50 p-5 flex justify-between items-center text-[13.5px]">
+                <div>
+                  <strong className="text-slate-700">{round.label}</strong>
+                  <p className="text-[12px] text-slate-400 mt-0.5">{round.date} | 09:00 น. โดย OPD Nurse B</p>
+                  <span className="text-[12.5px] text-slate-500 mt-2 block">ยังไม่มีผลการประเมิน</span>
+                </div>
+                <button className="rounded-xl border border-slate-200 bg-white px-5 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-50 shadow-sm">
+                  รอประเมิน
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* detailed evaluation card view */}
+        {subtab === 'eval-detail' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-[13px]">
+            {/* Left Column (7 spans) */}
+            <div className="lg:col-span-7 space-y-4">
+              
+              {/* Attachments */}
+              <div className="sub-info-card p-5">
+                <div className="sub-info-card-header border-b border-slate-100 pb-3 mb-4">
+                  <h4 className="sub-info-card-title text-[#002d73] font-semibold">เอกสาร/ไฟล์แนบ</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">รองรับไฟล์ .jpg .jpeg .png ขนาดไม่เกิน 5 MB</p>
+                </div>
+                <div className="space-y-3">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="flex justify-between items-center w-full">
+                      <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg text-left flex-1 max-w-[400px]">
+                        <div className="color-red bg-red-100 p-2 rounded text-red-500">
+                          <File size={16} />
+                        </div>
+                        <div>
+                          <strong className="text-slate-800">Discharge Summary.pdf</strong>
+                          <span className="block text-[11px] text-slate-400 mt-0.5">15 มิ.ย. 2569 10:10 • 245 KB</span>
+                        </div>
+                      </div>
+                      <a href="#" className="text-slate-400 ml-4">
+                        <Send size={18} className="rotate-90" />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Wound photos */}
+              <div className="sub-info-card p-5">
+                <div className="sub-info-card-header border-b border-slate-100 pb-3 mb-4">
+                  <h4 className="sub-info-card-title text-[#002d73] font-semibold">รูปภาพแผล</h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">รองรับไฟล์ .jpg .jpeg .png ขนาดไม่เกิน 5 MB</p>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {woundPhotos.map((photo) => (
+                    <div key={photo.id} className="flex flex-col items-center">
+                      <div className="w-full aspect-[4/3] rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-300 relative overflow-hidden">
+                        {/* Simulation wound image using styled borders */}
+                        <div className="absolute inset-0 flex items-center justify-center bg-[#fdf2e9]">
+                          <div className="w-0.5 h-full bg-[#8c5230] relative flex flex-col justify-around py-2">
+                            {Array.from({ length: 12 }).map((_, i) => (
+                              <div key={i} className="w-3 h-0.5 bg-slate-800 -translate-x-1.5"></div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[11px] text-slate-400 mt-1">{photo.time}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Patient AI Chat log */}
+              <div className="sub-info-card p-5">
+                <div className="sub-info-card-header border-b border-slate-100 pb-3 mb-4">
+                  <h4 className="sub-info-card-title text-[#002d73] font-semibold">ประวัติการพูดคุยตอบกลับผู้ป่วย (AI)</h4>
+                </div>
+                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+                  <div className="flex gap-2.5 items-start">
+                    <div className="grid size-8 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-600">🤖</div>
+                    <div className="bg-slate-100 rounded-2xl rounded-tl-none p-3 max-w-[80%] text-left">
+                      สวัสดีค่ะ ฉันจะช่วยถามอาการเพิ่มเติมเพื่อให้ทีมพยาบาลประเมินได้แม่นยำขึ้นนะคะ
+                      <span className="block text-[10px] text-slate-400 mt-1 text-right">09:41</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2.5 items-start">
+                    <div className="grid size-8 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-600">🤖</div>
+                    <div className="bg-slate-100 rounded-2xl rounded-tl-none p-3 max-w-[80%] text-left">
+                      วันนี้คุณมีไข้หรือไม่?
+                      <span className="block text-[10px] text-slate-400 mt-1 text-right">09:41</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2.5 items-start">
+                    <div className="bg-blue-50 text-blue-800 rounded-2xl rounded-tr-none p-3 max-w-[80%] text-left">
+                      ไม่มีไข้
+                      <span className="block text-[10px] text-blue-400 mt-1 text-right">09:41</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2.5 items-start">
+                    <div className="bg-blue-50 text-blue-800 rounded-2xl rounded-tr-none p-3 max-w-[80%] text-left">
+                      มีไข้
+                      <span className="block text-[10px] text-blue-400 mt-1 text-right">09:41</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2.5 items-start">
+                    <div className="grid size-8 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-600">🤖</div>
+                    <div className="bg-slate-100 rounded-2xl rounded-tl-none p-3 max-w-[80%] text-left flex gap-2 items-center">
+                      <span>มีไข้</span>
+                      <Check size={14} className="text-emerald-500" strokeWidth={3} />
+                      <span className="text-[10px] text-slate-400 ml-auto">09:42</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Nurse Chat log */}
+              <div className="sub-info-card p-5">
+                <div className="sub-info-card-header border-b border-slate-100 pb-3 mb-4">
+                  <h4 className="sub-info-card-title text-[#002d73] font-semibold">ประวัติการพูดคุยตอบกลับจากผู้ป่วย (เจ้าหน้าที่ ประเมิน)</h4>
+                </div>
+                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+                  <div className="flex gap-2.5 items-start">
+                    <div className="grid size-8 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-600">👩🏻‍⚕️</div>
+                    <div className="bg-slate-100 rounded-2xl rounded-tl-none p-3 max-w-[80%] text-left">
+                      วันนี้คุณมีไข้หรือไม่?
+                      <span className="block text-[10px] text-slate-400 mt-1 text-right">09:41</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2.5 items-start">
+                    <div className="bg-[#175beb] text-white rounded-2xl rounded-tr-none p-3 max-w-[80%] text-left">
+                      มีไข้ต่ำ ๆ 37.8°C
+                      <span className="block text-[10px] text-blue-200 mt-1 text-right">09:42</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2.5 items-start">
+                    <div className="border border-slate-200 rounded-lg p-2 bg-[#f8fafc] max-w-[200px] flex flex-col items-center">
+                      <div className="w-[120px] aspect-[4/3] rounded bg-[#fdf2e9] border border-slate-200 flex items-center justify-center overflow-hidden">
+                        <div className="w-0.5 h-full bg-[#8c5230] relative flex flex-col justify-around py-1">
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="w-2.5 h-0.5 bg-slate-800 -translate-x-1"></div>
+                          ))}
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-slate-400 mt-1">รูปภาพแผลแนบ</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Right Column (5 spans) */}
+            <div className="lg:col-span-5 space-y-4">
+              
+              {/* CDC Symptoms Checklist Form */}
+              <div className="sub-info-card p-5">
+                <div className="sub-info-card-header border-b border-slate-100 pb-3 mb-4">
+                  <h4 className="sub-info-card-title text-[#002d73] font-semibold">แบบประเมินอาการ (CDC SSI)</h4>
+                </div>
+                
+                <table className="w-full text-slate-700">
+                  <thead>
+                    <tr className="text-[12px] text-slate-400 border-b border-slate-100">
+                      <th className="py-2 text-left font-medium">อาการ/อาการแสดง</th>
+                      <th className="py-2 text-center font-medium" style={{ width: '50px' }}>ไม่มี</th>
+                      <th className="py-2 text-center font-medium" style={{ width: '50px' }}>มี</th>
+                      <th className="py-2 text-center font-medium" style={{ width: '60px' }}>ไม่ทราบ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cdcChecklist.map((item, idx) => (
+                      <tr key={idx} className="border-b border-slate-100/50 hover:bg-slate-50/40">
+                        <td className="py-2.5 text-left font-medium text-slate-700">{item.label}</td>
+                        <td className="py-2.5 text-center">
+                          <input 
+                            type="radio" 
+                            name={`cdc-${idx}`} 
+                            checked={item.status === 'no'} 
+                            disabled 
+                            className="accent-slate-500 scale-110"
+                          />
+                        </td>
+                        <td className="py-2.5 text-center">
+                          <input 
+                            type="radio" 
+                            name={`cdc-${idx}`} 
+                            checked={item.status === 'has'} 
+                            disabled 
+                            className="accent-blue-600 scale-110"
+                          />
+                        </td>
+                        <td className="py-2.5 text-center">
+                          <input 
+                            type="radio" 
+                            name={`cdc-${idx}`} 
+                            checked={item.status === 'unknown'} 
+                            disabled 
+                            className="accent-slate-400 scale-110"
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Additional symptoms check */}
+                <div className="mt-4 pt-4 border-t border-slate-100 text-left">
+                  <strong className="text-[#002d73] block mb-2">อาการอื่นๆ</strong>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 font-medium">
+                      <input type="checkbox" checked disabled className="accent-blue-600" />
+                      คลื่นไส้ / อาเจียน
+                    </label>
+                    <label className="flex items-center gap-2 font-medium">
+                      <input type="checkbox" checked disabled className="accent-blue-600" />
+                      ปวดข้อ/ปวดกล้ามเนื้อ
+                    </label>
+                    <label className="flex items-center gap-2 font-medium">
+                      <input type="checkbox" checked disabled className="accent-blue-600" />
+                      อื่นๆ
+                    </label>
+                    <input 
+                      type="text" 
+                      className="form-input mt-1 h-9 py-1 text-[13px] bg-slate-50" 
+                      defaultValue="ระบุอาการอื่นๆ" 
+                      disabled 
+                    />
+                  </div>
+                </div>
+
+                {/* post discharge check */}
+                <div className="mt-4 pt-4 border-t border-slate-100 text-left">
+                  <strong className="text-[#002d73] block mb-2">การมารับการรักษาหลังจำหน่าย</strong>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 font-medium">
+                      <input type="radio" checked={false} disabled className="accent-blue-600" />
+                      ไม่ได้ไปพบแพทย์
+                    </label>
+                    <label className="flex items-center gap-2 font-medium">
+                      <input type="radio" checked={true} disabled className="accent-blue-600" />
+                      ไปพบแพทย์แล้ว (OPD/IPD)
+                    </label>
+                    <label className="flex items-center gap-2 font-medium">
+                      <input type="radio" checked={false} disabled className="accent-blue-600" />
+                      อื่นๆ
+                    </label>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {subtab === 'docs' && (
+          <DocsView selectedPatient={patient} />
+        )}
+      </div>
+
+    </div>
+  );
 }

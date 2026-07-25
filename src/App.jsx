@@ -42,6 +42,8 @@ function App() {
         <Route path="cases/:id" element={<CaseDetailPage />} />
         <Route path="cases/:id/create-follow-up" element={<CreateFollowUpPage />} />
         <Route path="follow-ups/:id" element={<CaseDetailPage />} />
+        <Route path="suspected-cases/:id" element={<Navigate to="info" replace />} />
+        <Route path="suspected-cases/:id/:subtab" element={<CaseDetailPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

@@ -23,7 +23,18 @@ const routeTitles = {
 
 export default function Header({ onMenu }) {
   const { pathname } = useLocation()
-  const title = pathname.endsWith('/create-follow-up') ? 'สร้างบันทึกการเฝ้าระวัง (Create Follow-up)' : pathname.startsWith('/cases/') || pathname.startsWith('/follow-ups/') ? 'รายละเอียดเคสผ่าตัด (Case Detail)' : routeTitles[pathname] ?? 'OR SMART SSI'
+  let title = pathname.endsWith('/create-follow-up') ? 'สร้างบันทึกการเฝ้าระวัง (Create Follow-up)' : pathname.startsWith('/cases/') || pathname.startsWith('/follow-ups/') ? 'รายละเอียดเคสผ่าตัด (Case Detail)' : routeTitles[pathname] ?? 'OR SMART SSI'
+
+  if (pathname.startsWith('/suspected-cases/')) {
+    const parts = pathname.split('/')
+    const subtab = parts[3]
+    let subName = 'ข้อมูลคนไข้'
+    if (subtab === 'evaluations') subName = 'ประวัติการประเมินอาการ'
+    if (subtab === 'eval-detail') subName = 'เคสสงสัยSSI แพทย์'
+    if (subtab === 'docs') subName = 'เอกสาร'
+    title = `เคสสงสัยติดเชื้อ (Suspected SSI Cases) (${subName})`
+  }
+
   return (
     <header className="sticky top-0 z-20 flex min-h-[var(--or-header-height)] items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur sm:px-[var(--or-header-padding)]">
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
