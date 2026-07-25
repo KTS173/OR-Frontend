@@ -970,15 +970,8 @@ function SuspectedCaseDetail({ patient }) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {woundPhotos.map((photo) => (
                     <div key={photo.id} className="flex flex-col items-center">
-                      <div className="w-full aspect-[4/3] rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-300 relative overflow-hidden">
-                        {/* Simulation wound image using styled borders */}
-                        <div className="absolute inset-0 flex items-center justify-center bg-[#fdf2e9]">
-                          <div className="w-0.5 h-full bg-[#8c5230] relative flex flex-col justify-around py-2">
-                            {Array.from({ length: 12 }).map((_, i) => (
-                              <div key={i} className="w-3 h-0.5 bg-slate-800 -translate-x-1.5"></div>
-                            ))}
-                          </div>
-                        </div>
+                      <div className="w-full aspect-[4/3] rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center relative overflow-hidden">
+                        <img src="/surgical_suture_healing.png" className="absolute inset-0 w-full h-full object-cover" alt="wound photo" />
                       </div>
                       <span className="text-[11px] text-slate-400 mt-1">{photo.time}</span>
                     </div>
@@ -1056,12 +1049,8 @@ function SuspectedCaseDetail({ patient }) {
 
                   <div className="flex justify-end gap-2.5 items-start">
                     <div className="border border-slate-200 rounded-lg p-2 bg-[#f8fafc] max-w-[200px] flex flex-col items-center">
-                      <div className="w-[120px] aspect-[4/3] rounded bg-[#fdf2e9] border border-slate-200 flex items-center justify-center overflow-hidden">
-                        <div className="w-0.5 h-full bg-[#8c5230] relative flex flex-col justify-around py-1">
-                          {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="w-2.5 h-0.5 bg-slate-800 -translate-x-1"></div>
-                          ))}
-                        </div>
+                      <div className="w-[120px] aspect-[4/3] rounded border border-slate-200 flex items-center justify-center overflow-hidden relative">
+                        <img src="/surgical_suture_healing.png" className="absolute inset-0 w-full h-full object-cover" alt="wound attachment" />
                       </div>
                       <span className="text-[10px] text-slate-400 mt-1">รูปภาพแผลแนบ</span>
                     </div>
