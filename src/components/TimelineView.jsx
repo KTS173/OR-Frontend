@@ -194,7 +194,7 @@ export default function TimelineView({ selectedPatient, setActiveDetailTab, isAc
           <button 
             type="button" 
             className="btn-filled-primary"
-            style={{ padding: '8px 16px', fontSize: '13px' }}
+            style={{ padding: '8px 16px', fontSize: '13px', backgroundColor: '#175beb', color: 'white' }}
             onClick={onSetupFollowUpClick}
           >
             ตั้งค่ารอบ Follow-up

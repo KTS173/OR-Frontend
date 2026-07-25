@@ -69,7 +69,10 @@ function FollowUpCaseDetail({ patient }) {
 
       <FollowUpTabs 
         activeDetailTab={activeDetailTab} 
-        setActiveDetailTab={setActiveDetailTab}
+        setActiveDetailTab={(tabId) => {
+          setActiveDetailTab(tabId);
+          setIsSetupFollowUpOpen(false);
+        }}
         setIsActivityModalOpen={setIsActivityModalOpen}
       />
 
