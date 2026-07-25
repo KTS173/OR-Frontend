@@ -32,7 +32,7 @@ export default function RegistryPage({ type }) {
   if (type === 'opd') return <OpdQueuePage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'followUp') return <MyFollowUpsPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'history') return <HistoryPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
-  if (type === 'suspected') return <SuspectedSSIPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
+  if (type === 'suspected' || type === 'confirmed') return <SuspectedSSIPage type={type} patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   return (
     <>
       <PageHeader title={config.title} description={config.description} actions={<><button className="btn-secondary"><Download size={14} />ส่งออก</button><button className="btn-primary">{type === 'sync' ? <RefreshCw size={14} /> : <Plus size={14} />}{type === 'sync' ? 'ซิงค์ข้อมูล' : 'เพิ่มรายการ'}</button></>} />
@@ -354,7 +354,7 @@ function HistoryPage({ patients, loading, search, setSearch }) {
   );
 }
 
-function SuspectedSSIPage({ patients, loading, search, setSearch }) {
+function SuspectedSSIPage({ type, patients, loading, search, setSearch }) {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('all')
 
@@ -422,8 +422,10 @@ function SuspectedSSIPage({ patients, loading, search, setSearch }) {
 
           <div className="form-group text-left">
             <label className="text-[12px] font-medium text-slate-500">ความเสี่ยง</label>
-            <select className="form-select mt-1 text-[13px] h-9 py-1">
+            <select className="form-select mt-1 text-[13px] h-9 py-1" defaultValue={type === 'confirmed' ? 'ยืนยัน SSI' : 'สงสัย SSI'}>
               <option>ทุกระดับความเสี่ยง</option>
+              <option>สงสัย SSI</option>
+              <option>ยืนยัน SSI</option>
             </select>
           </div>
 
@@ -490,7 +492,7 @@ function SuspectedSSIPage({ patients, loading, search, setSearch }) {
       {/* Table Section */}
       <section className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
         <header className="flex h-[72px] items-center justify-between border-b border-slate-100 px-6">
-          <h2 className="text-[17px] font-semibold text-[#002d73]">รายการสงสัย SSI วันนี้ (48 ราย)</h2>
+          <h2 className="text-[17px] font-semibold text-[#002d73]">รายการติดตามวันนี้ (48 ราย)</h2>
           <button className="inline-flex h-[40px] w-[146px] items-center justify-between rounded-lg border border-[#e2e8f0] px-4 text-[14px]">
             <span className="inline-flex items-center gap-3"><CalendarDays size={17}/>วันนี้</span>
             <ChevronRight size={14} className="rotate-90"/>
@@ -532,9 +534,15 @@ function SuspectedSSIPage({ patients, loading, search, setSearch }) {
                     </span>
                   </td>
                   <td className="px-4 py-2">
-                    <span className="rounded-lg bg-orange-50 px-2.5 py-1 text-[12px] font-semibold text-orange-500">
-                      {row.status}
-                    </span>
+                    {type === 'confirmed' ? (
+                      <span className="rounded-lg bg-red-50 px-2.5 py-1 text-[12px] font-semibold text-red-500">
+                        ยืนยัน SSI
+                      </span>
+                    ) : (
+                      <span className="rounded-lg bg-orange-50 px-2.5 py-1 text-[12px] font-semibold text-orange-500">
+                        สงสัย SSI
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
