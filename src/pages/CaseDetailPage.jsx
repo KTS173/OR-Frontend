@@ -903,10 +903,13 @@ function SuspectedCaseDetail({ patient }) {
               { label: 'รอบที่ 2 (Day 28)', date: '15 มิ.ย. 2569' },
               { label: 'รอบที่ 2 (Day 30)', date: '15 มิ.ย. 2569' }
             ].map((round, idx) => (
-              <div key={idx} className="rounded-xl border border-slate-100 bg-slate-50/50 p-5 flex justify-between items-center text-[13.5px]">
+              <div key={idx} className="rounded-xl border border-slate-200 bg-white p-5 flex justify-between items-center text-[13.5px] shadow-sm">
                 <div>
-                  <strong className="text-slate-700">{round.label}</strong>
-                  <p className="text-[12px] text-slate-400 mt-0.5">{round.date} | 09:00 น. โดย OPD Nurse B</p>
+                  <div className="flex items-center gap-3">
+                    <strong className="text-[15px] font-semibold text-[#1e293b]">{round.label}</strong>
+                    <span className="rounded bg-orange-50 border border-orange-200 px-2 py-0.5 text-[11px] font-medium text-orange-500">รอดำเนินการ</span>
+                  </div>
+                  <p className="text-[12px] text-slate-400 mt-1">{round.date} | 09:00 น. โดย OPD Nurse B</p>
                   <span className="text-[12.5px] text-slate-500 mt-2 block">ยังไม่มีผลการประเมิน</span>
                 </div>
                 <button className="rounded-xl border border-slate-200 bg-white px-5 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-50 shadow-sm">
