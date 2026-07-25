@@ -53,6 +53,7 @@ function FollowUpCaseDetail({ patient }) {
   const [activeDetailTab, setActiveDetailTab] = useState('info')
   const [isActivityAdded, setIsActivityAdded] = useState(false)
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
+  const [isSetupFollowUpOpen, setIsSetupFollowUpOpen] = useState(false)
 
   return (
     <>
@@ -72,28 +73,44 @@ function FollowUpCaseDetail({ patient }) {
         setIsActivityModalOpen={setIsActivityModalOpen}
       />
 
-      <div className="mt-3">
-        {activeDetailTab === 'info' && (
-          <SetupFollowUpView selectedPatient={patient} />
-        )}
-        {activeDetailTab === 'evaluation' && (
-          <EvaluationForm selectedPatient={patient} />
-        )}
-        {activeDetailTab === 'timeline' && (
-          <TimelineView 
+      {isSetupFollowUpOpen ? (
+        <div className="mt-3">
+          <SetupFollowUpView 
             selectedPatient={patient} 
-            isActivityAdded={isActivityAdded} 
-            setActiveDetailTab={setActiveDetailTab}
-            onSetupFollowUpClick={() => setActiveDetailTab('info')}
+            onClose={() => setIsSetupFollowUpOpen(false)} 
           />
-        )}
-        {activeDetailTab === 'transfer' && (
-          <TransferCareView selectedPatient={patient} />
-        )}
-        {activeDetailTab === 'docs' && (
-          <DocsView selectedPatient={patient} />
-        )}
-      </div>
+        </div>
+      ) : (
+        <>
+          <FollowUpTimeline isActivityAdded={isActivityAdded} />
+          
+          <div className="mt-3">
+            {activeDetailTab === 'info' && (
+              <>
+                <SurgerySection patient={patient} />
+                <ContactAndProcedures patient={patient} />
+              </>
+            )}
+            {activeDetailTab === 'evaluation' && (
+              <EvaluationForm selectedPatient={patient} />
+            )}
+            {activeDetailTab === 'timeline' && (
+              <TimelineView 
+                selectedPatient={patient} 
+                isActivityAdded={isActivityAdded} 
+                setActiveDetailTab={setActiveDetailTab}
+                onSetupFollowUpClick={() => setIsSetupFollowUpOpen(true)}
+              />
+            )}
+            {activeDetailTab === 'transfer' && (
+              <TransferCareView selectedPatient={patient} />
+            )}
+            {activeDetailTab === 'docs' && (
+              <DocsView selectedPatient={patient} />
+            )}
+          </div>
+        </>
+      )}
 
       {isActivityModalOpen && (
         <AddActivityModal 
@@ -182,8 +199,111 @@ function ContactAndProcedures({ patient }) {
   </section>
 }
 
-function FollowUpTimeline() {
-  return <section className="mt-3 rounded-lg border border-[#e2e8f0] bg-white p-6 shadow-sm"><div className="flex items-center gap-2"><h3 className="text-[16px] font-semibold text-[#002d73]">การติดตามที่แนะนำ</h3><span className="text-[14px] text-[#424752]">(ยังไม่ได้สร้าง Follow-up)</span></div><p className="text-[14px] text-[#424752]">ระบบแนะนำรอบการติดตามมาตรฐานสำหรับหัตถการนี้</p><div className="relative mx-4 mt-8 flex h-[111px] items-start justify-between before:absolute before:top-2 before:right-4 before:left-4 before:h-0.5 before:bg-[#696969]">{followUpDays.map(day=><div key={day} className="relative z-10 flex flex-col items-center"><i className="size-4 rounded-full bg-[#696969] shadow-[0_0_0_4px_white]"/><strong className="mt-2 text-[13px] font-semibold text-[#3b82f6]">{day}</strong><span className="text-[10px] text-[#424752]">ยังไม่เริ่ม</span></div>)}</div><div className="flex gap-[13px] text-[14px]">{[['#16a34a','ดำเนินการสำเร็จ'],['#3b82f6','อยู่ระหว่างติดตามดำเนินการ'],['#696969','ยังไม่เริ่มติดตาม']].map(([c,l])=><span key={l} className="flex items-center gap-2"><i className="size-[10px] rounded-full" style={{backgroundColor:c}}/>{l}</span>)}</div><p className="mt-3 rounded-md bg-[#f2f4f6] p-2 text-[13px] text-[#424752]">หมายเหตุ: วันที่อาจเปลี่ยนแปลงได้ตามการกำหนดของโรงพยาบาล</p></section>
+function FollowUpTimeline({ isActivityAdded }) {
+  return (
+    <div className="timeline-card mt-3">
+      <div className="timeline-card-header">
+        <div className="timeline-title-container">
+          <h4 className="timeline-title">ช่วงเวลาติดตามอาการคนไข้</h4>
+          <span className="timeline-subtitle">รอบการติดตามมาตรฐานสำหรับหัตถการนี้</span>
+        </div>
+        <select className="form-select" style={{ width: 'auto', fontSize: '13px' }}>
+          <option value="15/06/2569">15 / 06 / 2569</option>
+          <option value="all">แสดงทั้งหมด</option>
+        </select>
+      </div>
+
+      <div className="timeline-track-container">
+        <div className="timeline-line"></div>
+        <div className="timeline-line-progress" style={{ width: isActivityAdded ? '42%' : '20%' }}></div>
+        <div className="timeline-steps">
+          <div className="timeline-step">
+            <div className="timeline-dot completed"></div>
+            <span className="timeline-step-name">Day 1</span>
+            <span className="timeline-step-date">16 มิ.ย. 2569</span>
+            <span className="timeline-step-time">09:00</span>
+          </div>
+
+          {isActivityAdded && (
+            <div className="timeline-step">
+              <div className="timeline-dot" style={{ backgroundColor: 'var(--color-orange)', boxShadow: '0 0 0 2px #ffedd5' }}></div>
+              <span className="timeline-step-name" style={{ color: 'var(--color-orange)' }}>กิจกรรมแทรก</span>
+              <span className="timeline-step-date">18 มิ.ย. 2569</span>
+              <span className="timeline-step-time">09:00</span>
+            </div>
+          )}
+
+          <div className="timeline-step">
+            <div className="timeline-dot active-tracking"></div>
+            <span className="timeline-step-name">Day 7</span>
+            <span className="timeline-step-date">22 มิ.ย. 2569</span>
+            <span className="timeline-step-time">09:00</span>
+          </div>
+
+          {isActivityAdded && (
+            <div className="timeline-step">
+              <div className="timeline-dot" style={{ backgroundColor: 'var(--color-orange)', boxShadow: '0 0 0 2px #ffedd5' }}></div>
+              <span className="timeline-step-name" style={{ color: 'var(--color-orange)' }}>กิจกรรมแทรก</span>
+              <span className="timeline-step-date">23 มิ.ย. 2569</span>
+              <span className="timeline-step-time">13:30</span>
+            </div>
+          )}
+
+          <div className="timeline-step">
+            <div className="timeline-dot pending"></div>
+            <span className="timeline-step-name">Day 14</span>
+            <span className="timeline-step-date">29 มิ.ย. 2569</span>
+            <span className="timeline-step-time">09:00</span>
+          </div>
+          <div className="timeline-step">
+            <div className="timeline-dot pending"></div>
+            <span className="timeline-step-name">Day 21</span>
+            <span className="timeline-step-date">6 ก.ค. 2569</span>
+            <span className="timeline-step-time">09:00</span>
+          </div>
+          <div className="timeline-step">
+            <div className="timeline-dot pending"></div>
+            <span className="timeline-step-name">Day 28</span>
+            <span className="timeline-step-date">13 ก.ค. 2569</span>
+            <span className="timeline-step-time">09:00</span>
+          </div>
+          <div className="timeline-step">
+            <div className="timeline-dot pending"></div>
+            <span className="timeline-step-name">Day 30</span>
+            <span className="timeline-step-date">15 ก.ค. 2569</span>
+            <span className="timeline-step-time">09:00</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="timeline-legend">
+        <div className="legend-item">
+          <span className="legend-dot" style={{ backgroundColor: 'var(--color-success)' }}></span>
+          <span>ดำเนินการสำเร็จ</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-dot" style={{ backgroundColor: 'var(--color-info)' }}></span>
+          <span>อยู่ระหว่างติดตามดำเนินการ</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-dot" style={{ backgroundColor: 'var(--color-orange)' }}></span>
+          <span>กิจกรรมแทรก</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-dot" style={{ backgroundColor: '#cbd5e1' }}></span>
+          <span>ยังไม่เริ่มติดตาม</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-dot" style={{ backgroundColor: 'var(--color-danger)' }}></span>
+          <span>เกินกำหนด</span>
+        </div>
+      </div>
+
+      <div style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: '12px' }}>
+        หมายเหตุ: วันที่อาจเปลี่ยนแปลงได้ตามการกำหนดของโรงพยาบาล
+      </div>
+    </div>
+  )
 }
 
 function ExcludeCaseModal({ patient, onClose }) {
