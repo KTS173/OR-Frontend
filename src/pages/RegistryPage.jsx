@@ -153,13 +153,13 @@ function HistoryPage({ patients, loading, search, setSearch }) {
   ]
 
   const historyRows = [
-    { time: '15 มิ.ย.2569 10:15', hn: '0123456', name: 'นายสมชาย ใจดี', age: '68 ปี', birth: '17 ม.ค. 2501', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
-    { time: '15 มิ.ย.2569 10:15', hn: '0234567', name: 'นางสาวรวิภา แก้วดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
-    { time: '15 มิ.ย.2569 10:15', hn: '0234567', name: 'นางสาววิภาพร คำดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
-    { time: '15 มิ.ย.2569 10:15', hn: '123459', name: 'นายอนันต์ รัตนกุล', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
-    { time: '15 มิ.ย.2569 10:15', hn: '456789', name: 'นางวรรณา ทองดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
-    { time: '15 มิ.ย.2569 10:15', hn: '456789', name: 'นายธีรดล อัคนิพงศ์', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
-    { time: '15 มิ.ย.2569 10:15', hn: '456789', name: 'นายธีรดล อัคนิพงศ์', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' }
+    { date: '15 มิ.ย. 2569', time: '10:15', hn: '0123456', name: 'นายสมชาย ใจดี', age: '68 ปี', birth: '17 ม.ค. 2501', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
+    { date: '15 มิ.ย. 2569', time: '10:15', hn: '0234567', name: 'นางสาวรวิภา แก้วดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
+    { date: '15 มิ.ย. 2569', time: '10:15', hn: '0234567', name: 'นางสาววิภาพร คำดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
+    { date: '15 มิ.ย. 2569', time: '10:15', hn: '123459', name: 'นายอนันต์ รัตนกุล', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
+    { date: '15 มิ.ย. 2569', time: '10:15', hn: '456789', name: 'นางวรรณา ทองดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
+    { date: '15 มิ.ย. 2569', time: '10:15', hn: '456789', name: 'นายธีรดล อัคนิพงศ์', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
+    { date: '15 มิ.ย. 2569', time: '10:15', hn: '456789', name: 'นายธีรดล อัคนิพงศ์', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' }
   ]
 
   return (
@@ -325,8 +325,8 @@ function HistoryPage({ patients, loading, search, setSearch }) {
               {historyRows.map((row, idx) => (
                 <tr key={idx} className="h-[70px] border-t border-slate-100 hover:bg-blue-50/20">
                   <td className="px-4 py-2 font-medium text-slate-700">
-                    {row.time.split(' ')[0]}
-                    <span className="block text-[11px] text-slate-400 mt-0.5">{row.time.split(' ')[1]}</span>
+                    <div>{row.date}</div>
+                    <span className="block text-[11px] text-slate-400 mt-0.5">{row.time}</span>
                   </td>
                   <td className="px-4 py-2 font-semibold text-slate-700">{row.hn}</td>
                   <td className="px-4 py-2">
