@@ -164,22 +164,6 @@ function HistoryPage({ patients, loading, search, setSearch }) {
 
   return (
     <div className="flex flex-col gap-6 text-left pb-10">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-[24px] font-bold text-slate-800">ประวัติการติดตาม</h1>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[14px]">
-            <Calendar size={16} className="text-slate-400" />
-            <span>15 มิ.ย. 2569</span>
-          </div>
-          <button className="relative rounded-full border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50">
-            <span className="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-red-500"></span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-            </svg>
-          </button>
-        </div>
-      </div>
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
