@@ -1,16 +1,15 @@
 import { useState } from 'react'
 import { Send, FileText, Paperclip, X, File, CheckCircle2, ChevronRight, Calendar, Info, Check } from 'lucide-react'
 
-export default function TransferCareView({ selectedPatient, isActivityAdded }) {
+export default function TransferCareView({ selectedPatient, isTransferCompleted, setIsTransferCompleted }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
-  const [isTransferCompleted, setIsTransferCompleted] = useState(false);
 
   // Form states matching user's screenshot
-  const [currentDept, setCurrentDept] = useState('IPD - ห้องศัลยกรรมชาย 2');
-  const [targetDept, setTargetDept] = useState('OPD - คลินิกศัลยกรรม');
-  const [reason, setReason] = useState('จำหน่ายออกจาก รพ. เพื่อฟื้นฟูที่บ้าน');
-  const [startDate, setStartDate] = useState('18 มิ.ย. 2569 (Day 7)');
+  const [currentDept, setCurrentDept] = useState('OPD (ชื่อแผนก)');
+  const [targetDept, setTargetDept] = useState('IPD (ชื่อแผนก)');
+  const [reason, setReason] = useState('จำหน่ายเข้าจากบ้านเพื่อพักฟื้นต่อที่ รพ.');
+  const [startDate, setStartDate] = useState('22 มิ.ย. 2569 (Day 7)');
   const [notes, setNotes] = useState('แผลผ่าตัดแห้งดี ไม่มีไข้ แนะนำติดตามอาการตามรอบ');
 
   // Submit handler
@@ -20,13 +19,26 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
     } else {
       setIsTransferCompleted(true);
       setIsDrawerOpen(false);
-      alert('ส่งต่อเคสไปยังแผนกรับเรียบร้อยแล้ว');
+      alert('ส่งต่อเคสสำเร็จ');
     }
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '8px' }}>
       
+      {/* Success Banner when completed */}
+      {isTransferCompleted && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '12px', padding: '16px', textAlign: 'left' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#10b981', color: 'white' }}>
+            <Check size={24} strokeWidth={3} />
+          </div>
+          <div>
+            <strong style={{ fontSize: '17px', fontWeight: '700', color: '#065f46' }}>ส่งต่อเคสสำเร็จ</strong>
+            <p style={{ fontSize: '14px', color: '#047857', margin: '4px 0 0 0' }}>ระบบได้ส่งเคสไปยังแผนก IPD เรียบร้อยแล้ว</p>
+          </div>
+        </div>
+      )}
+
       {/* ข้อมูลการส่งต่อปัจจุบัน */}
       <div className="sub-info-card" style={{ padding: '20px' }}>
         <div className="sub-info-card-header" style={{ marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border-color)' }}>
@@ -36,7 +48,7 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
             <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>วันที่ส่งต่อ</span>
             <span style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-dark)' }}>
-              {isTransferCompleted ? '15 มิ.ย. 2569 10:15' : 'ไม่มีข้อมูล'}
+              {isTransferCompleted ? '15 มิ.ย. 2569' : 'ไม่มีข้อมูล'}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
@@ -53,9 +65,15 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
             <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>สถานะการส่งต่อ</span>
-            <span style={{ fontSize: '13.5px', fontWeight: '600', color: isTransferCompleted ? 'var(--color-primary)' : 'var(--text-medium)' }}>
-              {isTransferCompleted ? 'รอแผนกรับการดูแล' : 'ไม่มีข้อมูล'}
-            </span>
+            <div>
+              {isTransferCompleted ? (
+                <span className="badge" style={{ backgroundColor: '#eff6ff', color: '#175beb', padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}>
+                  รอการยอมรับ
+                </span>
+              ) : (
+                <span style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-medium)' }}>ไม่มีข้อมูล</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -74,24 +92,22 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
                 <th>ไปแผนก</th>
                 <th>ผู้ส่งต่อ</th>
                 <th>ผู้รับเคส</th>
+                <th>เหตุผลการส่งต่อ</th>
               </tr>
             </thead>
             <tbody>
               {isTransferCompleted ? (
                 <tr>
-                  <td>15 มิ.ย. 2569 10:15</td>
-                  <td>{currentDept}</td>
-                  <td>{targetDept}</td>
-                  <td>อรวรรณดี จ. (IPD Staff)</td>
-                  <td><span style={{ color: 'var(--color-primary)', fontWeight: '600' }}>รอแผนกรับการดูแล</span></td>
+                  <td>15 มิ.ย.2569<br/><span style={{ fontSize: '11px', color: 'var(--text-light)' }}>10:15</span></td>
+                  <td>OPD<br/><span style={{ fontSize: '11px', color: 'var(--text-light)' }}>(ชื่อแผนก)</span></td>
+                  <td>IPD<br/><span style={{ fontSize: '11px', color: 'var(--text-light)' }}>(ชื่อแผนก)</span></td>
+                  <td>(ชื่อ-นามสกุลเจ้าหน้าที่)</td>
+                  <td>-</td>
+                  <td>จำหน่ายเข้าจากบ้านเพื่อพักฟื้นต่อที่ รพ.</td>
                 </tr>
               ) : (
                 <tr>
-                  <td>ไม่มีข้อมูล</td>
-                  <td>ไม่มีข้อมูล</td>
-                  <td>ไม่มีข้อมูล</td>
-                  <td>ไม่มีข้อมูล</td>
-                  <td>ไม่มีข้อมูล</td>
+                  <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-light)' }}>ไม่มีข้อมูล</td>
                 </tr>
               )}
             </tbody>
@@ -110,17 +126,23 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
       {/* เอกสารแนบ (ถ้ามี) */}
       <div className="sub-info-card" style={{ padding: '20px' }}>
         <div className="sub-info-card-header" style={{ marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border-color)' }}>
-          <h4 className="sub-info-card-title">เอกสารแนบ (ถ้ามี)</h4>
+          <h4 className="sub-info-card-title">เอกสารแนบ</h4>
         </div>
         {isTransferCompleted ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', backgroundColor: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', textAlign: 'left', maxWidth: '360px' }}>
-            <div style={{ color: '#ef4444', backgroundColor: '#fee2e2', padding: '8px', borderRadius: '6px' }}>
-              <File size={20} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', backgroundColor: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', textAlign: 'left', minWidth: '360px' }}>
+              <div style={{ color: '#ef4444', backgroundColor: '#fee2e2', padding: '8px', borderRadius: '6px' }}>
+                <File size={20} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                <strong style={{ fontSize: '13px', color: 'var(--text-dark)' }}>Discharge Summary.pdf</strong>
+                <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>15 มิ.ย. 2569 10:10 • 245 KB</span>
+              </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <strong style={{ fontSize: '13px', color: 'var(--text-dark)' }}>Discharge Summary.pdf</strong>
-              <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>15 มิ.ย. 2569 10:10 • 245 KB</span>
-            </div>
+            {/* Download Icon on right */}
+            <a href="#" style={{ color: 'var(--text-light)', marginLeft: '12px' }}>
+              <Send size={20} className="rotate-90" />
+            </a>
           </div>
         ) : (
           <div style={{ padding: '32px', textAlign: 'center', backgroundColor: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-light)', fontSize: '13.5px' }}>
@@ -133,25 +155,52 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
       {!isTransferCompleted && (
         <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fef3c7', borderLeft: '4px solid var(--color-orange)', borderRadius: '8px', padding: '16px', display: 'flex', gap: '10px', alignItems: 'center', fontSize: '13px', color: '#b45309', textAlign: 'left' }}>
           <span>⚠️</span>
-          <span>ยังไม่ได้ส่งไปยังแผนก OPD กรุณาตรวจสอบข้อมูลก่อนยืนยันการส่งต่อ</span>
+          <span>ยังไม่ได้ส่งไปยังแผนก OPD/IPD กรุณาตรวจสอบข้อมูลก่อนยืนยันการส่งต่อ</span>
         </div>
       )}
 
-      {/* Action button */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button 
-          type="button" 
-          className="btn-filled-primary"
-          style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', borderRadius: '8px' }}
-          onClick={() => {
-            setWizardStep(1);
-            setIsDrawerOpen(true);
-          }}
-        >
-          <Send size={16} />
-          <span>ย้ายเคส / ส่งต่อการดูแล</span>
-        </button>
-      </div>
+      {/* Action buttons */}
+      {isTransferCompleted ? (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+          <button 
+            type="button" 
+            className="clear-btn" 
+            style={{ padding: '10px 20px', fontSize: '13.5px', borderRadius: '8px' }}
+            onClick={() => setIsTransferCompleted(false)}
+          >
+            กลับไปหน้ารายการเคส
+          </button>
+          <button 
+            type="button" 
+            className="btn-filled-primary"
+            style={{ padding: '10px 20px', fontSize: '13.5px', borderRadius: '8px', backgroundColor: '#175beb', color: 'white' }}
+          >
+            ดูประวัติการดำเนินการ
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button 
+            type="button" 
+            className="btn-filled-primary"
+            style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', borderRadius: '8px', backgroundColor: '#175beb', color: 'white' }}
+            onClick={() => {
+              setWizardStep(1);
+              setIsDrawerOpen(true);
+            }}
+          >
+            <Send size={16} />
+            <span>ย้ายเคส / ส่งต่อการดูแล</span>
+          </button>
+        </div>
+      )}
+
+      {/* Horizontal Timeline rendered at the bottom of the TransferCare success page */}
+      {isTransferCompleted && (
+        <div style={{ marginTop: '20px' }}>
+          <LocalTimeline />
+        </div>
+      )}
 
       {/* Side Drawer Modal */}
       {isDrawerOpen && (
@@ -225,26 +274,24 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
                       <div className="form-group">
                         <label>แผนกปัจจุบัน (ผู้ส่งต่อ)</label>
                         <select className="form-select" value={currentDept} onChange={(e) => setCurrentDept(e.target.value)}>
+                          <option value="OPD (ชื่อแผนก)">OPD (ชื่อแผนก)</option>
                           <option value="IPD - ห้องศัลยกรรมชาย 2">IPD - ห้องศัลยกรรมชาย 2</option>
-                          <option value="OPD - (ชื่อแผนก)">OPD - (ชื่อแผนก)</option>
-                          <option value="OR - (ชื่อแผนก)">OR - (ชื่อแผนก)</option>
                         </select>
                       </div>
 
                       <div className="form-group">
                         <label>ส่งต่อไปยังแผนก *</label>
                         <select className="form-select" value={targetDept} onChange={(e) => setTargetDept(e.target.value)}>
+                          <option value="IPD (ชื่อแผนก)">IPD (ชื่อแผนก)</option>
                           <option value="OPD - คลินิกศัลยกรรม">OPD - คลินิกศัลยกรรม</option>
-                          <option value="IPD - (ชื่อแผนก)">IPD - (ชื่อแผนก)</option>
                         </select>
                       </div>
 
                       <div className="form-group">
                         <label>เหตุผลการส่งต่อ *</label>
                         <select className="form-select" value={reason} onChange={(e) => setReason(e.target.value)}>
+                          <option value="จำหน่ายเข้าจากบ้านเพื่อพักฟื้นต่อที่ รพ.">จำหน่ายเข้าจากบ้านเพื่อพักฟื้นต่อที่ รพ.</option>
                           <option value="จำหน่ายออกจาก รพ. เพื่อฟื้นฟูที่บ้าน">จำหน่ายออกจาก รพ. เพื่อฟื้นฟูที่บ้าน</option>
-                          <option value="จำหน่ายเข้าพักรพ.">จำหน่ายเข้าพักรพ.</option>
-                          <option value="ติดตามต่อที่คลินิก">ติดตามต่อที่คลินิก</option>
                         </select>
                       </div>
 
@@ -336,7 +383,7 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
                       
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>ผู้ส่งต่อ</span>
-                        <strong>อรวรรณดี จ. (IPD Staff)</strong>
+                        <strong>(ชื่อ-นามสกุลเจ้าหน้าที่)</strong>
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -380,7 +427,7 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
                     {/* Notice bar info */}
                     <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderLeft: '4px solid var(--color-primary)', borderRadius: '8px', padding: '12px 16px', display: 'flex', gap: '8px', alignItems: 'center', fontSize: '12.5px', color: 'var(--color-primary)', textAlign: 'left', marginTop: '12px' }}>
                       <Info size={16} style={{ flexShrink: 0 }} />
-                      <span>แผนก OPD จะได้รับแจ้งเตือนและสามารถตรวจสอบข้อมูลเพื่อรับเคสได้จากระบบ</span>
+                      <span>แผนก IPD จะได้รับแจ้งเตือนและสามารถตรวจสอบข้อมูลเพื่อรับเคสได้จากระบบ</span>
                     </div>
 
                   </div>
@@ -408,7 +455,7 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
               <button 
                 type="button" 
                 className="btn-filled-primary"
-                style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '6px', minWidth: '150px', justifyContent: 'center' }}
+                style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '6px', minWidth: '150px', justifyContent: 'center', backgroundColor: '#175beb', color: 'white' }}
                 onClick={handleNextStep}
               >
                 <span>{wizardStep === 1 ? 'ถัดไป' : 'ยืนยันและส่งต่อเคส'}</span>
@@ -419,6 +466,108 @@ export default function TransferCareView({ selectedPatient, isActivityAdded }) {
         </div>
       )}
 
+    </div>
+  );
+}
+
+function LocalTimeline() {
+  return (
+    <div className="timeline-card" style={{ padding: '24px', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'white', boxSizing: 'border-box' }}>
+      <div className="timeline-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div className="timeline-title-container" style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
+          <h4 className="timeline-title" style={{ fontSize: '14.5px', fontWeight: '600', color: 'var(--text-dark)', margin: 0 }}>ช่วงเวลาติดตามอาการคนไข้</h4>
+          <span className="timeline-subtitle" style={{ fontSize: '12px', color: 'var(--text-light)' }}>รอบการติดตามมาตรฐานสำหรับหัตถการนี้</span>
+        </div>
+        <select className="form-select" style={{ width: 'auto', fontSize: '13px' }}>
+          <option value="15/06/2569">15 / 06 / 2569</option>
+          <option value="all">แสดงทั้งหมด</option>
+        </select>
+      </div>
+
+      <div className="timeline-track-container" style={{ padding: '20px 0 10px', position: 'relative' }}>
+        <div className="timeline-line" style={{ position: 'absolute', top: '26px', left: '40px', right: '40px', height: '3px', backgroundColor: '#e2e8f0', zIndex: 1 }}></div>
+        <div className="timeline-line-progress" style={{ position: 'absolute', top: '26px', left: '40px', width: '22%', height: '3px', backgroundColor: '#3b82f6', zIndex: 2 }}></div>
+        <div className="timeline-steps" style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', zIndex: 10 }}>
+          <div className="timeline-step" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '80px', textAlign: 'center' }}>
+            {/* Green dot with checkmark ✓ */}
+            <div className="timeline-dot completed" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '10px', fontWeight: 'bold' }}>
+              ✓
+            </div>
+            <span className="timeline-step-name" style={{ fontSize: '12.5px', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '2px' }}>Day 1</span>
+            <span className="timeline-step-date" style={{ fontSize: '11px', color: 'var(--text-light)', marginBottom: '2px' }}>16 มิ.ย. 2569</span>
+            <span className="timeline-step-time" style={{ fontSize: '10px', color: 'var(--text-light)' }}>09:00</span>
+          </div>
+
+          <div className="timeline-step" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '80px', textAlign: 'center' }}>
+            <div className="timeline-dot" style={{ backgroundColor: 'var(--color-orange)', boxShadow: '0 0 0 2px #ffedd5' }}></div>
+            <span className="timeline-step-name" style={{ color: 'var(--color-orange)', fontSize: '12.5px', fontWeight: '600', marginBottom: '2px' }}>กิจกรรมแทรก</span>
+            <span className="timeline-step-date" style={{ fontSize: '11px', color: 'var(--text-light)', marginBottom: '2px' }}>18 มิ.ย. 2569</span>
+            <span className="timeline-step-time" style={{ fontSize: '10px', color: 'var(--text-light)' }}>09:00</span>
+          </div>
+
+          <div className="timeline-step" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '80px', textAlign: 'center' }}>
+            <div className="timeline-dot active-tracking"></div>
+            <span className="timeline-step-name" style={{ fontSize: '12.5px', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '2px' }}>Day 7</span>
+            <span className="timeline-step-date" style={{ fontSize: '11px', color: 'var(--text-light)', marginBottom: '2px' }}>22 มิ.ย. 2569</span>
+            <span className="timeline-step-time" style={{ fontSize: '10px', color: 'var(--text-light)' }}>09:00</span>
+          </div>
+
+          <div className="timeline-step" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '80px', textAlign: 'center' }}>
+            <div className="timeline-dot" style={{ backgroundColor: 'var(--color-orange)', boxShadow: '0 0 0 2px #ffedd5' }}></div>
+            <span className="timeline-step-name" style={{ color: 'var(--color-orange)', fontSize: '12.5px', fontWeight: '600', marginBottom: '2px' }}>กิจกรรมแทรก</span>
+            <span className="timeline-step-date" style={{ fontSize: '11px', color: 'var(--text-light)', marginBottom: '2px' }}>23 มิ.ย. 2569</span>
+            <span className="timeline-step-time" style={{ fontSize: '10px', color: 'var(--text-light)' }}>09:00</span>
+          </div>
+
+          <div className="timeline-step" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '80px', textAlign: 'center' }}>
+            <div className="timeline-dot pending"></div>
+            <span className="timeline-step-name" style={{ fontSize: '12.5px', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '2px' }}>Day 14</span>
+            <span className="timeline-step-date" style={{ fontSize: '11px', color: 'var(--text-light)', marginBottom: '2px' }}>29 มิ.ย. 2569</span>
+            <span className="timeline-step-time" style={{ fontSize: '10px', color: 'var(--text-light)' }}>09:00</span>
+          </div>
+          <div className="timeline-step" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '80px', textAlign: 'center' }}>
+            <div className="timeline-dot pending"></div>
+            <span className="timeline-step-name" style={{ fontSize: '12.5px', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '2px' }}>Day 21</span>
+            <span className="timeline-step-date" style={{ fontSize: '11px', color: 'var(--text-light)', marginBottom: '2px' }}>6 ก.ค. 2569</span>
+            <span className="timeline-step-time" style={{ fontSize: '10px', color: 'var(--text-light)' }}>09:00</span>
+          </div>
+          <div className="timeline-step" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '80px', textAlign: 'center' }}>
+            <div className="timeline-dot pending"></div>
+            <span className="timeline-step-name" style={{ fontSize: '12.5px', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '2px' }}>Day 28</span>
+            <span className="timeline-step-date" style={{ fontSize: '11px', color: 'var(--text-light)', marginBottom: '2px' }}>13 ก.ค. 2569</span>
+            <span className="timeline-step-time" style={{ fontSize: '10px', color: 'var(--text-light)' }}>09:00</span>
+          </div>
+          <div className="timeline-step" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '80px', textAlign: 'center' }}>
+            <div className="timeline-dot pending"></div>
+            <span className="timeline-step-name" style={{ fontSize: '12.5px', fontWeight: '600', color: 'var(--text-dark)', marginBottom: '2px' }}>Day 30</span>
+            <span className="timeline-step-date" style={{ fontSize: '11px', color: 'var(--text-light)', marginBottom: '2px' }}>15 ก.ค. 2569</span>
+            <span className="timeline-step-time" style={{ fontSize: '10px', color: 'var(--text-light)' }}>09:00</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="timeline-legend" style={{ display: 'flex', gap: '16px', justifyContent: 'flex-start', marginTop: '20px', fontSize: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '12px', color: 'var(--text-medium)' }}>
+        <div className="legend-item" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span className="legend-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-success)' }}></span>
+          <span>ดำเนินการสำเร็จ</span>
+        </div>
+        <div className="legend-item" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span className="legend-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-info)' }}></span>
+          <span>อยู่ระหว่างติดตามดำเนินการ</span>
+        </div>
+        <div className="legend-item" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span className="legend-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-orange)' }}></span>
+          <span>กิจกรรมแทรก</span>
+        </div>
+        <div className="legend-item" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span className="legend-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#cbd5e1' }}></span>
+          <span>ยังไม่เริ่มติดตาม</span>
+        </div>
+        <div className="legend-item" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span className="legend-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-danger)' }}></span>
+          <span>เกินกำหนด</span>
+        </div>
+      </div>
     </div>
   );
 }

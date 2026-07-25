@@ -54,6 +54,7 @@ function FollowUpCaseDetail({ patient }) {
   const [isActivityAdded, setIsActivityAdded] = useState(false)
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
   const [isSetupFollowUpOpen, setIsSetupFollowUpOpen] = useState(false)
+  const [isTransferCompleted, setIsTransferCompleted] = useState(false)
 
   return (
     <>
@@ -85,7 +86,9 @@ function FollowUpCaseDetail({ patient }) {
         </div>
       ) : (
         <>
-          <FollowUpTimeline isActivityAdded={isActivityAdded} />
+          {!(activeDetailTab === 'transfer' && isTransferCompleted) && (
+            <FollowUpTimeline isActivityAdded={isActivityAdded} />
+          )}
           
           <div className="mt-3">
             {activeDetailTab === 'info' && (
@@ -106,7 +109,11 @@ function FollowUpCaseDetail({ patient }) {
               />
             )}
             {activeDetailTab === 'transfer' && (
-              <TransferCareView selectedPatient={patient} />
+              <TransferCareView 
+                selectedPatient={patient} 
+                isTransferCompleted={isTransferCompleted}
+                setIsTransferCompleted={setIsTransferCompleted}
+              />
             )}
             {activeDetailTab === 'docs' && (
               <DocsView selectedPatient={patient} />
