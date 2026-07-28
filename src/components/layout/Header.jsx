@@ -39,7 +39,7 @@ export default function Header({ onMenu }) {
     <header className="sticky top-0 z-20 flex min-h-[var(--or-header-height)] items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur sm:px-[var(--or-header-padding)]">
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <button onClick={onMenu} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 lg:hidden" aria-label="เปิดเมนู"><Menu size={19} /></button>
-        <h1 className="min-w-0 truncate text-base leading-normal py-1 font-medium text-[#175beb] sm:text-xl xl:text-[24px]">{title}</h1>
+        <h1 className="min-w-0 truncate text-base leading-5 font-medium text-[#175beb] sm:text-xl xl:text-[24px]">{title}</h1>
       </div>
       <div className="flex shrink-0 items-center gap-2 sm:gap-6">
         <button className="hidden h-[42px] w-[182px] items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-[17px] py-[9px] text-[14px] font-normal leading-6 text-[#1f2937] md:flex"><span className="flex items-center gap-2"><CalendarDays size={18} />15 มิ.ย 2569</span><ChevronDown size={12} /></button>

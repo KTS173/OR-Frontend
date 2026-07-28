@@ -74,7 +74,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div className="form-group">
-                <label>วันที่ติดตาม *</label>
+                <label>วันที่ติดตาม <span className="text-red-500 font-bold">*</span></label>
                 <input 
                   type="text" 
                   className="form-input" 
@@ -83,7 +83,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 />
               </div>
               <div className="form-group">
-                <label>เวลาติดตาม *</label>
+                <label>เวลาติดตาม <span className="text-red-500 font-bold">*</span></label>
                 <input 
                   type="text" 
                   className="form-input" 
@@ -94,7 +94,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             </div>
 
             <div className="form-group" style={{ marginBottom: '16px' }}>
-              <label>วิธีการติดตาม *</label>
+              <label>วิธีการติดตาม <span className="text-red-500 font-bold">*</span></label>
               <div className="radio-group-horizontal">
                 <label className="radio-label">
                   <input 
@@ -131,7 +131,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div className="form-group">
-                <label>ผู้ติดตาม *</label>
+                <label>ผู้ติดตาม <span className="text-red-500 font-bold">*</span></label>
                 <input 
                   type="text" 
                   className="form-input" 
@@ -151,7 +151,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             </div>
 
             <div className="form-group" style={{ marginBottom: '16px' }}>
-              <label>ติดต่อได้หรือไม่ *</label>
+              <label>ติดต่อได้หรือไม่ <span className="text-red-500 font-bold">*</span></label>
               <div className="radio-group-horizontal">
                 <label className="radio-label">
                   <input 
@@ -326,16 +326,30 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             <button 
               type="button" 
               className="clear-btn" 
-              style={{ marginTop: '12px', width: '100%', justifyContent: 'center', fontSize: '13px', padding: '8px' }}
+              style={{
+                marginTop: '12px',
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '13.5px',
+                padding: '10px',
+                border: '1px dashed #175beb',
+                borderRadius: '8px',
+                backgroundColor: '#ffffff',
+                color: '#175beb',
+                fontWeight: '500',
+                transition: 'all 0.2s',
+              }}
               onClick={() => alert('เพิ่มช่องกรอกข้อมูลสำเร็จ')}
             >
               + เพิ่มข้อมูลการประเมิน
             </button>
           </div>
 
-          {/* อาการอื่นๆ และ การรักษา */}
-          <div className="sub-info-card">
-            <div className="sub-info-card-header">
+          {/* อาการอื่นๆ และ การรักษา (รวมอยู่ในบาร์/การ์ดเดียวกัน) */}
+          <div className="sub-info-card" style={{ padding: '20px' }}>
+            <div className="sub-info-card-header" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>
               <h4 className="sub-info-card-title">อาการอื่นๆ</h4>
             </div>
             <div className="checkbox-group-vertical">
@@ -377,11 +391,11 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 />
               )}
             </div>
-          </div>
 
-          {/* การมารับการรักษาหลังจำหน่าย */}
-          <div className="sub-info-card">
-            <div className="sub-info-card-header">
+            {/* เส้นคั่นกลาง */}
+            <div className="border-t border-slate-100 my-5"></div>
+
+            <div className="sub-info-card-header" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>
               <h4 className="sub-info-card-title">การมารับการรักษาหลังจำหน่าย</h4>
             </div>
             <div className="checkbox-group-vertical">
@@ -435,7 +449,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             </div>
             
             <div className="form-group" style={{ marginBottom: '16px' }}>
-              <label>ผลการประเมิน *</label>
+              <label>ผลการประเมิน <span className="text-red-500 font-bold">*</span></label>
               <div className="evaluation-toggle-group">
                 <button 
                   type="button" 
@@ -472,15 +486,16 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             </div>
 
             <div className="form-group">
-              <label>นัดหมายติดตามครั้งถัดไป *</label>
-              <div className="input-container">
-                <Calendar className="input-icon" />
+              <label>นัดหมายติดตามครั้งถัดไป <span className="text-red-500 font-bold">*</span></label>
+              <div className="relative mt-1">
                 <input 
                   type="text" 
-                  className="form-input form-input-with-icon" 
+                  className="form-input w-full" 
+                  style={{ paddingLeft: '36px', height: '38px', fontSize: '13px' }}
                   value={nextAppointment}
                   onChange={(e) => setNextAppointment(e.target.value)}
                 />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               </div>
             </div>
           </div>
@@ -498,7 +513,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
           ) : (
             <span className="badge-outlined" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-orange)', borderColor: 'var(--color-orange)' }}>
               <Clock size={14} />
-              <span>เกณฑ์กำหนด</span>
+              <span>เกินกำหนด</span>
             </span>
           )}
         </div>
@@ -561,22 +576,22 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                   <User size={20} />
                 </div>
                 <div className="modal-patient-info-list">
-                  <span className="modal-patient-hn">HN {selectedPatient.hn}</span>
+                  <span className="modal-patient-hn">HN {selectedPatient.id}</span>
                   <span className="modal-patient-meta">
-                    หัตถการ: {selectedPatient.procedure} (เข่าขวา) | รอบติดตาม: {selectedPatient.round}
+                    หัตถการ: {selectedPatient.procedure} | รอบติดตาม: {selectedPatient.round || 'Day 1'}
                   </span>
                   <span className="modal-patient-time">
-                    วันที่นัดติดตาม: {selectedPatient.firstAppt} เวลา 09:00 น.
+                    วันที่นัดติดตาม: {selectedPatient.followUp || '15 มิ.ย. 2569'} เวลา 09:00 น.
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="modal-action-row">
+            <div className="modal-action-row" style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '16px' }}>
               <button 
                 type="button" 
-                className="clear-btn" 
-                style={{ padding: '10px 24px' }}
+                className="btn-outlined-primary" 
+                style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}
                 onClick={() => setIsSaveModalOpen(false)}
               >
                 ปิด
@@ -584,7 +599,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
               <button 
                 type="button" 
                 className="btn-filled-primary"
-                style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', whiteSpace: 'nowrap' }}
                 onClick={() => {
                   setIsSaveModalOpen(false);
                   setSelectedPatient(null);
@@ -623,12 +638,12 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                   <User size={20} />
                 </div>
                 <div className="modal-patient-info-list">
-                  <span className="modal-patient-hn">HN {selectedPatient.hn}</span>
+                  <span className="modal-patient-hn">HN {selectedPatient.id}</span>
                   <span className="modal-patient-meta">
-                    หัตถการ: {selectedPatient.procedure} (เข่าขวา) | รอบติดตาม: {selectedPatient.round}
+                    หัตถการ: {selectedPatient.procedure} | รอบติดตาม: {selectedPatient.round || 'Day 1'}
                   </span>
                   <span className="modal-patient-time">
-                    วันที่นัดติดตาม: {selectedPatient.firstAppt} เวลา 09:00 น.
+                    วันที่นัดติดตาม: {selectedPatient.followUp || '15 มิ.ย. 2569'} เวลา 09:00 น.
                   </span>
                 </div>
               </div>
@@ -706,7 +721,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
 
                   {notifySMS && (
                     <div className="form-group" style={{ width: '100%' }}>
-                      <label style={{ fontSize: '11px', color: 'var(--text-medium)', fontWeight: '500' }}>แจ้งเตือนแพทย์ผ่านเบอร์ SMS *</label>
+                      <label style={{ fontSize: '11px', color: 'var(--text-medium)', fontWeight: '500' }}>แจ้งเตือนแพทย์ผ่านเบอร์ SMS <span className="text-red-500 font-bold">*</span></label>
                       <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
                         <select 
                           className="form-select" 
@@ -731,11 +746,11 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             </div>
 
             {/* Modal Actions */}
-            <div className="modal-action-row" style={{ marginTop: '24px' }}>
+            <div className="modal-action-row" style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '24px' }}>
               <button 
                 type="button" 
-                className="clear-btn" 
-                style={{ padding: '12px 24px' }}
+                className="btn-outlined-primary" 
+                style={{ padding: '12px 24px', flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}
                 onClick={() => setIsSubmitToDoctorModalOpen(false)}
               >
                 ยกเลิก
@@ -743,7 +758,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
               <button 
                 type="button" 
                 className="btn-filled-primary"
-                style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                style={{ padding: '12px 24px', flex: '1 1 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', whiteSpace: 'nowrap' }}
                 onClick={() => {
                   if (selectedPatient) {
                     selectedPatient.status = 'รอแพทย์ตรวจสอบ'; // Change status

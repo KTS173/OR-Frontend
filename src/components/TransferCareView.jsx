@@ -25,7 +25,7 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '8px' }}>
-      
+
       {/* Success Banner when completed */}
       {isTransferCompleted && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '12px', padding: '16px', textAlign: 'left' }}>
@@ -98,9 +98,9 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
             <tbody>
               {isTransferCompleted ? (
                 <tr>
-                  <td>15 มิ.ย.2569<br/><span style={{ fontSize: '11px', color: 'var(--text-light)' }}>10:15</span></td>
-                  <td>OPD<br/><span style={{ fontSize: '11px', color: 'var(--text-light)' }}>(ชื่อแผนก)</span></td>
-                  <td>IPD<br/><span style={{ fontSize: '11px', color: 'var(--text-light)' }}>(ชื่อแผนก)</span></td>
+                  <td>15 มิ.ย.2569<br /><span style={{ fontSize: '11px', color: 'var(--text-light)' }}>10:15</span></td>
+                  <td>OPD<br /><span style={{ fontSize: '11px', color: 'var(--text-light)' }}>(ชื่อแผนก)</span></td>
+                  <td>IPD<br /><span style={{ fontSize: '11px', color: 'var(--text-light)' }}>(ชื่อแผนก)</span></td>
                   <td>(ชื่อ-นามสกุลเจ้าหน้าที่)</td>
                   <td>-</td>
                   <td>จำหน่ายเข้าจากบ้านเพื่อพักฟื้นต่อที่ รพ.</td>
@@ -114,11 +114,11 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
           </table>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-light)' }}>Showing {isTransferCompleted ? '1' : '10'} of 10 Historical Log</span>
-          <div className="pagination-buttons">
-            <button className="page-btn" disabled>Previous</button>
-            <button className="page-btn active">1</button>
-            <button className="page-btn" disabled>Next</button>
+          <span style={{ fontSize: '13px', color: 'var(--text-medium)' }}>แสดง {isTransferCompleted ? '1' : '10'} จาก 10 รายการ</span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="page-button w-auto px-3" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>Previous</button>
+            <button className="page-button bg-[#175beb] text-white">1</button>
+            <button className="page-button w-auto px-3" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>Next</button>
           </div>
         </div>
       </div>
@@ -162,16 +162,16 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
       {/* Action buttons */}
       {isTransferCompleted ? (
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
-          <button 
-            type="button" 
-            className="clear-btn" 
+          <button
+            type="button"
+            className="clear-btn"
             style={{ padding: '10px 20px', fontSize: '13.5px', borderRadius: '8px' }}
             onClick={() => setIsTransferCompleted(false)}
           >
             กลับไปหน้ารายการเคส
           </button>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-filled-primary"
             style={{ padding: '10px 20px', fontSize: '13.5px', borderRadius: '8px', backgroundColor: '#175beb', color: 'white' }}
           >
@@ -180,8 +180,8 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
         </div>
       ) : (
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-filled-primary"
             style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', borderRadius: '8px', backgroundColor: '#175beb', color: 'white' }}
             onClick={() => {
@@ -211,8 +211,8 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
               <div>
                 <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: 'var(--text-dark)' }}>ย้ายเคส / ส่งต่อการดูแล</h3>
               </div>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setIsDrawerOpen(false)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-medium)' }}
               >
@@ -242,7 +242,7 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
               {wizardStep === 1 ? (
                 <>
                   {/* Step 1: Form Inputs */}
-                  
+
                   {/* ข้อมูลผู้ป่วย */}
                   <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
                     <h5 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-medium)', marginBottom: '12px' }}>ข้อมูลผู้ป่วย</h5>
@@ -269,7 +269,7 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
                   {/* ข้อมูลการส่งต่อ */}
                   <div>
                     <h5 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-medium)', marginBottom: '12px' }}>ข้อมูลการส่งต่อ</h5>
-                    
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                       <div className="form-group">
                         <label>แผนกปัจจุบัน (ผู้ส่งต่อ)</label>
@@ -298,10 +298,10 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
                       <div className="form-group">
                         <label>วันที่เริ่มติดตามโดยแผนกรับ *</label>
                         <div style={{ position: 'relative' }}>
-                          <input 
-                            type="text" 
-                            className="form-input" 
-                            value={startDate} 
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
                             style={{ paddingRight: '36px' }}
                           />
@@ -311,10 +311,10 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
 
                       <div className="form-group">
                         <label>หมายเหตุเพิ่มเติม</label>
-                        <textarea 
-                          className="form-input" 
+                        <textarea
+                          className="form-input"
                           style={{ height: '70px', resize: 'vertical' }}
-                          value={notes} 
+                          value={notes}
                           onChange={(e) => setNotes(e.target.value)}
                         />
                       </div>
@@ -324,15 +324,15 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
                   {/* แนบเอกสาร */}
                   <div>
                     <h5 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-medium)', marginBottom: '8px' }}>แนบเอกสาร (ถ้ามี)</h5>
-                    <button 
-                      type="button" 
-                      className="clear-btn" 
+                    <button
+                      type="button"
+                      className="clear-btn"
                       style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primary)', borderColor: 'var(--color-primary)', padding: '8px 16px', fontSize: '13px' }}
                     >
                       <Paperclip size={14} />
                       <span>แนบไฟล์</span>
                     </button>
-                    
+
                     <div className="file-box-item">
                       <div style={{ color: '#ef4444', backgroundColor: '#fee2e2', padding: '8px', borderRadius: '6px' }}>
                         <File size={18} />
@@ -347,7 +347,7 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
               ) : (
                 <>
                   {/* Step 2: Review and Validation Confirmation */}
-                  
+
                   {/* ข้อมูลผู้ป่วย */}
                   <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
                     <h5 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-medium)', marginBottom: '12px' }}>ข้อมูลผู้ป่วย</h5>
@@ -374,13 +374,13 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
                   {/* สรุปการส่งต่อที่บันทึก */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <h5 style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--text-dark)', margin: 0 }}>สรุปการส่งต่อที่บันทึก</h5>
-                    
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>จากแผนก (ผู้ส่งต่อ)</span>
                         <strong>{currentDept}</strong>
                       </div>
-                      
+
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <span style={{ color: 'var(--text-light)', fontSize: '11px' }}>ผู้ส่งต่อ</span>
                         <strong>(ชื่อ-นามสกุลเจ้าหน้าที่)</strong>
@@ -437,9 +437,9 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
 
             {/* Footer buttons */}
             <div className="drawer-footer">
-              <button 
-                type="button" 
-                className="clear-btn" 
+              <button
+                type="button"
+                className="clear-btn"
                 style={{ padding: '10px 20px', minWidth: '90px' }}
                 onClick={() => {
                   if (wizardStep === 2) {
@@ -451,9 +451,9 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
               >
                 {wizardStep === 2 ? 'ย้อนกลับ' : 'ยกเลิก'}
               </button>
-              
-              <button 
-                type="button" 
+
+              <button
+                type="button"
                 className="btn-filled-primary"
                 style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '6px', minWidth: '150px', justifyContent: 'center', backgroundColor: '#175beb', color: 'white' }}
                 onClick={handleNextStep}

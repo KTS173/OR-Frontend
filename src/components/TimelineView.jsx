@@ -191,8 +191,8 @@ export default function TimelineView({ selectedPatient, setActiveDetailTab, isAc
           <select className="form-select" style={{ width: 'auto', padding: '6px 12px', fontSize: '13px' }}>
             <option value="all">แสดงทั้งหมด</option>
           </select>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-filled-primary"
             style={{ padding: '8px 16px', fontSize: '13px', backgroundColor: '#175beb', color: 'white' }}
             onClick={onSetupFollowUpClick}
@@ -239,30 +239,32 @@ export default function TimelineView({ selectedPatient, setActiveDetailTab, isAc
                 </td>
                 <td>{row.details}</td>
                 <td>
-                  <span className={`badge ${
-                    row.status === 'completed' ? 'badge-not-infected' :
-                    row.status === 'success' ? 'badge-not-infected' : 'badge-pending'
-                  }`} style={{ textWrap: 'nowrap' }}>
+                  <span className={`inline-flex items-center rounded px-2.5 py-0.5 text-[11.5px] font-medium border text-center whitespace-nowrap ${row.statusText === 'เสร็จสิ้น'
+                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                      : row.statusText === 'รอดำเนินการ'
+                        ? 'bg-blue-50 text-[#175beb] border-blue-200'
+                        : 'bg-slate-50 text-slate-500 border-slate-200'
+                    }`}>
                     {row.statusText}
                   </span>
                 </td>
                 <td>
                   {row.actionType === 'assess_btn' && (
                     row.isActive || isActivityAdded ? (
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         className="manage-btn-active"
                         onClick={() => {
                           setActiveDetailTab('evaluation');
-                          window.scrollTo(0,0);
+                          window.scrollTo(0, 0);
                         }}
                       >
                         <ClipboardList size={14} />
                         <span>ประเมินอาการคนไข้</span>
                       </button>
                     ) : (
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         className="manage-btn-inactive"
                         onClick={() => alert('รอบติดตามนี้ยังไม่ถึงเวลาเปิดให้ประเมิน')}
                       >
@@ -274,17 +276,17 @@ export default function TimelineView({ selectedPatient, setActiveDetailTab, isAc
 
                   {row.actionType === 'view_edit' && (
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button 
-                        type="button" 
-                        className="clear-btn" 
+                      <button
+                        type="button"
+                        className="clear-btn"
                         style={{ padding: '6px 8px', minWidth: 'auto', color: 'var(--color-primary)', borderColor: 'var(--color-primary)' }}
                         onClick={() => alert('ดูรายละเอียดกิจกรรม')}
                       >
                         <Eye size={14} />
                       </button>
-                      <button 
-                        type="button" 
-                        className="clear-btn" 
+                      <button
+                        type="button"
+                        className="clear-btn"
                         style={{ padding: '6px 8px', minWidth: 'auto', color: 'var(--color-primary)', borderColor: 'var(--color-primary)' }}
                         onClick={() => alert('แก้ไขกิจกรรม')}
                       >
@@ -295,17 +297,17 @@ export default function TimelineView({ selectedPatient, setActiveDetailTab, isAc
 
                   {row.actionType === 'edit_delete' && (
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button 
-                        type="button" 
-                        className="clear-btn" 
+                      <button
+                        type="button"
+                        className="clear-btn"
                         style={{ padding: '6px 8px', minWidth: 'auto', color: 'var(--color-primary)', borderColor: '#cbd5e1' }}
                         onClick={() => alert('แก้ไขกิจกรรม')}
                       >
                         <Pencil size={14} />
                       </button>
-                      <button 
-                        type="button" 
-                        className="clear-btn" 
+                      <button
+                        type="button"
+                        className="clear-btn"
                         style={{ padding: '6px 8px', minWidth: 'auto', color: 'var(--color-danger)', borderColor: '#fca5a5' }}
                         onClick={() => alert('ลบกิจกรรม')}
                       >
@@ -320,17 +322,14 @@ export default function TimelineView({ selectedPatient, setActiveDetailTab, isAc
         </table>
       </div>
 
-      {/* Pagination summary row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
         <span style={{ fontSize: '13px', color: 'var(--text-medium)' }}>
-          Showing 2 of {isActivityAdded ? '5 Historical Log' : '5 Historical Log'}
+          แสดง {isActivityAdded ? '6' : '5'} จาก {isActivityAdded ? '6' : '5'} รายการ
         </span>
-        <div className="pagination-buttons">
-          <button className="page-btn" disabled>Previous</button>
-          <button className="page-btn active">1</button>
-          <button className="page-btn">2</button>
-          <button className="page-btn">3</button>
-          <button className="page-btn">Next</button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="page-button w-auto px-3" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>Previous</button>
+          <button className="page-button bg-[#175beb] text-white">1</button>
+          <button className="page-button w-auto px-3" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>Next</button>
         </div>
       </div>
 

@@ -151,13 +151,11 @@ export default function DocsView({ selectedPatient }) {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-light)', textAlign: 'left' }}>Showing 10 of 10 Historical Log</span>
-          <div className="pagination-buttons">
-            <button className="page-btn" disabled>Previous</button>
-            <button className="page-btn active">1</button>
-            <button className="page-btn">2</button>
-            <button className="page-btn">3</button>
-            <button className="page-btn">Next</button>
+          <span style={{ fontSize: '13px', color: 'var(--text-medium)', textAlign: 'left' }}>แสดง {DOCS_LIST.length} จาก {DOCS_LIST.length} รายการ</span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="page-button w-auto px-3" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>Previous</button>
+            <button className="page-button bg-[#175beb] text-white">1</button>
+            <button className="page-button w-auto px-3" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>Next</button>
           </div>
         </div>
       </div>
