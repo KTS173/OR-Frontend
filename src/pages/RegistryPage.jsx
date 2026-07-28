@@ -1,4 +1,4 @@
-import { AlertCircle, AlertTriangle, ArrowRight, Calendar, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Download, History, PhoneCall, Plus, RefreshCw, RotateCcw, Search, ShieldCheck, TimerReset, UserRound, X } from 'lucide-react'
+import { Activity, AlertCircle, AlertTriangle, ArrowRight, Calendar, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Database, Download, Eye, File, History, Layers, Mail, PhoneCall, Plus, RefreshCw, RotateCcw, Scissors, Search, Settings2, ShieldCheck, Stethoscope, TimerReset, UserCheck, UserRound, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Filters from '../components/ui/Filters.jsx'
@@ -33,6 +33,9 @@ export default function RegistryPage({ type }) {
   if (type === 'followUp') return <MyFollowUpsPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'history') return <HistoryPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'suspected' || type === 'confirmed') return <SuspectedSSIPage type={type} patients={filtered} loading={loading} search={search} setSearch={setSearch} />
+  if (type === 'notifications') return <NotificationsCenterPage />
+  if (type === 'search') return <CentralSearchPage />
+  if (type === 'sync') return <HisSyncPage />
   return (
     <>
       <PageHeader title={config.title} description={config.description} actions={<><button className="btn-secondary"><Download size={14} />ส่งออก</button><button className="btn-primary">{type === 'sync' ? <RefreshCw size={14} /> : <Plus size={14} />}{type === 'sync' ? 'ซิงค์ข้อมูล' : 'เพิ่มรายการ'}</button></>} />
@@ -569,3 +572,760 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch }) {
     </div>
   );
 }
+
+function NotificationsCenterPage() {
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [dateRange, setDateRange] = useState('01/05/2569 - 01/06/2569');
+  const [notifType, setNotifType] = useState('ทั้งหมด');
+  const [status, setStatus] = useState('ทั้งหมด');
+  const [importance, setImportance] = useState('ทั้งหมด');
+  const [patientType, setPatientType] = useState('คนไข้ทั้งหมด');
+
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      unread: true,
+      type: 'พบผู้ป่วยสงสัยการติดเชื้อ SSI',
+      detail: 'ระบบตรวจพบความเสี่ยง SSI สูงจากแบบประเมิน',
+      patient: { name: 'นายสมชาย ใจดี', hn: 'HN 66012345', or: 'OR2567-0512-0123' },
+      time: '12/05/2567 10:25',
+      fullDetail: 'รายละเอียดความเสี่ยง: ตรวจพบระดับความเสี่ยง Critical เนื่องจากผู้ป่วยทำแบบประเมินตนเองแล้วมีไข้สูง ปวดแผลผ่าตัด และแผลบวมแดง แนะนำส่งต่อประสานงานแพทย์ตรวจอย่างเร่งด่วน'
+    },
+    {
+      id: 2,
+      unread: true,
+      type: 'ติดตามนัดหมายวันนี้',
+      detail: 'มีผู้ป่วยครบกำหนดติดตามอาการวันนี้',
+      patient: { name: 'นายสมชาย ใจดี', hn: 'HN 66012345', or: 'OR2567-0512-0123' },
+      time: '12/05/2567 10:25',
+      fullDetail: 'กำหนดการนัดหมาย: ครบกำหนดติดตามผู้ป่วยรอบ Day 30 ตามโปรโตคอลการผ่าตัดศัลยกรรมกระดูก'
+    },
+    {
+      id: 3,
+      unread: true,
+      type: 'ติดตามเลยกำหนด (เกิน 1 วัน)',
+      detail: 'ผู้ป่วยยังไม่ได้ส่งข้อมูลตามกำหนด',
+      patient: { name: 'นายสมชาย ใจดี', hn: 'HN 66012345', or: 'OR2567-0512-0123' },
+      time: '12/05/2567 10:25',
+      fullDetail: 'เลยกำหนดการบันทึก: ผู้ป่วยเลยรอบประเมินอาการ Day 14 มาเป็นเวลา 48 ชั่วโมง ยังไม่มีการส่งข้อมูลแผลผ่าตัดกลับมา'
+    },
+    {
+      id: 4,
+      unread: true,
+      type: 'ติดตามเลยกำหนด (เกิน 1 วัน)',
+      detail: 'ผู้ป่วยยังไม่ได้ส่งข้อมูลตามกำหนด',
+      patient: { name: 'นายสมชาย ใจดี', hn: 'HN 66012345', or: 'OR2567-0512-0123' },
+      time: '12/05/2567 10:25',
+      fullDetail: 'เลยกำหนดการบันทึก: เลยกำหนดติดตามผู้ป่วยรอบ Day 7 เจ้าหน้าที่โทรติดตามแล้วไม่รับสาย'
+    },
+    {
+      id: 5,
+      unread: false,
+      type: 'มีเคสใหม่จากห้องผ่าตัด',
+      detail: 'มีผู้ป่วยผ่าตัดใหม่เข้าสู่ระบบติดตาม',
+      patient: { name: 'นายสมชาย ใจดี', hn: 'HN 66012345', or: 'OR2567-0512-0123' },
+      time: '12/05/2567 10:25',
+      fullDetail: 'การเชื่อมต่อ HIS: ได้รับประวัติการผ่าตัดเคสใหม่จากแผนกศัลยกรรมกระดูกเรียบร้อยแล้ว'
+    },
+    {
+      id: 6,
+      unread: false,
+      type: 'ผู้ป่วยส่งรูปแผล',
+      detail: 'มีผู้ป่วยอัปโหลดรูปแผลใหม่',
+      patient: { name: 'นายสมชาย ใจดี', hn: 'HN 66012345', or: 'OR2567-0512-0123' },
+      time: '12/05/2567 10:25',
+      fullDetail: 'ไฟล์ภาพแผล: ผู้ป่วยอัปโหลดรูปแผลความละเอียดสูงสำหรับช่วงติดตาม Day 14 ตรวจสอบเบื้องต้นแผลปกติ'
+    },
+    {
+      id: 7,
+      unread: false,
+      type: 'ผู้ป่วยส่งรูปแผล',
+      detail: 'มีผู้ป่วยอัปโหลดรูปแผลใหม่',
+      patient: { name: 'นายสมชาย ใจดี', hn: 'HN 66012345', or: 'OR2567-0512-0123' },
+      time: '12/05/2567 10:25',
+      fullDetail: 'ไฟล์ภาพแผล: ผู้ป่วยอัปโหลดรูปแผลติดตาม Day 28 แผลแห้งดีและตัดไหมเรียบร้อยแล้ว'
+    },
+    {
+      id: 8,
+      unread: false,
+      type: 'ผู้ป่วยส่งรูปแผล',
+      detail: 'มีผู้ป่วยอัปโหลดรูปแผลใหม่',
+      patient: { name: 'นายสมชาย ใจดี', hn: 'HN 66012345', or: 'OR2567-0512-0123' },
+      time: '12/05/2567 10:25',
+      fullDetail: 'ไฟล์ภาพแผล: ผู้ป่วยอัปโหลดรูปแผลติดตาม Day 1 แผลเรียบปกติ ไม่มีน้ำเหลืองซึม'
+    },
+    {
+      id: 9,
+      unread: false,
+      type: 'ผู้ป่วยส่งรูปแผล',
+      detail: 'มีผู้ป่วยอัปโหลดรูปแผลใหม่',
+      patient: { name: 'นายสมชาย ใจดี', hn: 'HN 66012345', or: 'OR2567-0512-0123' },
+      time: '12/05/2567 10:25',
+      fullDetail: 'ไฟล์ภาพแผล: ผู้ป่วยอัปโหลดรูปแผลติดตาม Day 7 แผลปิดเรียบร้อย ไม่มีอักเสบ'
+    },
+    {
+      id: 10,
+      unread: false,
+      type: 'ผู้ป่วยส่งรูปแผล',
+      detail: 'มีผู้ป่วยอัปโหลดรูปแผลใหม่',
+      patient: { name: 'นายสมชาย ใจดี', hn: 'HN 66012345', or: 'OR2567-0512-0123' },
+      time: '12/05/2567 10:25',
+      fullDetail: 'ไฟล์ภาพแผล: ผู้ป่วยอัปโหลดรูปแผลติดตาม Day 30 แผลหายสนิทเรียบร้อย'
+    }
+  ]);
+
+  const handleOpenDetail = (notif) => {
+    setSelectedNotification(notif);
+    // Mark as read
+    setNotifications(prev =>
+      prev.map(n => n.id === notif.id ? { ...n, unread: false } : n)
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Search and Filters Section */}
+      <section className="rounded-xl border border-black/10 bg-white p-6 shadow-sm">
+        <h2 className="flex items-center gap-2 text-[18px] font-semibold text-[#002d73] mb-4">
+          <Search size={19} className="text-[#175beb]" />
+          ค้นหาข้อมูล
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div>
+            <label className="text-[13px] font-medium text-slate-600">เลือกช่วงวันที่</label>
+            <div className="relative mt-1">
+              <input
+                type="text"
+                value={dateRange}
+                onChange={e => setDateRange(e.target.value)}
+                className="h-[38px] w-full rounded-lg border border-slate-200 pl-10 pr-4 text-xs font-semibold text-slate-600"
+              />
+              <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[13px] font-medium text-slate-600">ประเภทการแจ้งเตือน</label>
+            <select
+              value={notifType}
+              onChange={e => setNotifType(e.target.value)}
+              className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-600 font-semibold"
+            >
+              <option>ทั้งหมด</option>
+              <option>พบผู้ป่วยสงสัยการติดเชื้อ SSI</option>
+              <option>ติดตามนัดหมายวันนี้</option>
+              <option>ติดตามเลยกำหนด</option>
+              <option>มีเคสใหม่จากห้องผ่าตัด</option>
+              <option>ผู้ป่วยส่งรูปแผล</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-[13px] font-medium text-slate-600">สถานะ</label>
+            <select
+              value={status}
+              onChange={e => setStatus(e.target.value)}
+              className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-600 font-semibold"
+            >
+              <option>ทั้งหมด</option>
+              <option>ยังไม่ได้อ่าน</option>
+              <option>อ่านแล้ว</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-[13px] font-medium text-slate-600">ระดับความสำคัญ</label>
+            <select
+              value={importance}
+              onChange={e => setImportance(e.target.value)}
+              className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-600 font-semibold"
+            >
+              <option>ทั้งหมด</option>
+              <option>สำคัญ</option>
+              <option>ปกติ</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-[13px] font-medium text-slate-600">ประเภท ผู้คนไข้</label>
+            <select
+              value={patientType}
+              onChange={e => setPatientType(e.target.value)}
+              className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-600 font-semibold"
+            >
+              <option>คนไข้ทั้งหมด</option>
+              <option>ศัลยกรรมกระดูก</option>
+              <option>ศัลยกรรมทั่วไป</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      {/* Notifications Table Card */}
+      <section className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm">
+        <header className="flex h-[72px] items-center justify-between px-6 border-b border-slate-100">
+          <h2 className="text-[18px] font-semibold text-[#002d73]">รายการแจ้งเตือน</h2>
+          <button className="inline-flex h-[40px] items-center justify-between rounded-lg border border-[#e2e8f0] px-4 text-[14px]">
+            <span className="inline-flex items-center gap-3 text-xs font-semibold text-slate-700">
+              <CalendarDays size={17} className="text-slate-500" />
+              วันนี้
+            </span>
+          </button>
+        </header>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1000px] text-[13px] text-[#434651] font-sans">
+            <thead className="h-[46px] bg-[#f8fafc] font-semibold text-[#1e293b]">
+              <tr>
+                <th className="px-6 text-left">สถานะ</th>
+                <th className="px-4 text-left">ประเภทการแจ้งเตือน</th>
+                <th className="px-4 text-left">รายละเอียด</th>
+                <th className="px-4 text-left">ผู้ป่วย / เคส</th>
+                <th className="px-4 text-left">เวลา</th>
+                <th className="px-6 text-right">การดำเนินการ</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {notifications.map((notif) => (
+                <tr key={notif.id} className="h-[76px] hover:bg-slate-50/60 transition">
+                  <td className="px-6 font-semibold">
+                    {notif.unread ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs text-blue-600">
+                        <span className="h-2 w-2 rounded-full bg-blue-600" />
+                        ยังไม่ได้อ่าน
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-xs text-[#10b981]">
+                        <span className="h-2 w-2 rounded-full bg-[#10b981]" />
+                        อ่านแล้ว
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 font-semibold text-slate-800">{notif.type}</td>
+                  <td className="px-4 text-slate-500 text-xs font-medium max-w-[280px] truncate">{notif.detail}</td>
+                  <td className="px-4">
+                    <span className="font-semibold text-slate-800 block">{notif.patient.name}</span>
+                    <small className="block text-[11px] text-slate-400 font-medium">
+                      {notif.patient.hn} | {notif.patient.or}
+                    </small>
+                  </td>
+                  <td className="px-4 text-slate-500 text-xs font-medium">{notif.time}</td>
+                  <td className="px-6 text-right">
+                    <button
+                      onClick={() => handleOpenDetail(notif)}
+                      className="inline-flex h-[36px] items-center gap-2 rounded-lg border border-[#e2e8f0] px-4 text-xs font-semibold text-slate-600 bg-white hover:bg-slate-50 transition"
+                    >
+                      <Eye size={14} className="text-slate-400" />
+                      เปิดดู
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <footer className="flex h-[46px] items-center justify-between border-t border-slate-200 px-6 text-[13px] text-slate-500 font-sans">
+          <span>Showing 10 of 10 Historical Log</span>
+          <div className="flex gap-2">
+            <button className="page-button w-auto px-3">Previous</button>
+            <button className="page-button bg-[#175beb] text-white">1</button>
+            <button className="page-button">2</button>
+            <button className="page-button">3</button>
+            <button className="page-button w-auto px-3">Next</button>
+          </div>
+        </footer>
+      </section>
+
+      {/* Notice Banner */}
+      <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
+        <Calendar size={16} className="text-blue-500" />
+        <span>15 มิ.ย. 2569: ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
+      </div>
+
+      {/* Detail Dialog Modal */}
+      {selectedNotification && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 animate-fade-in font-sans">
+          <section className="relative w-full max-w-[500px] rounded-2xl bg-white p-6 shadow-2xl">
+            <button
+              onClick={() => setSelectedNotification(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+              <span className={`grid h-10 w-10 place-items-center rounded-xl ${
+                selectedNotification.unread ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'
+              }`}>
+                <Bell size={20} />
+              </span>
+              <div>
+                <h3 className="text-base font-bold text-slate-800">{selectedNotification.type}</h3>
+                <p className="text-xs text-slate-400 mt-0.5">{selectedNotification.time}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-4">
+              <div className="rounded-xl bg-slate-50 p-4">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">ข้อมูลผู้ป่วย / เคส</p>
+                <p className="mt-1.5 text-sm font-bold text-slate-800">{selectedNotification.patient.name}</p>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  {selectedNotification.patient.hn} • เลขที่ใบผ่าตัด: {selectedNotification.patient.or}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">รายละเอียดการแจ้งเตือน</p>
+                <p className="mt-1.5 text-sm text-slate-600 leading-relaxed font-medium">
+                  {selectedNotification.fullDetail}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setSelectedNotification(null)}
+                className="h-[40px] rounded-xl bg-[#002d73] hover:bg-[#001d52] px-6 text-sm font-semibold text-white transition"
+              >
+                รับทราบ
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CentralSearchPage() {
+  const [query, setQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('ทั้งหมด');
+
+  const categories = [
+    { label: 'ทั้งหมด', count: 8642 },
+    { label: 'ผู้ป่วย', count: 1250 },
+    { label: 'หัตถการ', count: 58 },
+    { label: 'การติดตาม', count: 118 },
+    { label: 'เอกสาร', count: 128 },
+    { label: 'การส่งต่อ', count: 24 },
+    { label: 'SSI', count: 12 },
+    { label: 'แพทย์', count: 4 },
+    { label: 'แผนก', count: 14 }
+  ];
+
+  const popularKeywords = [
+    'SSI ล่าสุด', 'แพทย์ ศัลยกรรม', 'หัตถการ C-Section',
+    'ส่งต่อ ICU', 'MRSA', 'ผู้ป่วย IPD วันนี้',
+    'ติดตามเกินกำหนด', 'เอกสาร Informed Consent'
+  ];
+
+  const [results, setResults] = useState([
+    { id: 1, type: 'ผู้ป่วย', icon: UserRound, code: '0123456', name: 'นายสมชาย ใจดี', sub: 'อายุ 67 ปี (10 ก.พ. 2501)', found: 'ข้อมูลผู้ป่วย (โปรไฟล์ผู้ป่วย)', dept: 'OPD', date: '15 มิ.ย. 2569 10:15', status: 'กำลังติดตาม', statusType: 'green-pill' },
+    { id: 2, type: 'หัตถการ', icon: Scissors, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'TKA (รายละเอียดอาการ)', dept: 'OPD', date: '15 มิ.ย. 2569 09:58', status: 'เอกสารล่าสุด', statusType: 'purple-pill' },
+    { id: 3, type: 'เอกสาร', icon: File, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'รายการเอกสารแนบ (12 รายการ)', dept: 'OPD', date: '15 มิ.ย. 2569 09:58', status: 'เอกสารล่าสุด', statusType: 'purple-pill' },
+    { id: 4, type: 'แพทย์', icon: Stethoscope, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'ข้อมูลแพทย์ (รายละเอียดแพทย์)', dept: 'OPD', date: '15 มิ.ย. 2569 09:58', status: 'PHYSICIAN', statusType: 'orange-border' },
+    { id: 5, type: 'ผู้รับผิดชอบ', icon: UserCheck, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'ข้อมูลผู้รับผิดชอบ (รายละเอียดเจ้าหน้าที่ดูแล)', dept: 'OPD', date: '15 มิ.ย. 2569 09:58', status: 'OPD NURSE', statusType: 'blue-border' },
+    { id: 6, type: 'ติดตาม', icon: CalendarDays, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'ติดตามหลังผ่าตัดครั้งที่ 1 (1/6)', dept: 'OPD', date: '15 มิ.ย. 2569 09:58', status: 'ตามนัด', statusType: 'blue-pill' },
+    { id: 7, type: 'เอกสาร', icon: RefreshCw, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'ส่งต่อไปยัง IPD', dept: 'OPD → IPD', date: '15 มิ.ย. 2569 09:58', status: 'สำเร็จ', statusType: 'green-border' },
+    { id: 8, type: 'SSI', icon: AlertTriangle, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'สงสัย SSI แผลผ่าตัด', dept: 'IPD', date: '15 มิ.ย. 2569 09:58', status: 'รอประเมิน', statusType: 'purple-pill' }
+  ]);
+
+  const filteredResults = useMemo(() => {
+    return results.filter(item => {
+      const matchQuery = [item.code, item.name, item.found, item.dept].some(val =>
+        val.toLowerCase().includes(query.toLowerCase())
+      );
+      if (activeTab === 'ทั้งหมด') return matchQuery;
+      return matchQuery && item.type === activeTab;
+    });
+  }, [query, activeTab, results]);
+
+  return (
+    <div className="space-y-4">
+      {/* Top metrics summary */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase">การค้นหาวันนี้</p>
+            <p className="mt-2 text-2xl font-bold text-slate-800">1,286 <span className="text-xs font-medium text-slate-400">ครั้ง</span></p>
+          </div>
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600">
+            <Search size={20} />
+          </span>
+        </div>
+
+        <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase">ผลลัพธ์ทั้งหมด</p>
+            <p className="mt-2 text-2xl font-bold text-slate-800">8,642 <span className="text-xs font-medium text-slate-400">รายการ</span></p>
+          </div>
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
+            <Layers size={20} />
+          </span>
+        </div>
+      </div>
+
+      {/* Main Search Panel Card */}
+      <section className="rounded-xl border border-black/10 bg-white p-6 shadow-sm space-y-4">
+        <h2 className="flex items-center gap-2 text-[18px] font-semibold text-[#002d73]">
+          <Search size={19} className="text-[#175beb]" />
+          ค้นหาทุกข้อมูลจากทุกแหล่งในระบบ
+        </h2>
+
+        {/* Input Bar */}
+        <div>
+          <label className="text-[13px] font-semibold text-slate-600">คำค้นหา</label>
+          <div className="mt-1 flex gap-3">
+            <input
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="ค้นหา HN, AN, ชื่อผู้ป่วย, เบอร์โทร, หัตถการ, แพทย์, แผนก, เอกสาร, หมายเหตุ, ประวัติติดตาม..."
+              className="h-[38px] flex-1 rounded-lg border border-slate-200 px-3 text-xs text-slate-600 font-semibold outline-none focus:border-[#175beb]"
+            />
+            <button className="inline-flex h-[38px] items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 text-xs font-bold text-white hover:bg-blue-700 transition">
+              ค้นหา
+            </button>
+            <button
+              onClick={() => setQuery('')}
+              className="inline-flex h-[38px] items-center justify-center gap-2 rounded-lg border border-slate-200 px-5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+            >
+              ล้างตัวกรอง
+            </button>
+          </div>
+        </div>
+
+        {/* Categories Tabs Selector */}
+        <div className="flex flex-wrap gap-2 pt-2">
+          {categories.map((cat) => (
+            <button
+              key={cat.label}
+              onClick={() => setActiveTab(cat.label)}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border transition ${
+                activeTab === cat.label
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Popular searches tags */}
+        <div className="pt-2 border-t border-slate-50 flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] font-bold text-slate-400">คำค้นหายอดนิยม 🔥</span>
+          {popularKeywords.map(keyword => (
+            <button
+              key={keyword}
+              onClick={() => setQuery(keyword)}
+              className="inline-flex rounded bg-slate-50 hover:bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600 border border-slate-100 transition"
+            >
+              {keyword}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Result Card Grid */}
+      <section className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm">
+        <header className="flex h-[64px] items-center justify-between px-6 border-b border-slate-100">
+          <h2 className="text-[16px] font-bold text-[#002d73]">ผลการค้นหา ({filteredResults.length} รายการ)</h2>
+        </header>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1000px] text-[13px] text-[#434651] font-sans border-collapse">
+            <thead className="h-[46px] bg-[#f8fafc] font-bold text-[#1e293b]">
+              <tr className="border-b border-slate-100">
+                <th className="px-4 text-left w-12"><input type="checkbox" /></th>
+                <th className="px-4 text-left">ประเภทข้อมูล</th>
+                <th className="px-4 text-left">HN / AN</th>
+                <th className="px-4 text-left">ชื่อผู้ป่วย</th>
+                <th className="px-4 text-left">รายการที่พบ</th>
+                <th className="px-4 text-left">แผนก</th>
+                <th className="px-4 text-left">วันที่อัปเดตล่าสุด</th>
+                <th className="px-4 text-left">สถานะ</th>
+                <th className="px-6 text-right">การดำเนินการ</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredResults.map((row) => {
+                const Icon = row.icon;
+                return (
+                  <tr key={row.id} className="h-[68px] hover:bg-slate-50/60 transition">
+                    <td className="px-4"><input type="checkbox" /></td>
+                    <td className="px-4">
+                      <span className="inline-flex items-center gap-2 font-bold text-slate-700">
+                        <span className="grid h-8 w-8 place-items-center rounded bg-slate-100 text-slate-500">
+                          <Icon size={16} />
+                        </span>
+                        {row.type}
+                      </span>
+                    </td>
+                    <td className="px-4 font-bold text-slate-800">{row.code}</td>
+                    <td className="px-4">
+                      <span className="font-bold text-slate-800 block">{row.name}</span>
+                      {row.sub && <small className="block text-[11px] text-slate-400 font-semibold mt-0.5">{row.sub}</small>}
+                    </td>
+                    <td className="px-4 text-slate-500 text-xs font-semibold">{row.found}</td>
+                    <td className="px-4 text-slate-600 font-bold">{row.dept}</td>
+                    <td className="px-4 text-slate-400 text-xs font-medium">{row.date}</td>
+                    <td className="px-4">
+                      {row.statusType === 'green-pill' && <span className="inline-block rounded-md bg-emerald-50 px-2 py-0.5 text-xs text-emerald-600 font-bold border border-emerald-100">{row.status}</span>}
+                      {row.statusType === 'purple-pill' && <span className="inline-block rounded-md bg-purple-50 px-2 py-0.5 text-xs text-purple-600 font-bold border border-purple-100">{row.status}</span>}
+                      {row.statusType === 'blue-pill' && <span className="inline-block rounded-md bg-blue-50 px-2 py-0.5 text-xs text-blue-600 font-bold border border-blue-100">{row.status}</span>}
+                      {row.statusType === 'orange-border' && <span className="inline-block rounded-md bg-white border border-orange-200 px-2 py-0.5 text-xs text-orange-500 font-bold">{row.status}</span>}
+                      {row.statusType === 'blue-border' && <span className="inline-block rounded-md bg-white border border-blue-200 px-2 py-0.5 text-xs text-blue-600 font-bold">{row.status}</span>}
+                      {row.statusType === 'green-border' && <span className="inline-block rounded-md bg-white border border-emerald-200 px-2 py-0.5 text-xs text-emerald-600 font-bold">{row.status}</span>}
+                    </td>
+                    <td className="px-6 text-right">
+                      <button className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-[#175beb] hover:bg-slate-50 transition">
+                        <Eye size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <footer className="flex h-[46px] items-center justify-between border-t border-slate-200 px-6 text-[13px] text-slate-500 font-sans">
+          <span>Showing 10 of 10 Historical Log</span>
+          <div className="flex gap-2">
+            <button className="page-button w-auto px-3">Previous</button>
+            <button className="page-button bg-[#175beb] text-white">1</button>
+            <button className="page-button">2</button>
+            <button className="page-button">3</button>
+            <button className="page-button w-auto px-3">Next</button>
+          </div>
+        </footer>
+      </section>
+
+      {/* Notice Banner */}
+      <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
+        <Calendar size={16} className="text-blue-500" />
+        <span>15 มิ.ย. 2569: ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
+      </div>
+    </div>
+  );
+}
+
+function HisSyncPage() {
+  const [dateRange, setDateRange] = useState('12 พ.ค. 2569 - 18 พ.ค. 2569');
+  const [db, setDb] = useState('ทั้งหมด');
+  const [syncStatus, setSyncStatus] = useState('ทั้งหมด');
+  const [search, setSearch] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const [sources, setSources] = useState([
+    { id: 0, type: 'ผู้ป่วย, แพทย์, แผนก', status: 'เชื่อมต่ออยู่', lastSync: '22/05/2567 14:30', receive: 'อัปเดตแล้ว', count: '2,156 รายการ' },
+    { id: 1, type: 'หัตถการ, ศัลยแพทย์, เวลาผ่าตัด', status: 'เชื่อมต่ออยู่', lastSync: '22/05/2567 14:28', receive: 'อัปเดตแล้ว', count: '1,842 รายการ' },
+    { id: 2, type: 'ผลตรวจทางห้องปฏิบัติการ', status: 'เชื่อมต่ออยู่', lastSync: '22/05/2567 14:28', receive: 'อัปเดตแล้ว', count: '3,215 รายการ' },
+    { id: 3, type: 'ผลเพาะเชื้อ', status: 'เชื่อมต่ออยู่', lastSync: '22/05/2567 14:28', receive: 'อัปเดตแล้ว', count: '886 รายการ' },
+    { id: 4, type: 'รหัสโรค', status: 'เชื่อมต่ออยู่', lastSync: '22/05/2567 14:28', receive: 'อัปเดตแล้ว', count: '1,247 รายการ' },
+    { id: 5, type: 'ข้อมูลเจ้าหน้าที่ในระบบ', status: 'เชื่อมต่ออยู่', lastSync: '22/05/2567 14:28', receive: 'อัปเดตแล้ว', count: '1,247 รายการ' }
+  ]);
+
+  const triggerSync = (id, type) => {
+    setIsSyncing(true);
+    setTimeout(() => {
+      setIsSyncing(false);
+      alert(`ซิงค์ข้อมูลประเภท "${type}" สำเร็จเรียบร้อยแล้ว!`);
+      // Update last sync time
+      const now = new Date();
+      const formattedDate = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear() + 543} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      setSources(prev => prev.map(item => item.id === id ? { ...item, lastSync: formattedDate } : item));
+    }, 1500);
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Top sync summaries */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase">ซิงค์ล่าสุดสำเร็จ</p>
+            <p className="mt-2 text-2xl font-bold text-slate-800">14/06/2569</p>
+            <p className="mt-1 flex items-center gap-0.5 text-xs font-semibold text-emerald-500">
+              <span className="text-emerald-500 font-bold">↑ 8%</span> จากเมื่อวาน
+            </p>
+          </div>
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600">
+            <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
+          </span>
+        </div>
+
+        <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase">ซิงค์สำเร็จ</p>
+            <p className="mt-2 text-2xl font-bold text-slate-800">1,248</p>
+            <p className="mt-1 flex items-center gap-0.5 text-xs font-semibold text-emerald-500">
+              <span className="text-emerald-500 font-bold">↑ 8%</span> จากเมื่อวาน
+            </p>
+          </div>
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
+            <CheckCircle2 size={20} />
+          </span>
+        </div>
+
+        <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase">ซิงค์ล้มเหลว</p>
+            <p className="mt-2 text-2xl font-bold text-red-500">36</p>
+            <p className="mt-1 flex items-center gap-0.5 text-xs font-semibold text-red-500">
+              <span className="text-red-500 font-bold">↑ 12%</span> จากเมื่อวาน
+            </p>
+          </div>
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-red-50 text-red-500">
+            <AlertCircle size={20} />
+          </span>
+        </div>
+      </div>
+
+      {/* Database Search Filter panel */}
+      <section className="rounded-xl border border-black/10 bg-white p-6 shadow-sm">
+        <h2 className="flex items-center gap-2 text-[18px] font-semibold text-[#002d73] mb-4">
+          <Search size={19} className="text-[#175beb]" />
+          ค้นหาข้อมูล
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="text-[13px] font-medium text-slate-600">เลือกช่วงวันที่</label>
+            <div className="relative mt-1">
+              <input
+                type="text"
+                value={dateRange}
+                onChange={e => setDateRange(e.target.value)}
+                className="h-[38px] w-full rounded-lg border border-slate-200 pl-10 pr-4 text-xs font-semibold text-slate-600"
+              />
+              <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[13px] font-medium text-slate-600">ฐานข้อมูล</label>
+            <select
+              value={db}
+              onChange={e => setDb(e.target.value)}
+              className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-600 font-semibold"
+            >
+              <option>ทั้งหมด</option>
+              <option>ผู้ป่วย, แพทย์, แผนก</option>
+              <option>หัตถการ, ศัลยแพทย์</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-[13px] font-medium text-slate-600">สถานะการซิงค์</label>
+            <select
+              value={syncStatus}
+              onChange={e => setSyncStatus(e.target.value)}
+              className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-600 font-semibold"
+            >
+              <option>ทั้งหมด</option>
+              <option>สำเร็จ</option>
+              <option>ล้มเหลว</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-end gap-3">
+          <label className="flex-1 text-[13px] font-semibold text-slate-600">
+            คำค้นหา
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="ค้นหาข้อมูลตาราง..."
+              className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-[#175beb]"
+            />
+          </label>
+          <button className="inline-flex h-[38px] items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 text-xs font-bold text-white hover:bg-blue-700 transition">
+            ค้นหา
+          </button>
+          <button
+            onClick={() => { setSearch(''); setDateRange('12 พ.ค. 2569 - 18 พ.ค. 2569'); }}
+            className="inline-flex h-[38px] items-center justify-center gap-2 rounded-lg border border-slate-200 px-5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+          >
+            ล้างตัวกรอง
+          </button>
+        </div>
+      </section>
+
+      {/* Data Sources Table Card */}
+      <section className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm">
+        <header className="flex h-[72px] items-center justify-between px-6 border-b border-slate-100">
+          <h2 className="text-[18px] font-semibold text-[#002d73]">แหล่งข้อมูล (Data Sources)</h2>
+          <button className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
+            <Settings2 size={14} /> ตั้งค่าการซิงค์
+          </button>
+        </header>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1000px] text-[13px] text-[#434651] font-sans border-collapse">
+            <thead className="h-[46px] bg-[#f8fafc] font-bold text-[#1e293b]">
+              <tr className="border-b border-slate-100">
+                <th className="px-4 py-3 text-left">ID_table</th>
+                <th className="px-4 py-3 text-left">ประเภทข้อมูล</th>
+                <th className="px-4 py-3 text-left">สถานะการเชื่อมต่อ</th>
+                <th className="px-4 py-3 text-left">ซิงค์ล่าสุด</th>
+                <th className="px-4 py-3 text-left">สถานะการรับ</th>
+                <th className="px-4 py-3 text-left">จำนวนข้อมูล</th>
+                <th className="px-6 py-3 text-right">การทำงาน</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {sources.map((row) => (
+                <tr key={row.id} className="h-[68px] hover:bg-slate-50/60 transition">
+                  <td className="px-4 text-slate-400 font-bold">{row.id}</td>
+                  <td className="px-4 font-bold text-slate-800">{row.type}</td>
+                  <td className="px-4">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600">
+                      <span className="h-2 w-2 rounded-full bg-[#10b981]" />
+                      {row.status}
+                    </span>
+                  </td>
+                  <td className="px-4 text-slate-500 font-semibold">{row.lastSync}</td>
+                  <td className="px-4 text-emerald-600 font-bold">{row.receive}</td>
+                  <td className="px-4 font-semibold text-slate-800">{row.count}</td>
+                  <td className="px-6 text-right">
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        onClick={() => triggerSync(row.id, row.type)}
+                        disabled={isSyncing}
+                        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+                      >
+                        <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
+                        ซิงค์ข้อมูล
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <footer className="flex h-[46px] items-center justify-between border-t border-slate-200 px-6 text-[13px] text-slate-500 font-sans">
+          <span>Showing 10 of 10 Historical Log</span>
+          <div className="flex gap-2">
+            <button className="page-button w-auto px-3">Previous</button>
+            <button className="page-button bg-[#175beb] text-white">1</button>
+            <button className="page-button">2</button>
+            <button className="page-button">3</button>
+            <button className="page-button w-auto px-3">Next</button>
+          </div>
+        </footer>
+      </section>
+
+      {/* Notice Banner */}
+      <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
+        <Calendar size={16} className="text-blue-500" />
+        <span>15 มิ.ย. 2569: ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
+      </div>
+    </div>
+  );
+}
+
