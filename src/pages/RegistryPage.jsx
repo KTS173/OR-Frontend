@@ -27,9 +27,13 @@ export default function RegistryPage({ type }) {
   const [search, setSearch] = useState('')
   const { data, loading } = useMockQuery(api.getPatients, fallbackPatients)
   const config = configs[type] ?? configs.validation
-  const filtered = useMemo(() => data.filter((item) => [item.id, item.name, item.procedure, item.department].some((value) => value.toLowerCase().includes(search.toLowerCase()))), [data, search])
+  const filtered = useMemo(() => data.filter((item) => {
+    const matchesQueue = !['opd', 'ipd'].includes(type) || item.patientType?.toLowerCase() === type
+    const matchesSearch = [item.id, item.name, item.procedure, item.department].some((value) => value.toLowerCase().includes(search.toLowerCase()))
+    return matchesQueue && matchesSearch
+  }), [data, search, type])
   if (type === 'validation') return <ValidationPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
-  if (type === 'opd') return <OpdQueuePage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
+  if (type === 'opd' || type === 'ipd') return <OpdQueuePage queueType={type} patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'followUp') return <MyFollowUpsPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'history') return <HistoryPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'suspected' || type === 'confirmed') return <SuspectedSSIPage type={type} patients={filtered} loading={loading} search={search} setSearch={setSearch} />
@@ -54,12 +58,13 @@ const opdMetrics = [
   ['ยืนยัน SSI', '1', '', '/assets/icon/dashboard/ice.png', '#ef3741', '#fee2e2', '#fff4f4'],
 ]
 
-function OpdQueuePage({ patients, loading, search, setSearch }) {
+function OpdQueuePage({ queueType, patients, loading, search, setSearch }) {
   const [selectedPatient, setSelectedPatient] = useState(null)
+  const queueLabel = queueType.toUpperCase()
   return <div className="space-y-4">
     <section className="grid grid-cols-5 gap-4">{opdMetrics.map(([label, value, unit, Icon, color, bg, cardBg], index) => <article key={label} className="flex h-[140px] min-w-0 flex-col rounded-xl border border-black/10 p-[17px] shadow-sm" style={{ backgroundColor: cardBg }}><div className="flex items-start justify-between gap-2"><p className="whitespace-nowrap text-[15px] font-medium" style={{ color }}>{label}</p><span className="grid size-9 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: bg, color }}>{typeof Icon === 'string' ? <span className="validation-card-icon" style={{ backgroundColor: color, WebkitMaskImage: `url("${Icon}")`, maskImage: `url("${Icon}")` }} /> : <Icon size={20} />}</span></div><p className="mt-3 flex items-baseline gap-1.5 text-[30px] font-semibold leading-8" style={{ color }}><span>{value}</span><span className="text-[15px]">{unit}</span></p><p className={`mt-auto flex items-center whitespace-nowrap text-[13px] leading-4 ${index >= 3 ? 'text-red-500' : 'text-[#64748b]'}`}>{index >= 3 && <img src="/assets/icon/dashboard/up-red-margin.png" alt="" className="mr-1 h-[9px] w-3 object-contain" />}{index === 0 ? 'ต้องรับเคสวันนี้' : index === 1 ? 'ต้องติดตามวันนี้' : index === 2 ? 'เกินกำหนดแล้ว' : index === 3 ? '2 ราย จากเมื่อวาน' : '1 ราย จากเมื่อวาน'}</p></article>)}</section>
     <Filters search={search} onSearch={setSearch} validation />
-    <section className="flex h-[66px] items-center rounded-xl border border-black/10 bg-white px-4 shadow-sm"><div className="flex h-full items-center gap-6">{['ทั้งหมด (52)', 'รายการคนไข้จากแผนก OR ใหม่ (48)', 'รายการผู้ป่วยจากการย้ายผู้ป่วยจากแผนก IPD (4)'].map((label, index) => <button key={label} className={`h-full text-[14px] font-medium ${index === 0 ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}>{label}</button>)}</div></section>
+    <section className="flex h-[66px] items-center rounded-xl border border-black/10 bg-white px-4 shadow-sm"><div className="flex h-full items-center gap-6">{['ทั้งหมด (52)', 'รายการคนไข้จากแผนก OR ใหม่ (48)', `รายการผู้ป่วยจากการย้ายผู้ป่วยจากแผนก ${queueLabel} (4)`].map((label, index) => <button key={label} className={`h-full text-[14px] font-medium ${index === 0 ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}>{label}</button>)}</div></section>
     <OpdPatientTable patients={patients} loading={loading} onSelect={setSelectedPatient} />
     {selectedPatient && <AcceptPatientModal patient={selectedPatient} onClose={() => setSelectedPatient(null)} />}
   </div>
@@ -1320,4 +1325,3 @@ function HisSyncPage() {
     </div>
   );
 }
-

@@ -5,7 +5,7 @@ const routeTitles = {
   '/dashboard': 'แดชบอร์ด',
   '/or-validation': 'OR Validation List (รายการเคสที่ต้องตรวจสอบก่อนส่งเข้า Surveillance)',
   '/opd-queue': 'รายการ คิว OPD (ชื่อ-แผนก)',
-  '/ipd-queue': 'คิว IPD',
+  '/ipd-queue': 'รายการ คิว IPD (ชื่อ-แผนก)',
   '/my-follow-ups': 'งานติดตามของฉัน',
   '/calendar': 'ปฏิทินติดตาม',
   '/history': 'ประวัติการติดตาม',
