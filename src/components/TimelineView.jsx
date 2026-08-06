@@ -240,17 +240,17 @@ export default function TimelineView({ selectedPatient, setActiveDetailTab, isAc
                 <td>{row.details}</td>
                 <td>
                   <span className={`inline-flex items-center rounded px-2.5 py-0.5 text-[11.5px] font-medium border text-center whitespace-nowrap ${row.statusText === 'เสร็จสิ้น'
-                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                      : row.statusText === 'รอดำเนินการ'
-                        ? 'bg-blue-50 text-[#175beb] border-blue-200'
-                        : 'bg-slate-50 text-slate-500 border-slate-200'
+                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                    : row.statusText === 'รอดำเนินการ'
+                      ? 'bg-blue-50 text-[#175beb] border-blue-200'
+                      : 'bg-slate-50 text-slate-500 border-slate-200'
                     }`}>
                     {row.statusText}
                   </span>
                 </td>
                 <td>
                   {row.actionType === 'assess_btn' && (
-                    row.isActive || isActivityAdded ? (
+                    row.isActive ? (
                       <button
                         type="button"
                         className="manage-btn-active"
@@ -265,8 +265,8 @@ export default function TimelineView({ selectedPatient, setActiveDetailTab, isAc
                     ) : (
                       <button
                         type="button"
-                        className="manage-btn-inactive"
-                        onClick={() => alert('รอบติดตามนี้ยังไม่ถึงเวลาเปิดให้ประเมิน')}
+                        className="manage-btn-inactive bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed hover:bg-slate-100"
+                        disabled
                       >
                         <ClipboardList size={14} />
                         <span>ประเมินอาการคนไข้</span>

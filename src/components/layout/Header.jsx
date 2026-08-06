@@ -11,7 +11,7 @@ const routeTitles = {
   '/history': 'ประวัติการติดตาม',
   '/suspected-ssi': 'เคสสงสัยติดเชื้อ (Suspected SSI Cases)',
   '/confirmed-ssi': 'เคสสงสัยติดเชื้อ (Suspected SSI Cases)',
-  '/doctor-review': 'แพทย์ตรวจสอบ SSI',
+  '/doctor-review': 'เคสสงสัยติดเชื้อ (Suspected SSI Cases) (แพทย์ประเมินอาการ)',
   '/reports': 'รายงานและวิเคราะห์',
   '/notifications': 'ศูนย์แจ้งเตือน (Notifications Center)',
   '/central-search': 'ค้นหาข้อมูลกลาง',
@@ -22,8 +22,9 @@ const routeTitles = {
 }
 
 export default function Header({ onMenu }) {
-  const { pathname } = useLocation()
-  let title = pathname.endsWith('/create-follow-up') ? 'สร้างบันทึกการเฝ้าระวัง (Create Follow-up)' : pathname.startsWith('/cases/') || pathname.startsWith('/follow-ups/') ? 'รายละเอียดเคสผ่าตัด (Case Detail)' : routeTitles[pathname] ?? 'OR SMART SSI'
+  const { pathname, search } = useLocation()
+  const isSetup = search.includes('setup=true')
+  let title = pathname.endsWith('/create-follow-up') ? 'สร้างบันทึกการเฝ้าระวัง (Create Follow-up)' : pathname.startsWith('/cases/') || pathname.startsWith('/follow-ups/') ? (isSetup ? 'ตั้งค่ารอบ follow-up' : 'งานติดตามของฉัน') : routeTitles[pathname] ?? 'OR SMART SSI'
 
   if (pathname.startsWith('/suspected-cases/')) {
     const parts = pathname.split('/')

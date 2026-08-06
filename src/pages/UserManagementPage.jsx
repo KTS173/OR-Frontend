@@ -31,12 +31,42 @@ export default function UserManagementPage() {
   })
 
   const rolePills = [
-    { label: 'Admin', count: 8, color: 'bg-blue-50 text-blue-700' },
-    { label: 'OR STAFF', count: 24, color: 'bg-emerald-50 text-emerald-700' },
-    { label: 'OPD NURSE', count: 38, color: 'bg-rose-50 text-rose-700' },
-    { label: 'IPD NURSE', count: 32, color: 'bg-sky-50 text-sky-700' },
-    { label: 'PHYSICIAN', count: 18, color: 'bg-amber-50 text-amber-700' },
-    { label: 'VIEWER', count: 2, color: 'bg-slate-100 text-slate-700' }
+    { 
+      label: 'Admin', 
+      count: 8, 
+      inactiveClass: 'bg-blue-50/50 border-blue-200 text-blue-700 hover:bg-blue-50',
+      activeClass: 'bg-blue-600 text-white border-blue-600'
+    },
+    { 
+      label: 'OR STAFF', 
+      count: 24, 
+      inactiveClass: 'bg-emerald-50/50 border-emerald-200 text-emerald-700 hover:bg-emerald-50',
+      activeClass: 'bg-emerald-600 text-white border-emerald-600'
+    },
+    { 
+      label: 'OPD NURSE', 
+      count: 36, 
+      inactiveClass: 'bg-rose-50/50 border-rose-200 text-rose-700 hover:bg-[#fff1f2]',
+      activeClass: 'bg-rose-600 text-white border-rose-600'
+    },
+    { 
+      label: 'IPD NURSE', 
+      count: 32, 
+      inactiveClass: 'bg-indigo-50/50 border-indigo-200 text-indigo-700 hover:bg-indigo-50',
+      activeClass: 'bg-indigo-600 text-white border-indigo-600'
+    },
+    { 
+      label: 'PHYSICIAN', 
+      count: 18, 
+      inactiveClass: 'bg-amber-50/50 border-amber-200 text-amber-700 hover:bg-amber-50',
+      activeClass: 'bg-amber-600 text-white border-amber-600'
+    },
+    { 
+      label: 'VIEWER', 
+      count: 3, 
+      inactiveClass: 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200/50',
+      activeClass: 'bg-slate-600 text-white border-slate-600'
+    }
   ]
 
   const getRoleStyle = (role) => {
@@ -85,11 +115,11 @@ export default function UserManagementPage() {
         {/* Total Users */}
         <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase">ผู้ใช้งานทั้งหมด</p>
-            <p className="mt-2 text-2xl font-bold text-slate-800">156 <span className="text-xs font-medium text-slate-400">คน</span></p>
+            <p className="text-xs font-semibold text-[#175beb] uppercase">ผู้ใช้งานทั้งหมด</p>
+            <p className="mt-2 text-2xl font-bold text-[#175beb]">156 <span className="text-xs font-medium text-slate-400">คน</span></p>
             <p className="mt-1 text-slate-400 text-xs font-bold">ทั้งหมดในระบบ</p>
           </div>
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-[#175beb]">
             <Users size={20} />
           </span>
         </div>
@@ -97,11 +127,11 @@ export default function UserManagementPage() {
         {/* Active Users */}
         <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase">ใช้งานอยู่</p>
-            <p className="mt-2 text-2xl font-bold text-slate-800">142 <span className="text-xs font-medium text-slate-400">คน</span></p>
+            <p className="text-xs font-semibold text-[#10b981] uppercase">ใช้งานอยู่</p>
+            <p className="mt-2 text-2xl font-bold text-[#10b981]">142 <span className="text-xs font-medium text-slate-400">คน</span></p>
             <p className="mt-1 text-emerald-500 text-xs font-bold">คิดเป็น 91.0%</p>
           </div>
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-[#10b981]">
             <UserCheck size={20} />
           </span>
         </div>
@@ -109,11 +139,11 @@ export default function UserManagementPage() {
         {/* Inactive Users */}
         <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase">ถูกปิดใช้งาน</p>
-            <p className="mt-2 text-2xl font-bold text-slate-800">14 <span className="text-xs font-medium text-slate-400">คน</span></p>
+            <p className="text-xs font-semibold text-[#f59e0b] uppercase">ถูกปิดใช้งาน</p>
+            <p className="mt-2 text-2xl font-bold text-[#f59e0b]">14 <span className="text-xs font-medium text-slate-400">คน</span></p>
             <p className="mt-1 text-orange-500 text-xs font-bold">คิดเป็น 9.0%</p>
           </div>
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-orange-600">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-[#f59e0b]">
             <UserMinus size={20} />
           </span>
         </div>
@@ -121,11 +151,11 @@ export default function UserManagementPage() {
         {/* Logged in today */}
         <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase">เข้าใช้งานวันนี้</p>
-            <p className="mt-2 text-2xl font-bold text-[#175beb]">87 <span className="text-xs font-medium text-slate-400">คน</span></p>
+            <p className="text-xs font-semibold text-purple-600 uppercase">เข้าใช้งานวันนี้</p>
+            <p className="mt-2 text-2xl font-bold text-purple-600">87 <span className="text-xs font-medium text-slate-400">คน</span></p>
             <p className="mt-1 text-slate-400 text-xs font-bold">อัปเดต ณ 09:30 น.</p>
           </div>
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-purple-50 text-purple-600">
             <LogIn size={20} />
           </span>
         </div>
@@ -222,20 +252,25 @@ export default function UserManagementPage() {
           }`}>156</span>
         </button>
 
-        {rolePills.map(pill => (
-          <button
-            key={pill.label}
-            onClick={() => setActiveRoleTab(pill.label)}
-            className={`inline-flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl border text-xs font-bold transition ${
-              activeRoleTab === pill.label ? 'bg-[#002d73] text-white border-[#002d73]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            <span>{pill.label}</span>
-            <span className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
-              activeRoleTab === pill.label ? 'bg-white/20 text-white' : pill.color
-            }`}>{pill.count}</span>
-          </button>
-        ))}
+        {rolePills.map(pill => {
+          const isSelected = activeRoleTab === pill.label;
+          return (
+            <button
+              key={pill.label}
+              onClick={() => setActiveRoleTab(pill.label)}
+              className={`inline-flex items-center justify-between gap-3 px-4 py-2 rounded-xl border text-xs font-bold transition ${
+                isSelected 
+                  ? pill.activeClass 
+                  : pill.inactiveClass
+              }`}
+            >
+              <span>{pill.label}</span>
+              <span className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
+                isSelected ? 'bg-white/20 text-white' : 'bg-white/60 text-current'
+              }`}>{pill.count}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Table Card Results */}

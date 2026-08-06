@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Send, FileText, Paperclip, X, File, CheckCircle2, ChevronRight, Calendar, Info, Check } from 'lucide-react'
+import { Send, FileText, Paperclip, X, File, CheckCircle2, ChevronRight, Calendar, Info, Check, UserRound } from 'lucide-react'
 
 export default function TransferCareView({ selectedPatient, isTransferCompleted, setIsTransferCompleted }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -164,8 +164,8 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
           <button
             type="button"
-            className="clear-btn"
-            style={{ padding: '10px 20px', fontSize: '13.5px', borderRadius: '8px' }}
+            className="btn-outlined-primary"
+            style={{ padding: '10px 20px', fontSize: '13.5px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onClick={() => setIsTransferCompleted(false)}
           >
             กลับไปหน้ารายการเคส
@@ -244,26 +244,28 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
                   {/* Step 1: Form Inputs */}
 
                   {/* ข้อมูลผู้ป่วย */}
-                  <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+                  <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '16px' }}>
                     <h5 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-medium)', marginBottom: '12px' }}>ข้อมูลผู้ป่วย</h5>
-                    <div className="patient-info-summary">
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>HN</span>
-                        <strong>{selectedPatient.hn}</strong>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>ชื่อ-สกุล</span>
-                        <strong>{selectedPatient.name}</strong>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', marginTop: '8px' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>วันที่ผ่าตัด</span>
-                        <strong>10 มิ.ย. 2569</strong>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', marginTop: '8px' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>วันที่จำหน่าย</span>
-                        <strong>15 มิ.ย. 2569</strong>
-                      </div>
-                    </div>
+                    <table className="info-table" style={{ width: '100%', fontSize: '13.5px' }}>
+                      <tbody>
+                        <tr>
+                          <td className="info-table-label" style={{ color: 'var(--text-medium)', padding: '8px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'left' }}>HN</td>
+                          <td className="info-table-value" style={{ color: 'var(--text-dark)', fontWeight: '600', padding: '8px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'right' }}>{selectedPatient.id}</td>
+                        </tr>
+                        <tr>
+                          <td className="info-table-label" style={{ color: 'var(--text-medium)', padding: '8px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'left' }}>ชื่อ-สกุล</td>
+                          <td className="info-table-value" style={{ color: 'var(--text-dark)', fontWeight: '600', padding: '8px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'right' }}>{selectedPatient.name}</td>
+                        </tr>
+                        <tr>
+                          <td className="info-table-label" style={{ color: 'var(--text-medium)', padding: '8px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'left' }}>วันที่ผ่าตัด</td>
+                          <td className="info-table-value" style={{ color: 'var(--text-dark)', fontWeight: '600', padding: '8px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'right' }}>{selectedPatient.surgeryDate || '10 มิ.ย. 2569'}</td>
+                        </tr>
+                        <tr>
+                          <td className="info-table-label" style={{ color: 'var(--text-medium)', padding: '8px 0', borderBottom: 'none', textAlign: 'left' }}>วันที่จำหน่าย</td>
+                          <td className="info-table-value" style={{ color: 'var(--text-dark)', fontWeight: '600', padding: '8px 0', borderBottom: 'none', textAlign: 'right' }}>{selectedPatient.followUp || '15 มิ.ย. 2569'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
 
                   {/* ข้อมูลการส่งต่อ */}
@@ -280,7 +282,7 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
                       </div>
 
                       <div className="form-group">
-                        <label>ส่งต่อไปยังแผนก *</label>
+                        <label>ส่งต่อไปยังแผนก <span className="text-red-500 font-bold">*</span></label>
                         <select className="form-select" value={targetDept} onChange={(e) => setTargetDept(e.target.value)}>
                           <option value="IPD (ชื่อแผนก)">IPD (ชื่อแผนก)</option>
                           <option value="OPD - คลินิกศัลยกรรม">OPD - คลินิกศัลยกรรม</option>
@@ -288,7 +290,7 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
                       </div>
 
                       <div className="form-group">
-                        <label>เหตุผลการส่งต่อ *</label>
+                        <label>เหตุผลการส่งต่อ <span className="text-red-500 font-bold">*</span></label>
                         <select className="form-select" value={reason} onChange={(e) => setReason(e.target.value)}>
                           <option value="จำหน่ายเข้าจากบ้านเพื่อพักฟื้นต่อที่ รพ.">จำหน่ายเข้าจากบ้านเพื่อพักฟื้นต่อที่ รพ.</option>
                           <option value="จำหน่ายออกจาก รพ. เพื่อฟื้นฟูที่บ้าน">จำหน่ายออกจาก รพ. เพื่อฟื้นฟูที่บ้าน</option>
@@ -296,7 +298,7 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
                       </div>
 
                       <div className="form-group">
-                        <label>วันที่เริ่มติดตามโดยแผนกรับ *</label>
+                        <label>วันที่เริ่มติดตามโดยแผนกรับ <span className="text-red-500 font-bold">*</span></label>
                         <div style={{ position: 'relative' }}>
                           <input
                             type="text"
@@ -326,8 +328,8 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
                     <h5 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-medium)', marginBottom: '8px' }}>แนบเอกสาร (ถ้ามี)</h5>
                     <button
                       type="button"
-                      className="clear-btn"
-                      style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primary)', borderColor: 'var(--color-primary)', padding: '8px 16px', fontSize: '13px' }}
+                      className="btn-outlined-primary"
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '13px' }}
                     >
                       <Paperclip size={14} />
                       <span>แนบไฟล์</span>
@@ -349,26 +351,28 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
                   {/* Step 2: Review and Validation Confirmation */}
 
                   {/* ข้อมูลผู้ป่วย */}
-                  <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+                  <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '16px' }}>
                     <h5 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-medium)', marginBottom: '12px' }}>ข้อมูลผู้ป่วย</h5>
-                    <div className="patient-info-summary">
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>HN</span>
-                        <strong>{selectedPatient.hn}</strong>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>ชื่อ-สกุล</span>
-                        <strong>{selectedPatient.name}</strong>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', marginTop: '8px' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>วันที่ผ่าตัด</span>
-                        <strong>10 มิ.ย. 2569</strong>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', marginTop: '8px' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>วันที่จำหน่าย</span>
-                        <strong>15 มิ.ย. 2569</strong>
-                      </div>
-                    </div>
+                    <table className="info-table" style={{ width: '100%', fontSize: '13.5px' }}>
+                      <tbody>
+                        <tr>
+                          <td className="info-table-label" style={{ color: 'var(--text-medium)', padding: '8px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'left' }}>HN</td>
+                          <td className="info-table-value" style={{ color: 'var(--text-dark)', fontWeight: '600', padding: '8px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'right' }}>{selectedPatient.id}</td>
+                        </tr>
+                        <tr>
+                          <td className="info-table-label" style={{ color: 'var(--text-medium)', padding: '8px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'left' }}>ชื่อ-สกุล</td>
+                          <td className="info-table-value" style={{ color: 'var(--text-dark)', fontWeight: '600', padding: '8px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'right' }}>{selectedPatient.name}</td>
+                        </tr>
+                        <tr>
+                          <td className="info-table-label" style={{ color: 'var(--text-medium)', padding: '8px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'left' }}>วันที่ผ่าตัด</td>
+                          <td className="info-table-value" style={{ color: 'var(--text-dark)', fontWeight: '600', padding: '8px 0', borderBottom: '1px solid #f1f5f9', textAlign: 'right' }}>{selectedPatient.surgeryDate || '10 มิ.ย. 2569'}</td>
+                        </tr>
+                        <tr>
+                          <td className="info-table-label" style={{ color: 'var(--text-medium)', padding: '8px 0', borderBottom: 'none', textAlign: 'left' }}>วันที่จำหน่าย</td>
+                          <td className="info-table-value" style={{ color: 'var(--text-dark)', fontWeight: '600', padding: '8px 0', borderBottom: 'none', textAlign: 'right' }}>{selectedPatient.followUp || '15 มิ.ย. 2569'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
 
                   {/* สรุปการส่งต่อที่บันทึก */}
@@ -436,11 +440,10 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
             </div>
 
             {/* Footer buttons */}
-            <div className="drawer-footer">
+            <div className="drawer-footer" style={{ display: 'grid', gridTemplateColumns: '1fr 2.2fr', gap: '12px', width: '100%', padding: '24px', boxSizing: 'border-box' }}>
               <button
                 type="button"
-                className="clear-btn"
-                style={{ padding: '10px 20px', minWidth: '90px' }}
+                className="rounded-xl border border-slate-200 bg-white h-[48px] text-[14.5px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-center"
                 onClick={() => {
                   if (wizardStep === 2) {
                     setWizardStep(1);
@@ -454,12 +457,11 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
 
               <button
                 type="button"
-                className="btn-filled-primary"
-                style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '6px', minWidth: '150px', justifyContent: 'center', backgroundColor: '#175beb', color: 'white' }}
+                className="rounded-xl bg-[#175beb] text-white h-[48px] text-[14.5px] font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5"
                 onClick={handleNextStep}
               >
                 <span>{wizardStep === 1 ? 'ถัดไป' : 'ยืนยันและส่งต่อเคส'}</span>
-                <ChevronRight size={14} />
+                <ChevronRight size={15} />
               </button>
             </div>
           </div>

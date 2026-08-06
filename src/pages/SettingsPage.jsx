@@ -180,7 +180,7 @@ HN: {{hn}}
       icon: SlidersHorizontal
     },
     {
-      title: 'ตั้งค่าตารางติดตามผล (Follow-up)',
+      title: 'ตั้งค่ารอบ follow-up',
       subtitle: 'กำหนดช่วงเวลาและรูปแบบการติดตาม',
       icon: Calendar
     },
@@ -211,6 +211,9 @@ HN: {{hn}}
       <div className="grid gap-6 xl:grid-cols-[330px_1fr]">
         {/* Left Tabs Sidebar */}
         <aside className="flex flex-col gap-2 rounded-2xl border border-black/10 bg-white p-3 shadow-sm h-fit">
+          <div className="px-3 py-2.5 border-b border-slate-100 mb-1 text-left">
+            <h3 className="font-bold text-[16px] text-slate-800">ตั้งค่าระบบ</h3>
+          </div>
           {tabsConfig.map((item, index) => {
             const Icon = item.icon
             const isActive = activeTab === index
@@ -218,10 +221,10 @@ HN: {{hn}}
               <button
                 key={index}
                 onClick={() => setActiveTab(index)}
-                className={`flex w-full items-start gap-4 rounded-xl p-4 text-left transition ${
+                className={`flex w-full items-start gap-4 rounded-xl py-3.5 pr-4 pl-3 text-left transition ${
                   isActive
-                    ? 'bg-blue-50 text-[#175beb]'
-                    : 'text-[#475569] hover:bg-slate-50'
+                    ? 'bg-blue-50 border border-blue-100 border-l-4 border-l-blue-600 pl-2 text-[#175beb]'
+                    : 'border border-transparent text-[#475569] hover:bg-slate-50'
                 }`}
               >
                 <span className={`grid h-[42px] w-[42px] shrink-0 place-items-center rounded-xl transition ${
@@ -245,37 +248,40 @@ HN: {{hn}}
         {/* Right Tab Content */}
         <section className="flex flex-col gap-6">
           {/* Active Tab Panel */}
-          <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+          <div className="flex-1 flex flex-col gap-6">
             
             {/* Tab 0: SSI Criteria Setting */}
             {activeTab === 0 && (
-              <div className="space-y-6">
-                <div>
+              <div className="flex flex-col gap-6">
+                {/* Header card */}
+                <div className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm text-left">
                   <h2 className="text-[18px] font-semibold text-[#002d73]">ตั้งค่าเกณฑ์ SSI <span className="text-[14px] text-slate-400 font-normal ml-2">(SSI Criteria Setting)</span></h2>
                 </div>
 
                 {/* Sub tabs "ไม่มี" / "มี" */}
-                <div className="flex border-b border-slate-100">
-                  <button
-                    onClick={() => setSsiSubTab('no')}
-                    className={`pb-3 px-6 text-[15px] font-semibold transition ${
-                      ssiSubTab === 'no' ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-slate-400'
-                    }`}
-                  >
-                    ไม่มี
-                  </button>
-                  <button
-                    onClick={() => setSsiSubTab('yes')}
-                    className={`pb-3 px-6 text-[15px] font-semibold transition ${
-                      ssiSubTab === 'yes' ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-slate-400'
-                    }`}
-                  >
-                    มี
-                  </button>
+                <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
+                  <div className="flex border-b border-slate-100">
+                    <button
+                      onClick={() => setSsiSubTab('no')}
+                      className={`pb-3 px-6 text-[15px] font-semibold transition ${
+                        ssiSubTab === 'no' ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-slate-400'
+                      }`}
+                    >
+                      ไม่มี
+                    </button>
+                    <button
+                      onClick={() => setSsiSubTab('yes')}
+                      className={`pb-3 px-6 text-[15px] font-semibold transition ${
+                        ssiSubTab === 'yes' ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-slate-400'
+                      }`}
+                    >
+                      มี
+                    </button>
+                  </div>
                 </div>
 
                 {/* Table list of SSI Symptoms */}
-                <div>
+                <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm text-left">
                   <div className="flex items-center justify-between pb-3 text-[14px] font-semibold text-slate-500 border-b border-slate-100 font-sans">
                     <span className="flex-1">รายการ</span>
                     <div className="flex items-center gap-12">
@@ -352,7 +358,7 @@ HN: {{hn}}
                 </div>
 
                 {/* Risk Level Setting Section */}
-                <div className="pt-6 border-t border-slate-100">
+                <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm text-left">
                   <h3 className="text-[15px] font-semibold text-slate-800 mb-4 flex items-center gap-1.5">
                     ระดับความเสี่ยง (Risk Level)
                     <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold cursor-pointer">?</span>
@@ -408,21 +414,26 @@ HN: {{hn}}
 
             {/* Tab 1: Follow-up Schedule Setting */}
             {activeTab === 1 && (
-              <div className="space-y-6">
-                <div>
+              <div className="flex flex-col gap-6">
+                {/* Header card */}
+                <div className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm text-left">
                   <h2 className="text-[18px] font-semibold text-[#002d73]">ตั้งค่าการติดตามมาตรฐาน <span className="text-[14px] text-slate-400 font-normal ml-2">(Follow-up Schedule)</span></h2>
                 </div>
 
-                {/* Table of Follow-up Schedule */}
-                <div className="border border-slate-100 rounded-xl overflow-hidden">
+                {/* Follow-up round schedule card */}
+                <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm text-left space-y-4">
+                  <h3 className="text-[15px] font-bold text-[#002d73]">ตารางติดตามมาตรฐาน (Follow-up Schedule)</h3>
+
+                  {/* Table of Follow-up Schedule */}
+                  <div className="border border-slate-100 rounded-xl overflow-hidden">
                   <table className="w-full text-left border-collapse text-[13px]">
                     <thead>
-                      <tr className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
-                        <th className="px-4 py-3">ลำดับ</th>
-                        <th className="px-4 py-3">วันที่ติดตาม</th>
-                        <th className="px-4 py-3">คำอธิบาย</th>
-                        <th className="px-4 py-3 text-center">เปิดใช้งาน</th>
-                        <th className="px-4 py-3 text-right">การดำเนินการ</th>
+                      <tr className="bg-slate-50 text-slate-400 font-semibold border-b border-slate-100 text-[12px]">
+                        <th className="px-4 py-3 font-semibold">ลำดับ</th>
+                        <th className="px-4 py-3 font-semibold">วันที่ติดตาม</th>
+                        <th className="px-4 py-3 font-semibold">คำอธิบาย</th>
+                        <th className="px-4 py-3 text-center font-semibold">เปิดใช้งาน</th>
+                        <th className="px-4 py-3 text-right font-semibold">การดำเนินการ</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
@@ -448,11 +459,15 @@ HN: {{hn}}
                           </td>
                           <td className="px-4 py-3.5 text-right">
                             <div className="flex justify-end gap-3 text-slate-400">
-                              <button className="hover:text-blue-600 transition"><Edit2 size={15} /></button>
+                              <button className="hover:text-blue-600 transition">
+                                <Edit2 size={15} className="text-blue-600 hover:text-blue-800" />
+                              </button>
                               <button
                                 onClick={() => setSchedules(prev => prev.filter(s => s.id !== item.id))}
                                 className="hover:text-red-500 transition"
-                              ><Trash2 size={15} /></button>
+                              >
+                                <Trash2 size={15} className="text-red-500 hover:text-red-700" />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -464,41 +479,42 @@ HN: {{hn}}
                 {/* Add Follow-up Day Button */}
                 <button
                   onClick={addScheduleDay}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 py-3 text-[14px] font-semibold text-slate-500 hover:bg-slate-50 transition"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-blue-300 text-blue-600 hover:bg-blue-50/50 py-3.5 text-[14px] font-semibold transition bg-blue-50/20"
                 >
                   <Plus size={16} /> เพิ่มวันติดตาม
                 </button>
+              </div>
 
                 {/* Follow-up Method section */}
-                <div className="pt-6 border-t border-slate-100">
-                  <h3 className="text-[15px] font-semibold text-slate-800 mb-4">วิธีติดตาม (Follow-up Method)</h3>
+                <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm text-left space-y-4">
+                  <h3 className="text-[15px] font-bold text-[#002d73]">วิธีติดตาม (Follow-up Method)</h3>
                   
-                  <div className="border border-slate-100 rounded-xl overflow-hidden">
-                    <table className="w-full text-left border-collapse text-[13px]">
-                      <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
-                        {methods.map((method, index) => (
-                          <tr key={method.id}>
-                            <td className="px-4 py-3.5 text-slate-400 w-12">{index + 1}</td>
-                            <td className="px-4 py-3.5 font-semibold text-slate-800">{method.name}</td>
-                            <td className="px-4 py-3.5 text-right w-24">
-                              <div className="flex justify-end gap-3 text-slate-400">
-                                <button className="hover:text-blue-600 transition"><Edit2 size={15} /></button>
-                                <button
-                                  onClick={() => setMethods(prev => prev.filter(m => m.id !== method.id))}
-                                  className="hover:text-red-500 transition"
-                                ><Trash2 size={15} /></button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="space-y-2 font-sans">
+                    {methods.map((method, index) => (
+                      <div key={method.id} className="flex items-center justify-between py-3 px-4 bg-slate-50/50 rounded-xl border border-slate-100 text-[13px] font-medium">
+                        <div className="flex items-center gap-4">
+                          <span className="text-slate-400 w-6 text-center font-semibold">{index + 1}</span>
+                          <span className="font-semibold text-slate-800">{method.name}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-slate-400">
+                          <button className="hover:text-blue-600 transition">
+                            <Edit2 size={15} className="text-blue-600 hover:text-blue-800" />
+                          </button>
+                          <button
+                            onClick={() => setMethods(prev => prev.filter(m => m.id !== method.id))}
+                            className="hover:text-red-500 transition"
+                          >
+                            <Trash2 size={15} className="text-red-500 hover:text-red-700" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
                   {/* Add Method Button */}
                   <button
                     onClick={addMethod}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 py-3 text-[14px] font-semibold text-slate-500 hover:bg-slate-50 transition"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-blue-300 text-blue-600 hover:bg-blue-50/50 py-3.5 text-[14px] font-semibold transition bg-blue-50/20"
                   >
                     <Plus size={16} /> เพิ่มวิธีติดตาม
                   </button>
@@ -506,10 +522,10 @@ HN: {{hn}}
               </div>
             )}
 
-            {/* Tab 2: HIS / TrackCare Connection */}
             {activeTab === 2 && (
-              <div className="space-y-6">
-                <div>
+              <div className="flex flex-col gap-6">
+                {/* Header card */}
+                <div className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm text-left">
                   <h2 className="text-[18px] font-semibold text-[#002d73]">ตั้งค่าการเชื่อมต่อระบบ HIS / TrackCare</h2>
                   <p className="text-[12px] text-[#64748b] mt-1">กำหนดค่าและจัดการการเชื่อมต่อระบบภายนอก (Integration)</p>
                 </div>
@@ -580,7 +596,7 @@ HN: {{hn}}
                 </div>
 
                 {/* Section: Latest Sync Status */}
-                <div className="space-y-3 pt-4 border-t border-slate-100">
+                <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm text-left space-y-3">
                   <h3 className="text-[15px] font-bold text-[#002d73]">สถานะการซิงค์ข้อมูลล่าสุด</h3>
                   <div className="border border-slate-100 rounded-xl overflow-hidden">
                     <table className="w-full text-left border-collapse text-[13px] font-sans">
@@ -620,7 +636,7 @@ HN: {{hn}}
                 </div>
 
                 {/* Section: Sync Timing Configuration */}
-                <div className="pt-6 border-t border-slate-100 space-y-4">
+                <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm text-left space-y-4">
                   <h3 className="text-[15px] font-bold text-[#002d73]">การตั้งค่าเวลาซิงค์ข้อมูล</h3>
                   
                   <div className="grid gap-6 lg:grid-cols-[1fr_260px] items-start">
@@ -700,34 +716,36 @@ HN: {{hn}}
 
             {/* Tab 3: Notification Rules */}
             {activeTab === 3 && (
-              <div className="space-y-6">
-                <div>
+              <div className="flex flex-col gap-6">
+                {/* Header card */}
+                <div className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm text-left">
                   <h2 className="text-[18px] font-semibold text-[#002d73]">ตั้งค่าการแจ้งเตือน</h2>
                 </div>
 
                 {/* Sub-tabs under Notification */}
-                <div className="flex border-b border-slate-100 mb-6">
-                  <button
-                    onClick={() => setNotifSubTab('pre')}
-                    className={`pb-3 px-6 text-[15px] font-semibold transition ${
-                      notifSubTab === 'pre' ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-slate-400'
-                    }`}
-                  >
-                    ตั้งค่าแจ้งเตือนล่วงหน้า
-                  </button>
-                  <button
-                    onClick={() => setNotifSubTab('template')}
-                    className={`pb-3 px-6 text-[15px] font-semibold transition ${
-                      notifSubTab === 'template' ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-slate-400'
-                    }`}
-                  >
-                    จัดการ Template แจ้งเตือน
-                  </button>
+                <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
+                  <div className="flex border-b border-slate-100">
+                    <button
+                      onClick={() => setNotifSubTab('pre')}
+                      className={`pb-3 px-6 text-[15px] font-semibold transition ${
+                        notifSubTab === 'pre' ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-slate-400'
+                      }`}
+                    >
+                      ตั้งค่าแจ้งเตือนล่วงหน้า
+                    </button>
+                    <button
+                      onClick={() => setNotifSubTab('template')}
+                      className={`pb-3 px-6 text-[15px] font-semibold transition ${
+                        notifSubTab === 'template' ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-slate-400'
+                      }`}
+                    >
+                      จัดการ Template แจ้งเตือน
+                    </button>
+                  </div>
                 </div>
 
-                {/* Sub-tab 1: Pre-alerts */}
                 {notifSubTab === 'pre' && (
-                  <div className="space-y-6 font-sans">
+                  <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm text-left space-y-6 font-sans">
                     {/* Header Details */}
                     <div>
                       <h3 className="text-[15px] font-bold text-[#002d73]">เปิดใช้งานการแจ้งเตือน SMS ล่วงหน้า</h3>
@@ -945,9 +963,8 @@ HN: {{hn}}
                   </div>
                 )}
 
-                {/* Sub-tab 2: Template Management */}
                 {notifSubTab === 'template' && (
-                  <div className="space-y-6 font-sans">
+                  <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm text-left space-y-6 font-sans">
                     {/* Template Card Content */}
                     <div className="rounded-xl border border-slate-100 p-5 space-y-4">
                       <div>
@@ -1002,7 +1019,7 @@ HN: {{hn}}
           </div>
 
           {/* Bottom Actions */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-end gap-4">
             <button className="btn-secondary h-11 px-6">
               ปิด
             </button>

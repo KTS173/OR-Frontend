@@ -22,11 +22,11 @@ const dashboardVisuals = {
   red:    { icon: 'time-alert_svgrepo.com.png', arrow: 'up-red-margin.png', label: '#ef2b2b', value: '#ef4444', iconColor: '#ef4444', trend: '#ef4444' },
   purple: { icon: '2.png', arrow: 'down green.png', label: '#4c1dca', value: '#4c1dca', iconColor: '#4c1dca', trend: '#10b981' },
   teal:   { icon: 'image.png', arrow: 'down green.png', label: '#1e3a8a', value: '#1e3a8a', iconColor: '#1e3a8a', trend: '#10b981' },
-  orange: { icon: 'warning.png', arrow: 'up-red-margin.png', label: '#e96500', value: '#e96500', iconColor: '#f97316', trend: '#ef4444', trendUnit: 'ราย', trendSuffix: '#ef4444', background: '#fffaf5' },
+  orange: { icon: 'warning.png', arrow: 'up-red-margin.png', label: '#e96500', value: '#e96500', iconColor: '#f97316', trend: '#ef4444', trendUnit: 'ราย', trendSuffix: '#ef4444', background: '#fffaf5', border: 'border-amber-200' },
   rose:   { icon: 'ice.png', arrow: 'up-red-margin.png', label: '#e9272f', value: '#ef3741', iconColor: '#e9272f', trend: '#ef3741', trendUnit: 'ราย', trendSuffix: '#ef3741', background: '#fff4f4' },
 }
 
-export default function MetricCard({ label, value, unit, trend, tone = 'blue', dashboard = false, topRow = false }) {
+export default function MetricCard({ label, value, unit, trend, tone = 'blue', dashboard = false, topRow = false, subtext }) {
   const positive = trend?.startsWith('+')
   if (!dashboard) {
     return (
@@ -44,10 +44,11 @@ export default function MetricCard({ label, value, unit, trend, tone = 'blue', d
   const visual = dashboardVisuals[tone] ?? dashboardVisuals.blue
   const iconUrl = `/assets/icon/dashboard/${visual.icon}`
   const arrowUrl = `/assets/icon/dashboard/${visual.arrow}`
+  const borderClass = visual.border ?? 'border-black/10'
 
   return (
     <article
-      className={`flex min-h-[124px] flex-col items-start gap-1 overflow-hidden rounded-xl border border-black/10 p-[17px] shadow-[0_1px_2px_rgba(0,0,0,0.05)] ${topRow ? 'sm:min-h-[138px]' : ''}`}
+      className={`flex min-h-[124px] flex-col items-start gap-1 overflow-hidden rounded-xl border p-[17px] shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all hover:shadow-md ${borderClass} ${topRow ? 'sm:min-h-[138px]' : ''}`}
       style={{ backgroundColor: visual.background ?? '#ffffff' }}
     >
       <div className="flex w-full items-start justify-between gap-3">
@@ -62,15 +63,21 @@ export default function MetricCard({ label, value, unit, trend, tone = 'blue', d
           }}
         />
       </div>
-      <p className="flex w-full items-baseline gap-2 pt-1 text-[32px] leading-9 font-semibold" style={{ color: visual.value }}>
+      <p className="flex w-full items-baseline gap-2 pt-1 text-[32px] leading-9 font-bold" style={{ color: visual.value }}>
         <span>{value}</span>
-        <span className="whitespace-nowrap text-[14px] font-semibold">{unit}</span>
+        {unit && <span className="whitespace-nowrap text-[14px] font-semibold">{unit}</span>}
       </p>
-      <p className="flex items-center gap-0.5 text-[14px] leading-4 font-medium" style={{ color: visual.trend }}>
-        <img src={arrowUrl} alt="" className="h-[9px] w-3 shrink-0 object-contain" />
-        {trend?.replace('+', '')}{visual.trendUnit ? ` ${visual.trendUnit}` : ''}
-        <span className="ml-1" style={{ color: visual.trendSuffix ?? '#6b7280' }}>จากเมื่อวาน</span>
-      </p>
+      {subtext ? (
+        <p className="mt-auto text-[12px] font-medium" style={{ color: tone === 'red' ? '#ef4444' : '#6b7280' }}>
+          {subtext}
+        </p>
+      ) : (
+        <p className="flex items-center gap-0.5 text-[14px] leading-4 font-medium" style={{ color: visual.trend }}>
+          <img src={arrowUrl} alt="" className="h-[9px] w-3 shrink-0 object-contain" />
+          {trend?.replace('+', '')}{visual.trendUnit ? ` ${visual.trendUnit}` : ''}
+          <span className="ml-1" style={{ color: visual.trendSuffix ?? '#6b7280' }}>จากเมื่อวาน</span>
+        </p>
+      )}
     </article>
   )
 }

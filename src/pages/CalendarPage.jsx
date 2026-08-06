@@ -15,19 +15,20 @@ import {
   User,
   Plus
 } from 'lucide-react'
+import MetricCard from '../components/ui/MetricCard.jsx'
 
 export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState(15);
   const [activeViewMode, setActiveViewMode] = useState('month'); // 'week' | 'month'
 
   const statCards = [
-    { label: 'ครบกำหนดวันนี้', value: '18 คน', subtext: 'ต้องรับเคสวันนี้', icon: Calendar, iconBg: 'bg-blue-50 text-blue-600' },
-    { label: 'นัดหมายแล้ววันนี้', value: '48 คน', subtext: 'ต้องติดตามวันนี้', icon: Phone, iconBg: 'bg-purple-50 text-purple-600' },
-    { label: 'ติดต่อไม่สำเร็จ', value: '11 คน', subtext: 'คนไข้ไม่รับโทรศัพท์', icon: PhoneOff, iconBg: 'bg-orange-50 text-orange-600' },
-    { label: 'ดำเนินการเสร็จ', value: '42 คน', subtext: 'ติดตามเสร็จสิ้น', icon: CheckCircle2, iconBg: 'bg-emerald-50 text-emerald-600' },
-    { label: 'เกินกำหนด', value: '11 คน', subtext: 'เกินกำหนดแล้ว', icon: AlertCircle, iconBg: 'bg-red-50 text-red-600' },
-    { label: 'สงสัย SSI', value: '2', subtext: '2 ราย จากเมื่อวาน', icon: AlertTriangle, iconBg: 'bg-amber-50 text-amber-600', isWarning: true },
-    { label: 'รอผู้ป่วยตอบกลับ', value: '13 เคส', subtext: 'ต้องติดตามวันนี้', icon: UserCheck, iconBg: 'bg-teal-50 text-teal-600' },
+    { label: 'ครบกำหนดวันนี้', value: '18', unit: 'คน', tone: 'green', subtext: 'ต้องรับเคสวันนี้' },
+    { label: 'นัดหมายแล้ววันนี้', value: '48', unit: 'คน', tone: 'blue', subtext: 'ต้องติดตามวันนี้' },
+    { label: 'ติดต่อไม่สำเร็จ', value: '11', unit: 'คน', tone: 'orange', subtext: 'คนไข้ไม่รับโทรศัพท์' },
+    { label: 'ดำเนินการเสร็จ', value: '42', unit: 'คน', tone: 'green', subtext: 'ติดตามเสร็จสิ้น' },
+    { label: 'เกินกำหนด', value: '11', unit: 'คน', tone: 'red', subtext: 'เกินกำหนดแล้ว' },
+    { label: 'สงสัย SSI', value: '2', unit: '', tone: 'orange', subtext: '2 ราย จากเมื่อวาน' },
+    { label: 'รอผู้ป่วยตอบกลับ', value: '13', unit: 'เคส', tone: 'violet', subtext: 'ต้องติดตามวันนี้' },
   ];
 
   const calendarDays = [
@@ -147,29 +148,10 @@ export default function CalendarPage() {
     <div className="flex flex-col gap-6 text-left pb-10">
 
       {/* Top Stat Cards Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-        {statCards.map((card, idx) => {
-          const Icon = card.icon;
-          return (
-            <div 
-              key={idx} 
-              className={`rounded-xl border bg-white p-4 shadow-sm flex flex-col justify-between min-h-[120px] transition-all hover:shadow-md ${card.isWarning ? 'border-amber-200' : 'border-slate-200/80'}`}
-            >
-              <div className="flex items-start justify-between">
-                <span className="text-[12px] font-medium text-slate-500 leading-tight">{card.label}</span>
-                <div className={`p-1.5 rounded-lg ${card.iconBg}`}>
-                  <Icon size={16} />
-                </div>
-              </div>
-              <div className="mt-3">
-                <strong className={`text-[22px] font-semibold tracking-tight ${card.isWarning ? 'text-amber-600' : 'text-slate-800'}`}>
-                  {card.value}
-                </strong>
-                <p className="text-[11px] text-slate-400 mt-0.5">{card.subtext}</p>
-              </div>
-            </div>
-          );
-        })}
+      <div className="grid grid-cols-5 gap-4">
+        {statCards.map((m, idx) => (
+          <MetricCard key={idx} {...m} dashboard />
+        ))}
       </div>
 
       {/* Search Filters Card */}

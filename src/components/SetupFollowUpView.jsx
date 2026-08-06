@@ -242,8 +242,8 @@ export default function SetupFollowUpView({ selectedPatient, onClose }) {
           <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '16px' }}>
             <button 
               type="button" 
-              className="clear-btn" 
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primary)', borderColor: 'var(--color-primary)', fontSize: '13px', padding: '6px 16px', minWidth: 'auto' }}
+              className="btn-outlined-primary" 
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', padding: '6px 16px', minWidth: 'auto' }}
               onClick={() => alert('เพิ่มรอบติดตามใหม่')}
             >
               <Plus size={14} />
@@ -281,8 +281,8 @@ export default function SetupFollowUpView({ selectedPatient, onClose }) {
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
           <button 
             type="button" 
-            className="clear-btn" 
-            style={{ padding: '10px 24px', fontSize: '13.5px', minWidth: '100px' }}
+            className="btn-outlined-primary" 
+            style={{ padding: '10px 24px', fontSize: '13.5px', minWidth: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onClick={onClose}
           >
             ปิด

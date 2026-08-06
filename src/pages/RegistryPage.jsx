@@ -1,4 +1,4 @@
-import { Activity, AlertCircle, AlertTriangle, ArrowRight, Calendar, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Database, Download, Eye, File, History, Layers, Mail, PhoneCall, Plus, RefreshCw, RotateCcw, Scissors, Search, Settings2, ShieldCheck, Stethoscope, TimerReset, UserCheck, UserRound, X } from 'lucide-react'
+import { Activity, AlertCircle, AlertTriangle, ArrowLeftRight, ArrowRight, Calendar, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Database, Download, Eye, File, History, Layers, Mail, PhoneCall, Plus, RefreshCw, RotateCcw, Scissors, Search, Settings2, ShieldCheck, Stethoscope, TimerReset, UserCheck, UserRound, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Filters from '../components/ui/Filters.jsx'
@@ -32,7 +32,7 @@ export default function RegistryPage({ type }) {
   if (type === 'opd') return <OpdQueuePage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'followUp') return <MyFollowUpsPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'history') return <HistoryPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
-  if (type === 'suspected' || type === 'confirmed') return <SuspectedSSIPage type={type} patients={filtered} loading={loading} search={search} setSearch={setSearch} />
+  if (type === 'suspected' || type === 'confirmed' || type === 'doctor') return <SuspectedSSIPage type={type} patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'notifications') return <NotificationsCenterPage />
   if (type === 'search') return <CentralSearchPage />
   if (type === 'sync') return <HisSyncPage />
@@ -57,9 +57,9 @@ const opdMetrics = [
 function OpdQueuePage({ patients, loading, search, setSearch }) {
   const [selectedPatient, setSelectedPatient] = useState(null)
   return <div className="space-y-4">
-    <section className="grid grid-cols-5 gap-4">{opdMetrics.map(([label, value, unit, Icon, color, bg, cardBg], index) => <article key={label} className="flex h-[140px] min-w-0 flex-col rounded-xl border border-black/10 p-[17px] shadow-sm" style={{ backgroundColor: cardBg }}><div className="flex items-start justify-between gap-2"><p className="whitespace-nowrap text-[15px] font-medium" style={{ color }}>{label}</p><span className="grid size-9 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: bg, color }}>{typeof Icon === 'string' ? <span className="validation-card-icon" style={{ backgroundColor: color, WebkitMaskImage: `url("${Icon}")`, maskImage: `url("${Icon}")` }} /> : <Icon size={20} />}</span></div><p className="mt-3 flex items-baseline gap-1.5 text-[30px] font-semibold leading-8" style={{ color }}><span>{value}</span><span className="text-[15px]">{unit}</span></p><p className={`mt-auto flex items-center whitespace-nowrap text-[13px] leading-4 ${index >= 3 ? 'text-red-500' : 'text-[#64748b]'}`}>{index >= 3 && <img src="/assets/icon/dashboard/up-red-margin.png" alt="" className="mr-1 h-[9px] w-3 object-contain" />}{index === 0 ? 'ต้องรับเคสวันนี้' : index === 1 ? 'ต้องติดตามวันนี้' : index === 2 ? 'เกินกำหนดแล้ว' : index === 3 ? '2 ราย จากเมื่อวาน' : '1 ราย จากเมื่อวาน'}</p></article>)}</section>
+    <section className="grid grid-cols-5 gap-4">{opdMetrics.map(([label, value, unit, Icon, color, bg, cardBg], index) => <article key={label} className="flex h-[140px] min-w-0 flex-col rounded-xl border border-black/10 p-[17px] shadow-sm" style={{ backgroundColor: cardBg }}><div className="flex items-start justify-between gap-2"><p className="whitespace-nowrap text-[14px] font-medium" style={{ color }}>{label}</p><span className="grid size-9 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: bg, color }}>{typeof Icon === 'string' ? <span className="validation-card-icon" style={{ backgroundColor: color, WebkitMaskImage: `url("${Icon}")`, maskImage: `url("${Icon}")` }} /> : <Icon size={20} />}</span></div><p className="mt-3 flex items-baseline gap-1.5 text-[28px] font-semibold leading-8" style={{ color }}><span>{value}</span><span className="text-[14px]">{unit}</span></p><p className={`mt-auto flex items-center whitespace-nowrap text-[12px] leading-4 ${index >= 3 ? 'text-red-500' : 'text-[#64748b]'}`}>{index >= 3 && <img src="/assets/icon/dashboard/up-red-margin.png" alt="" className="mr-1 h-[9px] w-3 object-contain" />}{index === 0 ? 'ต้องรับเคสวันนี้' : index === 1 ? 'ต้องติดตามวันนี้' : index === 2 ? 'เกินกำหนดแล้ว' : index === 3 ? '2 ราย จากเมื่อวาน' : '1 ราย จากเมื่อวาน'}</p></article>)}</section>
     <Filters search={search} onSearch={setSearch} validation />
-    <section className="flex h-[66px] items-center rounded-xl border border-black/10 bg-white px-4 shadow-sm"><div className="flex h-full items-center gap-6">{['ทั้งหมด (52)', 'รายการคนไข้จากแผนก OR ใหม่ (48)', 'รายการผู้ป่วยจากการย้ายผู้ป่วยจากแผนก IPD (4)'].map((label, index) => <button key={label} className={`h-full text-[14px] font-medium ${index === 0 ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}>{label}</button>)}</div></section>
+    <section className="flex h-[66px] items-center rounded-xl border border-black/10 bg-white px-4 shadow-sm"><div className="flex h-full items-center gap-6">{['ทั้งหมด (52)', 'รายการคนไข้จากแผนก OR ใหม่ (48)', 'รายการผู้ป่วยจากการย้ายผู้ป่วยจากแผนก IPD (4)'].map((label, index) => <button key={label} className={`h-full text-[13px] font-medium ${index === 0 ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}>{label}</button>)}</div></section>
     <OpdPatientTable patients={patients} loading={loading} onSelect={setSelectedPatient} />
     {selectedPatient && <AcceptPatientModal patient={selectedPatient} onClose={() => setSelectedPatient(null)} />}
   </div>
@@ -83,20 +83,45 @@ function ValidationPage({ patients, loading, search, setSearch }) {
   return <div className="space-y-4">
     <section className="grid grid-cols-4 gap-x-[17px] gap-y-4">{validationMetrics.map(([label, value, unit, icon, color, iconBg, labelColor = color]) => {
       const iconUrl = `/assets/icon/OR Validation List/${icon}`
-      return <article key={label} className="h-[138px] rounded-xl border border-black/10 bg-white p-[20px] shadow-sm"><div className="flex h-11 items-start justify-between"><p className="text-[20px] leading-5 font-medium" style={{ color: labelColor }}>{label}</p><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl" style={{ backgroundColor: iconBg }}><span className="validation-card-icon" style={{ backgroundColor: color, WebkitMaskImage: `url("${iconUrl}")`, maskImage: `url("${iconUrl}")` }} /></span></div><p className="pt-3 text-[34px] leading-9 font-semibold" style={{ color }}>{value} <span className="text-[15px]">{unit}</span></p></article>
+      return <article key={label} className="h-[138px] rounded-xl border border-black/10 bg-white p-[20px] shadow-sm"><div className="flex h-11 items-start justify-between"><p className="text-[18px] leading-5 font-medium" style={{ color: labelColor }}>{label}</p><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl" style={{ backgroundColor: iconBg }}><span className="validation-card-icon" style={{ backgroundColor: color, WebkitMaskImage: `url("${iconUrl}")`, maskImage: `url("${iconUrl}")` }} /></span></div><p className="pt-3 text-[32px] leading-9 font-semibold" style={{ color }}>{value} <span className="text-[14px]">{unit}</span></p></article>
     })}</section>
     <Filters search={search} onSearch={setSearch} validation />
-    <section className="flex h-[73px] items-center justify-between rounded-xl border border-black/10 bg-white px-[17px] shadow-sm"><div className="flex items-center gap-4">{['ทั้งหมด (58)', 'รอตรวจสอบ (18)', 'ยืนยันการตรวจสอบ (14)', 'เข้าเกณฑ์ (32)', 'ไม่เข้าเกณฑ์ (5)', 'ส่งเข้าแล้ว (5)'].map((item, i) => <button key={item} className={`h-9 px-3 text-[15px] ${i === 0 ? 'border-b-2 border-[#175beb] font-medium text-[#175beb]' : 'text-[#424752]'}`}>{item}</button>)}</div><button className="flex h-[38px] items-center gap-2 rounded-lg border border-[#e2e8f0] px-[13px] text-[15px]"><RefreshCw size={13} />รีเฟรช</button></section>
+    <section className="flex h-[73px] items-center justify-between rounded-xl border border-black/10 bg-white px-[17px] shadow-sm"><div className="flex items-center gap-4">{['ทั้งหมด (58)', 'รอตรวจสอบ (18)', 'ยืนยันการตรวจสอบ (14)', 'เข้าเกณฑ์ (32)', 'ไม่เข้าเกณฑ์ (5)', 'ส่งเข้าแล้ว (5)'].map((item, i) => <button key={item} className={`h-9 px-3 text-[14px] ${i === 0 ? 'border-b-2 border-[#175beb] font-medium text-[#175beb]' : 'text-[#424752]'}`}>{item}</button>)}</div><button className="flex h-[38px] items-center gap-2 rounded-lg border border-[#e2e8f0] px-[13px] text-[14px]"><RefreshCw size={13} />รีเฟรช</button></section>
     <PatientTable patients={patients} loading={loading} validation />
   </div>
 }
 
 const myMetrics = [
-  ['ครบกำหนดวันนี้', '18', 'คน', CalendarClock, '#1e3a8a'], ['นัดหมายแล้ววันนี้', '48', 'คน', PhoneCall, '#8b5cf6'], ['ติดต่อไม่สำเร็จ', '11', 'คน', PhoneCall, '#f97316'], ['ดำเนินการเสร็จ', '42', 'คน', CheckCircle2, '#10b981'], ['เกินกำหนด', '11', 'คน', TimerReset, '#ef4444'], ['สงสัย SSI', '2', '', AlertTriangle, '#f97316'], ['รอผู้ป่วยตอบกลับ', '13', 'เคส', UserRound, '#0d9488'],
+  { label: 'ครบกำหนดวันนี้', value: '18', unit: 'คน', tone: 'green', subtext: 'ต้องรับเคสวันนี้' },
+  { label: 'นัดหมายแล้ววันนี้', value: '48', unit: 'คน', tone: 'blue', subtext: 'ต้องติดตามวันนี้' },
+  { label: 'ติดต่อไม่สำเร็จ', value: '11', unit: 'คน', tone: 'orange', subtext: 'คนไข้ไม่รับโทรศัพท์' },
+  { label: 'ดำเนินการเสร็จ', value: '42', unit: 'คน', tone: 'green', subtext: 'ติดตามเสร็จสิ้น' },
+  { label: 'เกินกำหนด', value: '11', unit: 'คน', tone: 'red', subtext: 'เกินกำหนดแล้ว' },
+  { label: 'สงสัย SSI', value: '2', unit: '', tone: 'orange', subtext: '2 ราย จากเมื่อวาน' },
+  { label: 'รอผู้ป่วยตอบกลับ', value: '13', unit: 'เคส', tone: 'violet', subtext: 'ต้องติดตามวันนี้' },
 ]
 
 function MyFollowUpsPage({ patients, loading, search, setSearch }) {
-  return <div className="space-y-4"><section className="grid grid-cols-5 gap-4">{myMetrics.map(([label, value, unit, Icon, color], index) => <article key={label} className="flex h-[140px] flex-col rounded-xl border border-black/10 bg-white p-[17px] shadow-sm"><div className="flex justify-between"><p className="text-[15px] font-medium" style={{ color }}>{label}</p><span className="grid size-9 place-items-center rounded-lg bg-slate-50" style={{ color }}><Icon size={20} /></span></div><p className="mt-3 flex items-baseline gap-1.5 text-[30px] font-semibold leading-8" style={{ color }}><span>{value}</span><span className="text-[15px]">{unit}</span></p><p className="mt-auto text-[13px] text-slate-500">{index === 2 ? 'คนไข้ไม่รับโทรศัพท์' : index === 3 ? 'ติดตามเสร็จสิ้น' : index === 4 ? 'เกินกำหนดแล้ว' : index === 5 ? '↑ 2 ราย จากเมื่อวาน' : 'ต้องติดตามวันนี้'}</p></article>)}</section><MyFilters search={search} setSearch={setSearch} /><section className="flex h-[66px] items-center rounded-xl border border-black/10 bg-white px-4 shadow-sm"><div className="flex h-full items-center gap-7">{['ทั้งหมด (52)', 'รายการกำหนดติดตามวันนี้ (48)', 'รายการยังไม่ถึงรอบติดตาม', 'รายการสงสัย SSI', 'รายการติดเชื้อ SSI'].map((x, i) => <button key={x} className={`h-full text-[14px] font-medium ${i === 0 ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}>{x}</button>)}</div></section><MyFollowTable patients={patients} loading={loading} /></div>
+  return (
+    <div className="space-y-4">
+      <section className="grid grid-cols-5 gap-4">
+        {myMetrics.map((m) => (
+          <MetricCard key={m.label} {...m} dashboard />
+        ))}
+      </section>
+      <MyFilters search={search} setSearch={setSearch} />
+      <section className="flex h-[66px] items-center rounded-xl border border-black/10 bg-white px-4 shadow-sm">
+        <div className="flex h-full items-center gap-7">
+          {['ทั้งหมด (52)', 'รายการกำหนดติดตามวันนี้ (48)', 'รายการยังไม่ถึงรอบติดตาม', 'รายการสงสัย SSI', 'รายการติดเชื้อ SSI'].map((x, i) => (
+            <button key={x} className={`h-full text-[14px] font-medium ${i === 0 ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}>
+              {x}
+            </button>
+          ))}
+        </div>
+      </section>
+      <MyFollowTable patients={patients} loading={loading} />
+    </div>
+  );
 }
 
 function MyFilters({ search, setSearch }) {
@@ -151,9 +176,9 @@ function HistoryPage({ patients, loading, search, setSearch }) {
   const [activeTab, setActiveTab] = useState('all')
 
   const historyMetrics = [
-    { label: 'ประวัติติดตามทั้งหมด', value: '1,118 คน', subtext: 'รายการ', icon: CalendarClock, iconBg: 'bg-blue-50 text-blue-600' },
-    { label: 'ติดตามสำเร็จ', value: '842 คน', subtext: 'รายการ', icon: CheckCircle2, iconBg: 'bg-emerald-50 text-emerald-600' },
-    { label: 'ย้ายไปแผนกอื่น', value: '276 คน', subtext: 'รายการ', icon: PhoneCall, iconBg: 'bg-purple-50 text-purple-600' }
+    { label: 'ประวัติติดตามทั้งหมด', value: '1,118', unit: 'คน', tone: 'blue', subtext: 'รายการ' },
+    { label: 'ติดตามสำเร็จ', value: '842', unit: 'คน', tone: 'green', subtext: 'รายการ' },
+    { label: 'ย้ายไปแผนกอื่น', value: '276', unit: 'คน', tone: 'violet', subtext: 'รายการ' }
   ]
 
   const historyRows = [
@@ -171,26 +196,9 @@ function HistoryPage({ patients, loading, search, setSearch }) {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {historyMetrics.map((card, idx) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={idx}
-              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center justify-between min-h-[110px] transition-all hover:shadow-md"
-            >
-              <div>
-                <span className="text-[13px] font-medium text-slate-500">{card.label}</span>
-                <div className="mt-2 flex items-baseline gap-1.5">
-                  <strong className="text-[26px] font-bold text-slate-800 tracking-tight">{card.value}</strong>
-                  <span className="text-[13px] text-slate-400">{card.subtext}</span>
-                </div>
-              </div>
-              <div className={`p-3 rounded-xl ${card.iconBg}`}>
-                <Icon size={24} />
-              </div>
-            </div>
-          );
-        })}
+        {historyMetrics.map((card, idx) => (
+          <MetricCard key={idx} {...card} dashboard />
+        ))}
       </div>
 
       {/* Search Filters Card */}
@@ -359,9 +367,9 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch }) {
   const [activeTab, setActiveTab] = useState('all')
 
   const metrics = [
-    { label: 'เคสรอแพทย์ตรวจ', value: '18 เคส', subtext: 'รอตรวจสอบวันนี้', icon: AlertTriangle, iconBg: 'bg-amber-50 text-amber-600' },
-    { label: 'แพทย์กำลังตรวจสอบ', value: '48 เคส', subtext: 'กำลังดำเนินการตรวจสอบ', icon: TimerReset, iconBg: 'bg-purple-50 text-purple-600' },
-    { label: 'ยืนยัน SSI', value: '11 เคส', subtext: 'เคสติดเชื้อ', icon: AlertCircle, iconBg: 'bg-red-50 text-red-600' }
+    { label: 'เคสรอแพทย์ตรวจ', value: '18', unit: 'เคส', tone: 'orange', subtext: 'รอตรวจสอบเคสวันนี้' },
+    { label: 'แพทย์กำลังตรวจสอบ', value: '48', unit: 'เคส', tone: 'purple', subtext: 'กำลังดำเนินการตรวจสอบ' },
+    { label: 'ยืนยัน SSI', value: '11', unit: 'เคส', tone: 'rose', subtext: 'พบติดเชื้อ' }
   ]
 
   const ssiRows = [
@@ -378,26 +386,9 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch }) {
     <div className="flex flex-col gap-6 text-left pb-10">
       {/* Top Stat Cards Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {metrics.map((card, idx) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={idx}
-              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex items-center justify-between min-h-[110px] transition-all hover:shadow-md"
-            >
-              <div>
-                <span className="text-[13px] font-medium text-slate-500">{card.label}</span>
-                <div className="mt-2 flex items-baseline gap-1.5">
-                  <strong className="text-[26px] font-bold text-slate-800 tracking-tight">{card.value}</strong>
-                  <span className="text-[12px] text-slate-400 mt-0.5">{card.subtext}</span>
-                </div>
-              </div>
-              <div className={`p-3 rounded-xl ${card.iconBg}`}>
-                <Icon size={24} />
-              </div>
-            </div>
-          );
-        })}
+        {metrics.map((card, idx) => (
+          <MetricCard key={idx} {...card} dashboard />
+        ))}
       </div>
 
       {/* Search Filters Card */}
@@ -891,6 +882,48 @@ function NotificationsCenterPage() {
   );
 }
 
+const DoctorIcon = ({ size = 24, ...props }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    {...props}
+  >
+    {/* Head */}
+    <circle cx="12" cy="7.5" r="4" />
+    {/* Shoulders */}
+    <path d="M12 13.5c-4.42 0-8 2.68-8 6v1.5h16v-1.5c0-3.32-3.58-6-8-6z" />
+    {/* Stethoscope loop around neck */}
+    <path d="M9 13.2v1.5a3 3 0 0 0 6 0v-1.5" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round" />
+    {/* Earpieces loop ends */}
+    <circle cx="9" cy="13.2" r="0.8" fill="white" />
+    <circle cx="15" cy="13.2" r="0.8" fill="white" />
+    {/* Stethoscope chestpiece stem and head */}
+    <path d="M12 15.5v2" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round" />
+    <circle cx="12" cy="18.5" r="1.1" fill="white" />
+  </svg>
+);
+
+const StaffIcon = ({ size = 24, ...props }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    {...props}
+  >
+    {/* Head */}
+    <circle cx="12" cy="7.5" r="4" />
+    {/* Shoulders */}
+    <path d="M12 13.5c-4.42 0-8 2.68-8 6v1.5h16v-1.5c0-3.32-3.58-6-8-6z" />
+    {/* Medical Cross on Chest */}
+    <path d="M12 15.5v3.5M10.25 17.25h3.5" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
+
 function CentralSearchPage() {
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState('ทั้งหมด');
@@ -915,12 +948,12 @@ function CentralSearchPage() {
 
   const [results, setResults] = useState([
     { id: 1, type: 'ผู้ป่วย', icon: UserRound, code: '0123456', name: 'นายสมชาย ใจดี', sub: 'อายุ 67 ปี (10 ก.พ. 2501)', found: 'ข้อมูลผู้ป่วย (โปรไฟล์ผู้ป่วย)', dept: 'OPD', date: '15 มิ.ย. 2569 10:15', status: 'กำลังติดตาม', statusType: 'green-pill' },
-    { id: 2, type: 'หัตถการ', icon: Scissors, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'TKA (รายละเอียดอาการ)', dept: 'OPD', date: '15 มิ.ย. 2569 09:58', status: 'เอกสารล่าสุด', statusType: 'purple-pill' },
+    { id: 2, type: 'หัตถการ', icon: Stethoscope, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'TKA (รายละเอียดอาการ)', dept: 'OPD', date: '15 มิ.ย. 2569 09:58', status: 'เอกสารล่าสุด', statusType: 'purple-pill' },
     { id: 3, type: 'เอกสาร', icon: File, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'รายการเอกสารแนบ (12 รายการ)', dept: 'OPD', date: '15 มิ.ย. 2569 09:58', status: 'เอกสารล่าสุด', statusType: 'purple-pill' },
-    { id: 4, type: 'แพทย์', icon: Stethoscope, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'ข้อมูลแพทย์ (รายละเอียดแพทย์)', dept: 'OPD', date: '15 มิ.ย. 2569 09:58', status: 'PHYSICIAN', statusType: 'orange-border' },
-    { id: 5, type: 'ผู้รับผิดชอบ', icon: UserCheck, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'ข้อมูลผู้รับผิดชอบ (รายละเอียดเจ้าหน้าที่ดูแล)', dept: 'OPD', date: '15 มิ.ย. 2569 09:58', status: 'OPD NURSE', statusType: 'blue-border' },
-    { id: 6, type: 'ติดตาม', icon: CalendarDays, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'ติดตามหลังผ่าตัดครั้งที่ 1 (1/6)', dept: 'OPD', date: '15 มิ.ย. 2569 09:58', status: 'ตามนัด', statusType: 'blue-pill' },
-    { id: 7, type: 'เอกสาร', icon: RefreshCw, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'ส่งต่อไปยัง IPD', dept: 'OPD → IPD', date: '15 มิ.ย. 2569 09:58', status: 'สำเร็จ', statusType: 'green-border' },
+    { id: 4, type: 'แพทย์', icon: DoctorIcon, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'ข้อมูลแพทย์ (รายละเอียดแพทย์)', dept: 'OPD', date: '15 มิ.ย. 2569 09:58', status: 'PHYSICIAN', statusType: 'orange-border' },
+    { id: 5, type: 'ผู้รับผิดชอบ', icon: StaffIcon, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'ข้อมูลผู้รับผิดชอบ (รายละเอียดเจ้าหน้าที่ดูแล)', dept: 'OPD', date: '15 มิ.ย. 2569 09:58', status: 'OPD NURSE', statusType: 'blue-border' },
+    { id: 6, type: 'ติดตาม', icon: History, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'ติดตามหลังผ่าตัดครั้งที่ 1 (1/6)', dept: 'OPD', date: '15 มิ.ย. 2569 09:58', status: 'ตามนัด', statusType: 'blue-pill' },
+    { id: 7, type: 'เอกสาร', icon: ArrowLeftRight, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'ส่งต่อไปยัง IPD', dept: 'OPD → IPD', date: '15 มิ.ย. 2569 09:58', status: 'สำเร็จ', statusType: 'green-border' },
     { id: 8, type: 'SSI', icon: AlertTriangle, code: '0123456', name: 'นายสมชาย ใจดี', sub: '', found: 'สงสัย SSI แผลผ่าตัด', dept: 'IPD', date: '15 มิ.ย. 2569 09:58', status: 'รอประเมิน', statusType: 'purple-pill' }
   ]);
 
@@ -941,9 +974,9 @@ function CentralSearchPage() {
         <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase">การค้นหาวันนี้</p>
-            <p className="mt-2 text-2xl font-bold text-slate-800">1,286 <span className="text-xs font-medium text-slate-400">ครั้ง</span></p>
+            <p className="mt-2 text-2xl font-bold text-[#175beb]">1,286 <span className="text-xs font-medium text-[#175beb]/75">ครั้ง</span></p>
           </div>
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-[#175beb]">
             <Search size={20} />
           </span>
         </div>
@@ -951,9 +984,9 @@ function CentralSearchPage() {
         <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase">ผลลัพธ์ทั้งหมด</p>
-            <p className="mt-2 text-2xl font-bold text-slate-800">8,642 <span className="text-xs font-medium text-slate-400">รายการ</span></p>
+            <p className="mt-2 text-2xl font-bold text-[#10b981]">8,642 <span className="text-xs font-medium text-[#10b981]/75">รายการ</span></p>
           </div>
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-[#10b981]">
             <Layers size={20} />
           </span>
         </div>
@@ -996,8 +1029,8 @@ function CentralSearchPage() {
               key={cat.label}
               onClick={() => setActiveTab(cat.label)}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border transition ${activeTab === cat.label
-                  ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
             >
               {cat.label}
@@ -1139,7 +1172,7 @@ function HisSyncPage() {
         <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase">ซิงค์ล่าสุดสำเร็จ</p>
-            <p className="mt-2 text-2xl font-bold text-slate-800">14/06/2569</p>
+            <p className="mt-2 text-2xl font-bold text-[#175beb]">14/06/2569</p>
             <p className="mt-1 flex items-center gap-0.5 text-xs font-semibold text-emerald-500">
               <span className="text-emerald-500 font-bold">↑ 8%</span> จากเมื่อวาน
             </p>
@@ -1152,7 +1185,7 @@ function HisSyncPage() {
         <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase">ซิงค์สำเร็จ</p>
-            <p className="mt-2 text-2xl font-bold text-slate-800">1,248</p>
+            <p className="mt-2 text-2xl font-bold text-[#10b981]">1,248</p>
             <p className="mt-1 flex items-center gap-0.5 text-xs font-semibold text-emerald-500">
               <span className="text-emerald-500 font-bold">↑ 8%</span> จากเมื่อวาน
             </p>
