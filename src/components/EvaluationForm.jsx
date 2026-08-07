@@ -21,7 +21,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
   const [contactStatus, setContactStatus] = useState('success'); // success, failed
   const [contactLocation, setContactLocation] = useState('');
   const [remarks, setRemarks] = useState('');
-  
+
   // CDC Symptoms
   const [symptoms, setSymptoms] = useState({
     fever: 'no',
@@ -33,7 +33,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
     gap: 'no'
   });
   const [otherSymptom, setOtherSymptom] = useState('');
-  
+
   // Other symptoms checkboxes
   const [otherCheckboxes, setOtherCheckboxes] = useState({
     nausea: false,
@@ -54,6 +54,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
   // Modal Visibility State
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isSubmitToDoctorModalOpen, setIsSubmitToDoctorModalOpen] = useState(false);
+  const [appointmentType, setAppointmentType] = useState('normal');
 
   // Submit to Doctor Notification Options States
   const [notifySurgeon, setNotifySurgeon] = useState(true);
@@ -71,23 +72,23 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             <div className="sub-info-card-header">
               <h4 className="sub-info-card-title">ข้อมูลการติดตาม</h4>
             </div>
-            
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div className="form-group">
                 <label>วันที่ติดตาม <span className="text-red-500 font-bold">*</span></label>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  value={followUpDate} 
+                <input
+                  type="text"
+                  className="form-input"
+                  value={followUpDate}
                   onChange={(e) => setFollowUpDate(e.target.value)}
                 />
               </div>
               <div className="form-group">
                 <label>เวลาติดตาม <span className="text-red-500 font-bold">*</span></label>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  value={followUpTime} 
+                <input
+                  type="text"
+                  className="form-input"
+                  value={followUpTime}
                   onChange={(e) => setFollowUpTime(e.target.value)}
                 />
               </div>
@@ -97,31 +98,31 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
               <label>วิธีการติดตาม <span className="text-red-500 font-bold">*</span></label>
               <div className="radio-group-horizontal">
                 <label className="radio-label">
-                  <input 
-                    type="radio" 
-                    name="followUpMethod" 
-                    className="radio-input" 
-                    checked={followUpMethod === 'phone'} 
+                  <input
+                    type="radio"
+                    name="followUpMethod"
+                    className="radio-input"
+                    checked={followUpMethod === 'phone'}
                     onChange={() => setFollowUpMethod('phone')}
                   />
                   <span>โทรศัพท์</span>
                 </label>
                 <label className="radio-label">
-                  <input 
-                    type="radio" 
-                    name="followUpMethod" 
-                    className="radio-input" 
-                    checked={followUpMethod === 'sms'} 
+                  <input
+                    type="radio"
+                    name="followUpMethod"
+                    className="radio-input"
+                    checked={followUpMethod === 'sms'}
                     onChange={() => setFollowUpMethod('sms')}
                   />
                   <span>SMS</span>
                 </label>
                 <label className="radio-label">
-                  <input 
-                    type="radio" 
-                    name="followUpMethod" 
-                    className="radio-input" 
-                    checked={followUpMethod === 'hospital'} 
+                  <input
+                    type="radio"
+                    name="followUpMethod"
+                    className="radio-input"
+                    checked={followUpMethod === 'hospital'}
                     onChange={() => setFollowUpMethod('hospital')}
                   />
                   <span>พบที่ รพ.</span>
@@ -132,19 +133,19 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div className="form-group">
                 <label>ผู้ติดตาม <span className="text-red-500 font-bold">*</span></label>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  value={followerName} 
+                <input
+                  type="text"
+                  className="form-input"
+                  value={followerName}
                   onChange={(e) => setFollowerName(e.target.value)}
                 />
               </div>
               <div className="form-group">
                 <label>เบอร์ติดต่อที่ใช้</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  value={contactPhone} 
+                <input
+                  type="text"
+                  className="form-input"
+                  value={contactPhone}
                   onChange={(e) => setContactPhone(e.target.value)}
                 />
               </div>
@@ -154,21 +155,21 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
               <label>ติดต่อได้หรือไม่ <span className="text-red-500 font-bold">*</span></label>
               <div className="radio-group-horizontal">
                 <label className="radio-label">
-                  <input 
-                    type="radio" 
-                    name="contactStatus" 
-                    className="radio-input" 
-                    checked={contactStatus === 'success'} 
+                  <input
+                    type="radio"
+                    name="contactStatus"
+                    className="radio-input"
+                    checked={contactStatus === 'success'}
                     onChange={() => setContactStatus('success')}
                   />
                   <span>ติดต่อได้</span>
                 </label>
                 <label className="radio-label">
-                  <input 
-                    type="radio" 
-                    name="contactStatus" 
-                    className="radio-input" 
-                    checked={contactStatus === 'failed'} 
+                  <input
+                    type="radio"
+                    name="contactStatus"
+                    className="radio-input"
+                    checked={contactStatus === 'failed'}
                     onChange={() => setContactStatus('failed')}
                   />
                   <span>ติดต่อไม่ได้</span>
@@ -178,11 +179,11 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
 
             <div className="form-group" style={{ marginBottom: '16px' }}>
               <label>สถานที่ติดต่อ</label>
-              <input 
-                type="text" 
-                placeholder="เช่น ที่บ้าน / โรงพยาบาล / ที่ทำงาน" 
-                className="form-input" 
-                value={contactLocation} 
+              <input
+                type="text"
+                placeholder="เช่น ที่บ้าน / โรงพยาบาล / ที่ทำงาน"
+                className="form-input"
+                value={contactLocation}
                 onChange={(e) => setContactLocation(e.target.value)}
               />
             </div>
@@ -192,9 +193,9 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 <label>หมายเหตุ</label>
                 <span className="char-counter">{remarks.length}/500</span>
               </div>
-              <textarea 
-                placeholder="บันทึกเพิ่มเติม (ถ้ามี)" 
-                className="form-input" 
+              <textarea
+                placeholder="บันทึกเพิ่มเติม (ถ้ามี)"
+                className="form-input"
                 style={{ height: '80px', resize: 'vertical' }}
                 maxLength={500}
                 value={remarks}
@@ -256,7 +257,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             <div className="sub-info-card-header">
               <h4 className="sub-info-card-title">แบบประเมินอาการ (CDC SSI)</h4>
             </div>
-            
+
             <table className="assessment-table">
               <thead>
                 <tr>
@@ -279,29 +280,29 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                   <tr key={item.id}>
                     <td>{item.label}</td>
                     <td className="assessment-table-center">
-                      <input 
-                        type="radio" 
-                        name={item.id} 
+                      <input
+                        type="radio"
+                        name={item.id}
                         className="radio-input"
-                        checked={symptoms[item.id] === 'no'} 
+                        checked={symptoms[item.id] === 'no'}
                         onChange={() => setSymptoms(prev => ({ ...prev, [item.id]: 'no' }))}
                       />
                     </td>
                     <td className="assessment-table-center">
-                      <input 
-                        type="radio" 
-                        name={item.id} 
+                      <input
+                        type="radio"
+                        name={item.id}
                         className="radio-input"
-                        checked={symptoms[item.id] === 'yes'} 
+                        checked={symptoms[item.id] === 'yes'}
                         onChange={() => setSymptoms(prev => ({ ...prev, [item.id]: 'yes' }))}
                       />
                     </td>
                     <td className="assessment-table-center">
-                      <input 
-                        type="radio" 
-                        name={item.id} 
+                      <input
+                        type="radio"
+                        name={item.id}
                         className="radio-input"
-                        checked={symptoms[item.id] === 'unknown'} 
+                        checked={symptoms[item.id] === 'unknown'}
                         onChange={() => setSymptoms(prev => ({ ...prev, [item.id]: 'unknown' }))}
                       />
                     </td>
@@ -310,10 +311,10 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 <tr>
                   <td>อื่นๆ</td>
                   <td colSpan="3">
-                    <input 
-                      type="text" 
-                      placeholder="ระบุอาการอื่นๆ" 
-                      className="form-input" 
+                    <input
+                      type="text"
+                      placeholder="ระบุอาการอื่นๆ"
+                      className="form-input"
                       style={{ padding: '6px 10px', fontSize: '13px' }}
                       value={otherSymptom}
                       onChange={(e) => setOtherSymptom(e.target.value)}
@@ -323,9 +324,9 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
               </tbody>
             </table>
 
-            <button 
-              type="button" 
-              className="clear-btn" 
+            <button
+              type="button"
+              className="clear-btn"
               style={{
                 marginTop: '12px',
                 width: '100%',
@@ -354,8 +355,8 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             </div>
             <div className="checkbox-group-vertical">
               <label className="checkbox-label">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   className="checkbox-input"
                   checked={otherCheckboxes.nausea}
                   onChange={(e) => setOtherCheckboxes(prev => ({ ...prev, nausea: e.target.checked }))}
@@ -363,8 +364,8 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 <span>คลื่นไส้ / อาเจียน</span>
               </label>
               <label className="checkbox-label">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   className="checkbox-input"
                   checked={otherCheckboxes.musclePain}
                   onChange={(e) => setOtherCheckboxes(prev => ({ ...prev, musclePain: e.target.checked }))}
@@ -372,8 +373,8 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 <span>ปวดข้อ/ปวดกล้ามเนื้อ</span>
               </label>
               <label className="checkbox-label">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   className="checkbox-input"
                   checked={otherCheckboxes.other}
                   onChange={(e) => setOtherCheckboxes(prev => ({ ...prev, other: e.target.checked }))}
@@ -381,10 +382,10 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 <span>อื่นๆ</span>
               </label>
               {otherCheckboxes.other && (
-                <input 
-                  type="text" 
-                  placeholder="ระบุอาการอื่นๆ" 
-                  className="form-input" 
+                <input
+                  type="text"
+                  placeholder="ระบุอาการอื่นๆ"
+                  className="form-input"
                   value={otherCheckboxesText}
                   onChange={(e) => setOtherCheckboxesText(e.target.value)}
                   style={{ fontSize: '13px', padding: '6px 10px', marginTop: '4px' }}
@@ -400,9 +401,9 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             </div>
             <div className="checkbox-group-vertical">
               <label className="radio-label">
-                <input 
-                  type="radio" 
-                  name="dischargeTreatment" 
+                <input
+                  type="radio"
+                  name="dischargeTreatment"
                   className="radio-input"
                   checked={dischargeTreatment === 'none'}
                   onChange={() => setDischargeTreatment('none')}
@@ -410,9 +411,9 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 <span>ไม่ได้ไปพบแพทย์</span>
               </label>
               <label className="radio-label">
-                <input 
-                  type="radio" 
-                  name="dischargeTreatment" 
+                <input
+                  type="radio"
+                  name="dischargeTreatment"
                   className="radio-input"
                   checked={dischargeTreatment === 'metDoctor'}
                   onChange={() => setDischargeTreatment('metDoctor')}
@@ -420,9 +421,9 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 <span>ไปพบแพทย์แล้ว (OPD/IPD)</span>
               </label>
               <label className="radio-label">
-                <input 
-                  type="radio" 
-                  name="dischargeTreatment" 
+                <input
+                  type="radio"
+                  name="dischargeTreatment"
                   className="radio-input"
                   checked={dischargeTreatment === 'other'}
                   onChange={() => setDischargeTreatment('other')}
@@ -430,10 +431,10 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 <span>อื่นๆ</span>
               </label>
               {dischargeTreatment === 'other' && (
-                <input 
-                  type="text" 
-                  placeholder="ระบุอาการอื่นๆ" 
-                  className="form-input" 
+                <input
+                  type="text"
+                  placeholder="ระบุอาการอื่นๆ"
+                  className="form-input"
                   value={dischargeTreatmentText}
                   onChange={(e) => setDischargeTreatmentText(e.target.value)}
                   style={{ fontSize: '13px', padding: '6px 10px', marginTop: '4px' }}
@@ -447,20 +448,20 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             <div className="sub-info-card-header">
               <h4 className="sub-info-card-title">ประเมินเบื้องต้น</h4>
             </div>
-            
+
             <div className="form-group" style={{ marginBottom: '16px' }}>
               <label>ผลการประเมิน <span className="text-red-500 font-bold">*</span></label>
               <div className="evaluation-toggle-group">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className={`toggle-btn toggle-btn-success ${evalResult === 'not_infected' ? 'active' : ''}`}
                   onClick={() => setEvalResult('not_infected')}
                 >
                   <span className="dot dot-green" style={{ display: evalResult === 'not_infected' ? 'inline-block' : 'none' }}></span>
                   <span>ไม่เข้าข่ายการติดเชื้อ</span>
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className={`toggle-btn toggle-btn-warning ${evalResult === 'suspect_ssi' ? 'active' : ''}`}
                   onClick={() => setEvalResult('suspect_ssi')}
                 >
@@ -475,9 +476,9 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 <label>การจัดการ/คำแนะนำ</label>
                 <span className="char-counter">{evalRemarks.length}/500</span>
               </div>
-              <textarea 
-                placeholder="ระบุการจัดการหรือคำแนะนำที่ให้กับผู้ป่วย" 
-                className="form-input" 
+              <textarea
+                placeholder="ระบุการจัดการหรือคำแนะนำที่ให้กับผู้ป่วย"
+                className="form-input"
                 style={{ height: '80px', resize: 'vertical' }}
                 maxLength={500}
                 value={evalRemarks}
@@ -488,9 +489,9 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             <div className="form-group">
               <label>นัดหมายติดตามครั้งถัดไป <span className="text-red-500 font-bold">*</span></label>
               <div className="relative mt-1">
-                <input 
-                  type="text" 
-                  className="form-input w-full" 
+                <input
+                  type="text"
+                  className="form-input w-full"
                   style={{ paddingLeft: '36px', height: '38px', fontSize: '13px' }}
                   value={nextAppointment}
                   onChange={(e) => setNextAppointment(e.target.value)}
@@ -518,16 +519,16 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
           )}
         </div>
         <div className="action-bar-right">
-          <button 
-            type="button" 
-            className="clear-btn" 
-            style={{ padding: '10px 24px' }}
+          <button
+            type="button"
+            className="btn-outlined-primary"
+            style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onClick={() => setSelectedPatient(null)}
           >
             ปิด
           </button>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-outlined-primary"
             onClick={() => {
               setIsSubmitToDoctorModalOpen(true);
@@ -535,8 +536,8 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
           >
             <span>บันทึกการประเมิน/ส่งให้แพทย์ประเมิน</span>
           </button>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-filled-primary"
             onClick={() => {
               // Update status of selected patient locally to simulate a save!
@@ -566,11 +567,23 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             <p className="modal-subtitle">บันทึกข้อมูลการประเมิน</p>
             <p className="modal-subtitle-bold">โดยยังไม่ส่งให้แพทย์ตรวจ</p>
 
-            <div className="modal-patient-box">
-              <div className="modal-patient-header-select">
-                <span>คนไข้เข้ารับการนัดปกติ</span>
+            <div className="w-full relative mb-3">
+              <select
+                value={appointmentType}
+                onChange={(e) => setAppointmentType(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-[14.5px] font-semibold text-slate-700 appearance-none outline-none cursor-pointer pr-10 shadow-sm transition hover:border-slate-300"
+              >
+                <option value="normal">คนไข้เข้ารับการนัดปกติ</option>
+                <option value="followup">ติดตามอาการเพิ่มเติม</option>
+                <option value="refer">ส่งต่อแพทย์ผู้เชี่ยวชาญ</option>
+                <option value="close">ยุติการติดตาม</option>
+              </select>
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
                 <ChevronDown size={16} />
               </div>
+            </div>
+
+            <div className="modal-patient-box">
               <div className="modal-patient-details">
                 <div className="modal-patient-avatar">
                   <User size={20} />
@@ -588,16 +601,16 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             </div>
 
             <div className="modal-action-row" style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '16px' }}>
-              <button 
-                type="button" 
-                className="btn-outlined-primary" 
+              <button
+                type="button"
+                className="btn-outlined-primary"
                 style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}
                 onClick={() => setIsSaveModalOpen(false)}
               >
                 ปิด
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn-filled-primary"
                 style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', whiteSpace: 'nowrap' }}
                 onClick={() => {
@@ -624,15 +637,16 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
               <CheckCircle2 size={44} strokeWidth={1.5} />
             </div>
             <h3 className="modal-title">ยืนยันการส่งการประเมินให้ศัลยแพทย์</h3>
-            <p className="modal-subtitle" style={{ padding: '0 16px', marginBottom: '20px' }}>
-              คุณต้องการส่งผลการติดตามและประเมินอาการ ให้ศัลยแพทย์ผู้ทำการผ่าตัดตรวจสอบแล้วใช่หรือไม่
+            <p
+              className="modal-subtitle"
+              style={{ padding: '0 16px', marginBottom: '20px' }}
+            >
+              คุณต้องการส่งผลการติดตามและประเมินอาการ
+              <br />
+              ให้ศัลยแพทย์ผู้ทำการผ่าตัดตรวจสอบแล้วใช่หรือไม่
             </p>
 
             <div className="modal-patient-box" style={{ marginBottom: '16px' }}>
-              <div className="modal-patient-header-select">
-                <span>คนไข้เข้ารับการนัดปกติ</span>
-                <ChevronDown size={16} />
-              </div>
               <div className="modal-patient-details">
                 <div className="modal-patient-avatar">
                   <User size={20} />
@@ -687,8 +701,8 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             {/* Notification Checkbox Section */}
             <div className="modal-notification-section">
               <label className="checkbox-label" style={{ fontWeight: '600' }}>
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   className="checkbox-input"
                   checked={notifySurgeon}
                   onChange={(e) => setNotifySurgeon(e.target.checked)}
@@ -700,8 +714,8 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 <div style={{ paddingLeft: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div className="notify-checkbox-row">
                     <label className="checkbox-label" style={{ fontSize: '12.5px' }}>
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="checkbox-input"
                         checked={notifyDashboard}
                         onChange={(e) => setNotifyDashboard(e.target.checked)}
@@ -709,8 +723,8 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                       <span>แจ้งเตือนในระบบ (Dashboard)</span>
                     </label>
                     <label className="checkbox-label" style={{ fontSize: '12.5px' }}>
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="checkbox-input"
                         checked={notifySMS}
                         onChange={(e) => setNotifySMS(e.target.checked)}
@@ -723,8 +737,8 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                     <div className="form-group" style={{ width: '100%' }}>
                       <label style={{ fontSize: '11px', color: 'var(--text-medium)', fontWeight: '500' }}>แจ้งเตือนแพทย์ผ่านเบอร์ SMS <span className="text-red-500 font-bold">*</span></label>
                       <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
-                        <select 
-                          className="form-select" 
+                        <select
+                          className="form-select"
                           style={{ paddingRight: '36px', fontSize: '13px' }}
                           value={notifyPhone}
                           onChange={(e) => setNotifyPhone(e.target.value)}
@@ -747,16 +761,16 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
 
             {/* Modal Actions */}
             <div className="modal-action-row" style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '24px' }}>
-              <button 
-                type="button" 
-                className="btn-outlined-primary" 
+              <button
+                type="button"
+                className="btn-outlined-primary"
                 style={{ padding: '12px 24px', flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}
                 onClick={() => setIsSubmitToDoctorModalOpen(false)}
               >
                 ยกเลิก
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn-filled-primary"
                 style={{ padding: '12px 24px', flex: '1 1 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', whiteSpace: 'nowrap' }}
                 onClick={() => {

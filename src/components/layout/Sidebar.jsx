@@ -20,7 +20,7 @@ import {
   Stethoscope,
   Users,
 } from 'lucide-react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 
 const primaryMenu = [
   { label: 'แดชบอร์ด', path: '/dashboard', icon: LayoutDashboard },
@@ -52,28 +52,35 @@ const adminMenu = [
 ]
 
 function NavItems({ items, onNavigate }) {
-  return items.map(({ label, path, icon: Icon, badge, danger }) => (
-    <NavLink
-      key={path}
-      to={path}
-      onClick={onNavigate}
-      className={({ isActive }) =>
-        `group flex h-[50px] items-center gap-4 rounded-[9px] px-4 text-[15px] font-medium transition ${
-          isActive
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-950/30'
-            : 'text-[#d7e5f3] hover:bg-white/8 hover:text-white'
-        }`
-      }
-    >
-      <Icon size={19} strokeWidth={2} className="shrink-0" />
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-      {badge ? (
-        <span className={`grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-center text-[16px] font-bold ${danger ? 'bg-[#ff4747] text-white' : 'bg-[#286eea] text-white'}`}>
-          {badge}
-        </span>
-      ) : null}
-    </NavLink>
-  ))
+  const { pathname } = useLocation()
+  return items.map(({ label, path, icon: Icon, badge, danger }) => {
+    const isActive = pathname === path || 
+      (path === '/my-follow-ups' && pathname.startsWith('/cases/')) ||
+      (path === '/doctor-review' && pathname.startsWith('/suspected-cases/'))
+
+    return (
+      <NavLink
+        key={path}
+        to={path}
+        onClick={onNavigate}
+        className={
+          `group flex h-[50px] items-center gap-4 rounded-[9px] px-4 text-[15px] font-medium transition ${
+            isActive
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-950/30'
+              : 'text-[#d7e5f3] hover:bg-white/8 hover:text-white'
+          }`
+        }
+      >
+        <Icon size={19} strokeWidth={2} className="shrink-0" />
+        <span className="min-w-0 flex-1 truncate">{label}</span>
+        {badge ? (
+          <span className={`grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-center text-[16px] font-bold ${danger ? 'bg-[#ff4747] text-white' : 'bg-[#286eea] text-white'}`}>
+            {badge}
+          </span>
+        ) : null}
+      </NavLink>
+    )
+  })
 }
 
 export default function Sidebar({ open, onClose }) {

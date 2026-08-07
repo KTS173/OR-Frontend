@@ -85,7 +85,7 @@ export default function DocsView({ selectedPatient }) {
           </button>
           <button 
             type="button" 
-            className="clear-btn" 
+            className="btn-outlined-primary" 
             style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', minWidth: 'auto' }}
             onClick={() => {
               setDocType('all');
