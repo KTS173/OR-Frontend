@@ -1,0 +1,47 @@
+CREATE TABLE IF NOT EXISTS ris_operations (
+    id SERIAL PRIMARY KEY,
+
+    request_id UUID NOT NULL UNIQUE,
+    event_type VARCHAR(50) NOT NULL,
+    source_system VARCHAR(100) NOT NULL,
+
+    hn VARCHAR(50) NOT NULL,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    date_of_birth DATE,
+    age INTEGER,
+    sex VARCHAR(30),
+    height_cm NUMERIC(6,2),
+    weight_kg NUMERIC(6,2),
+    bmi NUMERIC(6,2),
+
+    episode_no VARCHAR(100) NOT NULL,
+    episode_date DATE,
+    ward_name VARCHAR(100),
+    bed_no VARCHAR(50),
+    patient_type VARCHAR(10),
+
+    operation_no VARCHAR(100) NOT NULL UNIQUE,
+    surgeon VARCHAR(255),
+    second_surgeon VARCHAR(255),
+    operation_department VARCHAR(255),
+    operation_location VARCHAR(255),
+    operating_room VARCHAR(100),
+    urgency VARCHAR(50),
+    operation_type VARCHAR(50),
+    preoperative_diagnosis TEXT,
+    procedure_name TEXT NOT NULL,
+    procedure_free_text TEXT,
+    primary_body_site VARCHAR(100),
+    laterality VARCHAR(50),
+    secondary_operation TEXT,
+    start_at TIMESTAMPTZ,
+    end_at TIMESTAMPTZ,
+    duration_minutes INTEGER,
+    outcome VARCHAR(100),
+    report_template TEXT,
+    status VARCHAR(50),
+
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
