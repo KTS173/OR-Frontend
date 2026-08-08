@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "RIS Data Sender",
+  "version": "1.0.3",
+  "description": "Reads operation data from the local RIS form and sends it to the backend.",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["http://localhost:4000/*"],
+  "action": {
+    "default_title": "RIS Data Sender",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost:5173/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
