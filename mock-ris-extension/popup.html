@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RIS Data Sender</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header><span>RIS</span><div><h1>RIS Data Sender</h1><p>Operation data bridge</p></div></header>
+    <main>
+      <div class="actions">
+        <button id="readData" class="secondary" type="button">Read Data</button>
+        <button id="sendData" class="primary" type="button">Send Data</button>
+      </div>
+      <label for="jsonPreview">JSON Preview</label>
+      <pre id="jsonPreview">Click “Read Data” on the RIS page.</pre>
+      <div id="status" class="status neutral" role="status">Ready</div>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
