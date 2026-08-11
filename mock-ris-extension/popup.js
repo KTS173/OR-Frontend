@@ -11,8 +11,8 @@ const setStatus = (message, type = 'neutral') => {
 
 const getActiveTab = async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id || !tab.url?.startsWith('http://localhost:5173/')) {
-    throw new Error('Open the RIS page at http://localhost:5173/ris-entry first.');
+  if (!tab?.id || !tab.url?.startsWith('http://localhost:9000/')) {
+    throw new Error('Open the RIS page at http://localhost:9000/ris-entry first.');
   }
   return tab;
 };
