@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, ChevronDown, Menu } from 'lucide-react'
+import { Bell, CalendarDays, ChevronDown, Info, Menu } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 
 const routeTitles = {
@@ -16,31 +16,52 @@ const routeTitles = {
   '/notifications': 'ศูนย์แจ้งเตือน (Notifications Center)',
   '/central-search': 'ค้นหาข้อมูลกลาง',
   '/documents': 'เอกสารข่าวสารกลาง',
-  '/his-sync': 'ซิงค์ข้อมูลหลัก',
+  '/his-sync': 'ข้อมูลที่เชื่อมต่อจาก HIS / TrackCare',
   '/settings': 'ตั้งค่า',
   '/users': 'จัดการผู้ใช้',
 }
 
 export default function Header({ onMenu }) {
   const { pathname, search } = useLocation()
+  const source = new URLSearchParams(search).get('source')
+  const documentMode = new URLSearchParams(search).get('mode')
   const isSetup = search.includes('setup=true')
-  let title = pathname.endsWith('/create-follow-up') ? 'สร้างบันทึกการเฝ้าระวัง (Create Follow-up)' : pathname.startsWith('/cases/') || pathname.startsWith('/follow-ups/') ? (isSetup ? 'ตั้งค่ารอบ follow-up' : 'งานติดตามของฉัน') : routeTitles[pathname] ?? 'OR SMART SSI'
+  let title = pathname.endsWith('/create-follow-up')
+    ? 'สร้างบันทึกการเฝ้าระวัง (Create Follow-up)'
+    : pathname.startsWith('/cases/')
+      ? (isSetup ? 'ตั้งค่ารอบ follow-up' : 'รายละเอียดเคสผ่าตัด (OR Surgery Case Detail)')
+      : pathname.startsWith('/follow-ups/')
+        ? (isSetup ? 'ตั้งค่ารอบ follow-up' : source === 'calendar' ? 'ประเมินตามรอบ' : 'รายละเอียดเคสผ่าตัด (Case Detail)')
+        : pathname === '/documents' && documentMode === 'create'
+      ? 'เพิ่มเอกสาร / ข่าวสาร'
+      : pathname === '/documents' && documentMode === 'edit'
+        ? 'แก้ไขเอกสาร / ข่าวสาร'
+      : pathname === '/documents' && documentMode === 'detail'
+        ? 'เนื้อหาข่าวสาร'
+          : routeTitles[pathname] ?? 'OR SMART SSI'
 
   if (pathname.startsWith('/suspected-cases/')) {
+    if (source === 'history') {
+      title = 'งานติดตามของฉัน'
+    } else if (source === 'confirmed') {
+      title = 'เคสยืนยันติดเชื้อ'
+    } else {
     const parts = pathname.split('/')
     const subtab = parts[3]
     let subName = 'ข้อมูลคนไข้'
     if (subtab === 'evaluations') subName = 'ประวัติการประเมินอาการ'
     if (subtab === 'eval-detail') subName = 'เคสสงสัยSSI แพทย์'
     if (subtab === 'docs') subName = 'เอกสาร'
-    title = `เคสสงสัยติดเชื้อ (Suspected SSI Cases) (${subName})`
+    title = `เคสสงสัยติดเชื้อ (Suspected SSI Case) (${subName})`
+    }
   }
 
   return (
     <header className="sticky top-0 z-20 flex min-h-[var(--or-header-height)] items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur sm:px-[var(--or-header-padding)]">
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <button onClick={onMenu} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 lg:hidden" aria-label="เปิดเมนู"><Menu size={19} /></button>
-        <h1 className="min-w-0 truncate text-base leading-5 font-medium text-[#175beb] sm:text-xl xl:text-[24px]">{title}</h1>
+        <h1 className="min-w-0 truncate text-base leading-[1.4] font-medium text-[#175beb] sm:text-xl xl:text-[24px]">{title}</h1>
+        {pathname.startsWith('/cases/') && !pathname.endsWith('/create-follow-up') && <Info size={17} className="shrink-0 text-slate-500" />}
       </div>
       <div className="flex shrink-0 items-center gap-2 sm:gap-6">
         <button className="hidden h-[42px] w-[182px] items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-[17px] py-[9px] text-[14px] font-normal leading-6 text-[#1f2937] md:flex"><span className="flex items-center gap-2"><CalendarDays size={18} />15 มิ.ย 2569</span><ChevronDown size={12} /></button>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { 
   Calendar, 
   Phone, 
@@ -18,6 +19,7 @@ import {
 import MetricCard from '../components/ui/MetricCard.jsx'
 
 export default function CalendarPage() {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(15);
   const [activeViewMode, setActiveViewMode] = useState('month'); // 'week' | 'month'
 
@@ -94,6 +96,12 @@ export default function CalendarPage() {
     { day: 3, count: null, isCurrentMonth: false },
     { day: 4, count: null, isCurrentMonth: false },
   ];
+
+  const selectedDayIndex = calendarDays.findIndex((item) => item.isCurrentMonth && item.day === selectedDate);
+  const selectedWeekStart = selectedDayIndex >= 0 ? Math.floor(selectedDayIndex / 7) * 7 : 0;
+  const visibleCalendarDays = activeViewMode === 'week'
+    ? calendarDays.slice(selectedWeekStart, selectedWeekStart + 7)
+    : calendarDays;
 
   const dotColors = {
     blue: 'bg-blue-500',
@@ -238,7 +246,7 @@ export default function CalendarPage() {
         {/* Left Side: Calendar (7 cols) */}
         <div className="lg:col-span-8 rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-            <h2 className="text-[17px] font-semibold text-slate-800">มิถุนายน 2569</h2>
+            <h2 className="text-[17px] font-semibold text-slate-800">{activeViewMode === 'week' ? `${visibleCalendarDays[0]?.day} - ${visibleCalendarDays[6]?.day} มิถุนายน 2569` : 'มิถุนายน 2569'}</h2>
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => setActiveViewMode('week')}
@@ -268,17 +276,17 @@ export default function CalendarPage() {
             ))}
 
             {/* Calendar Cells */}
-            {calendarDays.map((item, idx) => (
+            {visibleCalendarDays.map((item, idx) => (
               <div 
                 key={idx} 
                 onClick={() => item.isCurrentMonth && setSelectedDate(item.day)}
-                className={`min-h-[75px] p-2 border-r border-b border-slate-200/60 flex flex-col justify-between cursor-pointer transition-all hover:bg-slate-50/50 ${
+                className={`${activeViewMode === 'week' ? 'min-h-[75px]' : 'min-h-[75px]'} p-2 border-r border-b border-slate-200/60 flex flex-col justify-between cursor-pointer transition-all hover:bg-slate-50/50 ${
                   !item.isCurrentMonth ? 'bg-slate-50/40 text-slate-300' : 'bg-white'
-                } ${item.isSelected ? 'ring-2 ring-[#175beb] ring-inset relative z-10' : ''}`}
+                } ${item.isCurrentMonth && item.day === selectedDate ? 'ring-2 ring-[#175beb] ring-inset relative z-10' : ''}`}
               >
                 <div className="flex justify-between items-start">
                   <span className={`text-[12.5px] font-medium ${
-                    item.isSelected ? 'text-[#175beb] font-semibold' : 'text-slate-600'
+                    item.isCurrentMonth && item.day === selectedDate ? 'text-[#175beb] font-semibold' : 'text-slate-600'
                   }`}>
                     {item.day}
                   </span>
@@ -297,7 +305,7 @@ export default function CalendarPage() {
                 {item.count !== null && (
                   <div className="mt-1">
                     <span className={`inline-block w-full text-center py-1 px-1.5 rounded text-[11px] font-medium ${
-                      item.isSelected 
+                      item.isCurrentMonth && item.day === selectedDate
                         ? 'bg-[#175beb] text-white' 
                         : 'bg-blue-50 text-blue-600'
                     }`}>
@@ -390,7 +398,7 @@ export default function CalendarPage() {
                   </div>
 
                   <div className="mt-3 flex justify-end">
-                    <button className="rounded-lg bg-[#175beb] px-4 py-1.5 text-[12px] font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors">
+                    <button onClick={() => navigate(`/follow-ups/${p.hn.replace(/^HN/, '')}?tab=evaluation&source=calendar`)} className="rounded-lg bg-[#175beb] px-4 py-1.5 text-[12px] font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors">
                       เริ่มติดตาม
                     </button>
                   </div>
@@ -411,11 +419,6 @@ export default function CalendarPage() {
 
       </div>
 
-      {/* Notice Banner */}
-      <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
-        <Calendar size={16} className="text-blue-500" />
-        <span>15 มิ.ย. 2569: ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
-      </div>
     </div>
   );
 }

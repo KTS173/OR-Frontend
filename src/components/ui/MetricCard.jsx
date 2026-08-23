@@ -20,8 +20,8 @@ const dashboardVisuals = {
   violet: { icon: 'letter.png', arrow: 'upgreen.png', label: '#0561d9', value: '#3b82f6', iconColor: '#3b82f6', trend: '#10b981' },
   green:  { icon: 'calendar-check.png', arrow: 'upgreen.png', label: '#047857', value: '#10b981', iconColor: '#10b981', trend: '#10b981' },
   red:    { icon: 'time-alert_svgrepo.com.png', arrow: 'up-red-margin.png', label: '#ef2b2b', value: '#ef4444', iconColor: '#ef4444', trend: '#ef4444' },
-  purple: { icon: '2.png', arrow: 'down green.png', label: '#4c1dca', value: '#4c1dca', iconColor: '#4c1dca', trend: '#10b981' },
-  teal:   { icon: 'image.png', arrow: 'down green.png', label: '#1e3a8a', value: '#1e3a8a', iconColor: '#1e3a8a', trend: '#10b981' },
+  purple: { icon: '2.png', arrow: 'down green.png', label: '#4c1dca', value: '#4c1dca', iconColor: '#4c1dca', trend: '#ef4444' },
+  teal:   { icon: 'image.png', arrow: 'down green.png', label: '#1e3a8a', value: '#1e3a8a', iconColor: '#1e3a8a', trend: '#ef4444' },
   orange: { icon: 'warning.png', arrow: 'up-red-margin.png', label: '#e96500', value: '#e96500', iconColor: '#f97316', trend: '#ef4444', trendUnit: 'ราย', trendSuffix: '#ef4444', background: '#fffaf5', border: 'border-amber-200' },
   rose:   { icon: 'ice.png', arrow: 'up-red-margin.png', label: '#e9272f', value: '#ef3741', iconColor: '#e9272f', trend: '#ef3741', trendUnit: 'ราย', trendSuffix: '#ef3741', background: '#fff4f4' },
 }
@@ -63,7 +63,7 @@ export default function MetricCard({ label, value, unit, trend, tone = 'blue', d
           }}
         />
       </div>
-      <p className="flex w-full items-baseline gap-2 pt-1 text-[32px] leading-9 font-bold" style={{ color: visual.value }}>
+      <p className="flex w-full items-baseline gap-2 pt-1 text-[32px] leading-9 font-semibold" style={{ color: visual.value }}>
         <span>{value}</span>
         {unit && <span className="whitespace-nowrap text-[14px] font-semibold">{unit}</span>}
       </p>
@@ -73,7 +73,21 @@ export default function MetricCard({ label, value, unit, trend, tone = 'blue', d
         </p>
       ) : (
         <p className="flex items-center gap-0.5 text-[14px] leading-4 font-medium" style={{ color: visual.trend }}>
-          <img src={arrowUrl} alt="" className="h-[9px] w-3 shrink-0 object-contain" />
+          <span
+            className="h-[9px] w-3 shrink-0 bg-contain bg-center bg-no-repeat"
+            aria-hidden="true"
+            style={{
+              backgroundColor: visual.trend,
+              WebkitMaskImage: `url("${arrowUrl}")`,
+              WebkitMaskPosition: 'center',
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskSize: 'contain',
+              maskImage: `url("${arrowUrl}")`,
+              maskPosition: 'center',
+              maskRepeat: 'no-repeat',
+              maskSize: 'contain',
+            }}
+          />
           {trend?.replace('+', '')}{visual.trendUnit ? ` ${visual.trendUnit}` : ''}
           <span className="ml-1" style={{ color: visual.trendSuffix ?? '#6b7280' }}>จากเมื่อวาน</span>
         </p>

@@ -4,6 +4,11 @@ import SystemAnnouncement from '../ui/SystemAnnouncement.jsx'
 import Header from './Header.jsx'
 import Sidebar from './Sidebar.jsx'
 
+const systemAnnouncement = {
+  date: '15 มิ.ย. 2569',
+  message: 'ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.',
+}
+
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { pathname } = useLocation()
@@ -18,9 +23,11 @@ export default function AppLayout() {
         <main className="or-page w-full flex-1">
           <Outlet />
         </main>
-        <footer className="mx-4 mb-4 flex flex-col justify-between gap-2 border-t border-slate-200 pt-3 text-[16px] text-slate-400 sm:mx-6 sm:flex-row">
-          <span>ระบบ OR SMART SSI สำหรับบุคลากรโรงพยาบาลที่ได้รับอนุญาต</span>
-          <span>© Bangkok Hospital · Version 1.0</span>
+        <footer className="mx-4 mb-4 sm:mx-6">
+          <SystemAnnouncement
+            date={systemAnnouncement.date}
+            message={systemAnnouncement.message}
+          />
         </footer>
       </div>
     </div>

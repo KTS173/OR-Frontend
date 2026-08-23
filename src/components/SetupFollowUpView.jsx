@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Calendar, HelpCircle, Plus, ChevronLeft, ChevronRight, Check } from 'lucide-react'
+import { Calendar, HelpCircle, Plus, ChevronLeft, ChevronRight, Check, Save, X } from 'lucide-react'
 
 export default function SetupFollowUpView({ selectedPatient, onClose }) {
   const [selectedTemplate, setSelectedTemplate] = useState('day30');
   const [autoCalculate, setAutoCalculate] = useState(true);
+  const [isAddRoundOpen, setIsAddRoundOpen] = useState(false);
+  const [newRound, setNewRound] = useState({ round: '', date: '', time: '09:00', method: 'โทรศัพท์ + ส่งรูปแผล', note: '' });
 
   // Calendar dates for June 2026
   const calendarDays = [
@@ -26,7 +28,28 @@ export default function SetupFollowUpView({ selectedPatient, onClose }) {
     { round: 'Day 30', date: '15 ก.ค.2569', time: '09:00', method: 'โทรศัพท์ + ส่งรูปแผล', note: 'โทรติดตามอาการ/แผล', checked: true }
   ];
 
+  const day90Rows = [
+    ...initialRows.filter((row) => row.round !== 'Day 30'),
+    { round: 'Day 30', date: '15 ก.ค.2569', time: '09:00', method: 'โทรศัพท์ + ส่งรูปแผล', note: 'โทรติดตามอาการ/แผล', checked: true },
+    { round: 'Day 45', date: '30 ก.ค.2569', time: '09:00', method: 'โทรศัพท์ + ส่งรูปแผล', note: 'ติดตามอาการหลังผ่าตัด', checked: true },
+    { round: 'Day 60', date: '14 ส.ค.2569', time: '09:00', method: 'โทรศัพท์ + ส่งรูปแผล', note: 'ติดตามอาการหลังผ่าตัด', checked: true },
+    { round: 'Day 90', date: '13 ก.ย.2569', time: '09:00', method: 'โทรศัพท์ + ส่งรูปแผล', note: 'ประเมินครบ 90 วัน', checked: true },
+  ];
+
   const [rows, setRows] = useState(initialRows);
+
+  const handleTemplateChange = (template) => {
+    setSelectedTemplate(template);
+    const templateRows = template === 'day90' ? day90Rows : initialRows;
+    setRows(templateRows.map((row) => ({ ...row })));
+  };
+
+  const handleAddRound = () => {
+    if (!newRound.round.trim() || !newRound.date.trim()) return;
+    setRows((current) => [...current, { ...newRound, checked: true }]);
+    setNewRound({ round: '', date: '', time: '09:00', method: 'โทรศัพท์ + ส่งรูปแผล', note: '' });
+    setIsAddRoundOpen(false);
+  };
 
   const handleCheckboxChange = (index) => {
     const updated = [...rows];
@@ -40,7 +63,7 @@ export default function SetupFollowUpView({ selectedPatient, onClose }) {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '20px', marginTop: '8px', textAlign: 'left' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 30%) minmax(0, 1fr)', gap: '16px', marginTop: '8px', textAlign: 'left', alignItems: 'start' }}>
       
       {/* Left Column: Template Selection and Calendar */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -58,7 +81,7 @@ export default function SetupFollowUpView({ selectedPatient, onClose }) {
                 type="radio" 
                 name="template" 
                 checked={selectedTemplate === 'day30'} 
-                onChange={() => setSelectedTemplate('day30')}
+                onChange={() => handleTemplateChange('day30')}
                 style={{ marginTop: '4px' }}
               />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
@@ -78,7 +101,7 @@ export default function SetupFollowUpView({ selectedPatient, onClose }) {
                 type="radio" 
                 name="template" 
                 checked={selectedTemplate === 'day90'} 
-                onChange={() => setSelectedTemplate('day90')}
+                onChange={() => handleTemplateChange('day90')}
                 style={{ marginTop: '4px' }}
               />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
@@ -239,12 +262,12 @@ export default function SetupFollowUpView({ selectedPatient, onClose }) {
           </div>
 
           {/* Add custom follow up row */}
-          <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '16px' }}>
+          <div style={{ display: 'flex', marginTop: '16px' }}>
             <button 
               type="button" 
               className="btn-outlined-primary" 
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', padding: '6px 16px', minWidth: 'auto' }}
-              onClick={() => alert('เพิ่มรอบติดตามใหม่')}
+              style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '13px', padding: '8px 16px', borderStyle: 'dashed' }}
+              onClick={() => setIsAddRoundOpen(true)}
             >
               <Plus size={14} />
               <span>เพิ่มรอบติดตาม</span>
@@ -272,17 +295,19 @@ export default function SetupFollowUpView({ selectedPatient, onClose }) {
           </div>
 
           {/* Notice bottom */}
-          <div style={{ fontSize: '13px', color: 'var(--text-light)', borderTop: '1px solid var(--border-color)', paddingTop: '12px', marginTop: '12px' }}>
-            หมายเหตุ: สามารถปรับเปลี่ยนรอบติดตามภายหลังใน Timeline ของผู้ป่วยได้
+          <div style={{ fontSize: '12px', color: 'var(--color-primary)', border: '1px solid #bfdbfe', borderRadius: '8px', backgroundColor: '#eff6ff', padding: '12px 14px', marginTop: '16px' }}>
+            <strong>หมายเหตุ:</strong>&nbsp; สามารถปรับเปลี่ยนรอบติดตามภายหลังใน Timeline ของผู้ป่วยได้
           </div>
         </div>
 
-        {/* Form Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+      </div>
+
+      {/* Form Actions */}
+        <div className="sub-info-card" style={{ gridColumn: '1 / -1', width: '100%', minHeight: '76px', display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'flex-end', gap: '16px', padding: '12px 20px', boxSizing: 'border-box' }}>
           <button 
             type="button" 
             className="btn-outlined-primary" 
-            style={{ padding: '10px 24px', fontSize: '13.5px', minWidth: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ width: '100px', height: '39px', flexShrink: 0, whiteSpace: 'nowrap', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}
             onClick={onClose}
           >
             ปิด
@@ -290,15 +315,34 @@ export default function SetupFollowUpView({ selectedPatient, onClose }) {
           <button 
             type="button" 
             className="btn-filled-primary"
-            style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px' }}
+            style={{ width: '250px', height: '39px', flexShrink: 0, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', fontSize: '15px', borderRadius: '8px', backgroundColor: '#175beb', color: 'white' }}
             onClick={handleSave}
           >
-            <Check size={16} />
+            <Save size={18} strokeWidth={2} />
             <span>บันทึกการแก้ไข Follow-up</span>
           </button>
         </div>
 
-      </div>
+      {isAddRoundOpen && <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/45 p-4" onMouseDown={() => setIsAddRoundOpen(false)}>
+        <section className="relative w-full max-w-[520px] rounded-2xl bg-white p-6 shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
+          <button type="button" onClick={() => setIsAddRoundOpen(false)} className="absolute right-5 top-5 text-slate-400 hover:text-slate-600"><X size={20} /></button>
+          <h3 className="text-[18px] font-semibold text-[#1e293b]">เพิ่มรอบติดตาม</h3>
+          <p className="mt-1 text-[13px] text-slate-500">กรอกรายละเอียดรอบติดตามเพิ่มเติม</p>
+
+          <div className="mt-5 grid grid-cols-2 gap-4">
+            <label className="text-[13px] text-slate-600">รอบติดตาม <span className="text-red-500">*</span><input value={newRound.round} onChange={(event) => setNewRound({ ...newRound, round: event.target.value })} className="form-input mt-1 h-[42px] w-full" placeholder="เช่น Day 45" /></label>
+            <label className="text-[13px] text-slate-600">วันที่ติดตาม <span className="text-red-500">*</span><input value={newRound.date} onChange={(event) => setNewRound({ ...newRound, date: event.target.value })} className="form-input mt-1 h-[42px] w-full" placeholder="เช่น 30 ก.ค.2569" /></label>
+            <label className="text-[13px] text-slate-600">เวลา<select value={newRound.time} onChange={(event) => setNewRound({ ...newRound, time: event.target.value })} className="form-select mt-1 h-[42px] w-full"><option>09:00</option><option>10:00</option><option>11:00</option><option>13:30</option></select></label>
+            <label className="text-[13px] text-slate-600">วิธีติดตาม<select value={newRound.method} onChange={(event) => setNewRound({ ...newRound, method: event.target.value })} className="form-select mt-1 h-[42px] w-full"><option>โทรศัพท์ + ส่งรูปแผล</option><option>โทรอย่างเดียว</option><option>เข้าพบแพทย์</option></select></label>
+            <label className="col-span-2 text-[13px] text-slate-600">หมายเหตุ<input value={newRound.note} onChange={(event) => setNewRound({ ...newRound, note: event.target.value })} className="form-input mt-1 h-[42px] w-full" placeholder="ระบุรายละเอียดเพิ่มเติม" /></label>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <button type="button" onClick={() => setIsAddRoundOpen(false)} className="h-[42px] rounded-lg border border-slate-300 px-6 text-[14px] text-slate-700">ยกเลิก</button>
+            <button type="button" disabled={!newRound.round.trim() || !newRound.date.trim()} onClick={handleAddRound} className="h-[42px] rounded-lg bg-[#175beb] px-6 text-[14px] text-white disabled:cursor-not-allowed disabled:bg-blue-300"><Plus size={15} className="mr-2 inline" />เพิ่มรอบติดตาม</button>
+          </div>
+        </section>
+      </div>}
 
     </div>
   );

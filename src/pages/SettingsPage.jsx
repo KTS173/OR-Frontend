@@ -281,59 +281,62 @@ HN: {{hn}}
                 </div>
 
                 {/* Table list of SSI Symptoms */}
-                <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm text-left">
-                  <div className="flex items-center justify-between pb-3 text-[14px] font-semibold text-slate-500 border-b border-slate-100 font-sans">
-                    <span className="flex-1">รายการ</span>
-                    <div className="flex items-center gap-12">
-                      <span className="w-16 text-center">คะแนน</span>
-                      <span className="w-24 text-right flex items-center justify-end gap-2">
-                        เปิดใช้งานทั้งหมด
-                      </span>
-                    </div>
+                <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm text-left">
+                  <div className="flex h-[58px] items-center justify-end border-b border-slate-200 bg-slate-50/60 px-6">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const enableAll = !ssiCriteria.every((item) => item.enabled)
+                        setSsiCriteria((current) => current.map((item) => ({ ...item, enabled: enableAll })))
+                      }}
+                      className="text-[14px] font-medium text-slate-600"
+                    >เปิดใช้งานทั้งหมด</button>
+                  </div>
+                  <div className="grid h-[58px] grid-cols-[1fr_190px_80px_90px] items-center border-b border-slate-200 px-6 text-[14px] font-medium text-slate-800">
+                    <span>รายการ</span>
+                    <span />
+                    <span className="text-center">คะแนน</span>
+                    <span className="text-center">เปิดใช้งาน</span>
                   </div>
 
-                  <div className="divide-y divide-slate-100 font-sans">
+                  <div className="font-sans">
                     {ssiCriteria.map((item, idx) => (
-                      <div key={item.id} className="flex items-center justify-between py-4 text-[14px]">
-                        <span className="flex-1 font-medium text-slate-700 flex items-center gap-3">
+                      <div key={item.id} className="grid min-h-[88px] grid-cols-[1fr_190px_80px_90px] items-center px-6 text-[14px]">
+                        <span className="flex items-center gap-3 font-normal text-slate-700">
                           <span className="text-slate-400 w-5">{idx + 1}.</span>
                           {item.name}
                         </span>
 
-                        <div className="flex items-center gap-12">
-                          {/* 3 Circular Radio Buttons */}
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center gap-8">
                             {[0, 1, 2].map((val) => (
                               <button
                                 key={val}
                                 type="button"
                                 onClick={() => handleSelectionChange(item.id, val)}
-                                className={`h-5 w-5 rounded-full border flex items-center justify-center transition ${
+                                className={`flex h-6 w-6 items-center justify-center rounded-full border transition ${
                                   item.selection === val
                                     ? 'border-[#175beb] bg-[#175beb]/10'
                                     : 'border-slate-300 bg-white hover:border-slate-400'
                                 }`}
                               >
                                 {item.selection === val && (
-                                  <span className="h-2.5 w-2.5 rounded-full bg-[#175beb]" />
+                                  <span className="h-2 w-2 rounded-full bg-[#175beb]" />
                                 )}
                               </button>
                             ))}
                           </div>
-
-                          {/* Score Input */}
                           <input
                             type="number"
                             value={item.score}
                             onChange={(e) => handleScoreChange(item.id, e.target.value)}
-                            className="w-16 h-9 rounded-lg border border-slate-200 text-center font-semibold text-slate-700 outline-none focus:border-[#175beb] focus:ring-1 focus:ring-[#175beb]"
+                            className="mx-auto h-10 w-16 rounded-lg border border-slate-300 text-center font-normal text-slate-700 outline-none focus:border-[#175beb]"
                           />
 
                           {/* Toggle Switch */}
                           <button
                             type="button"
                             onClick={() => handleToggleSsi(item.id)}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            className={`relative mx-auto inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                               item.enabled ? 'bg-[#10b981]' : 'bg-slate-200'
                             }`}
                           >
@@ -343,7 +346,6 @@ HN: {{hn}}
                               }`}
                             />
                           </button>
-                        </div>
                       </div>
                     ))}
                   </div>
@@ -351,7 +353,7 @@ HN: {{hn}}
                   {/* Add Symptom Button */}
                   <button
                     onClick={addSsiCriterion}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 py-3 text-[14px] font-semibold text-slate-500 hover:bg-slate-50 transition"
+                    className="mx-5 mb-5 mt-2 flex w-[calc(100%_-_2.5rem)] items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 py-3 text-[14px] font-medium text-slate-500 transition hover:bg-slate-50"
                   >
                     <Plus size={16} /> เพิ่มอาการ/อาการแสดง
                   </button>
@@ -359,54 +361,54 @@ HN: {{hn}}
 
                 {/* Risk Level Setting Section */}
                 <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm text-left">
-                  <h3 className="text-[15px] font-semibold text-slate-800 mb-4 flex items-center gap-1.5">
+                  <h3 className="mb-5 flex items-center gap-2 text-[16px] font-semibold text-slate-700">
                     ระดับความเสี่ยง (Risk Level)
-                    <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold cursor-pointer">?</span>
+                    <span className="inline-flex h-[18px] w-[18px] cursor-pointer items-center justify-center rounded-full border-2 border-[#175beb] text-[11px] font-semibold leading-none text-[#175beb]">?</span>
                   </h3>
 
-                  <div className="overflow-x-auto rounded-xl border border-slate-100">
-                    <table className="w-full text-left border-collapse text-[13px]">
+                  <div className="overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="w-full border-collapse text-left text-[15px]">
                       <thead>
-                        <tr className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
-                          <th className="px-4 py-3">ระดับ</th>
-                          <th className="px-4 py-3 text-right">ช่วงคะแนน (%)</th>
+                        <tr className="h-[58px] border-b border-slate-200 bg-slate-50 text-slate-600">
+                          <th className="px-6 font-medium">ระดับ</th>
+                          <th className="px-6 text-right font-medium">ช่วงคะแนน (%)</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
-                        <tr>
-                          <td className="px-4 py-3">
-                            <span className="inline-block rounded-md bg-[#ecfdf5] px-2 py-0.5 text-xs text-[#10b981]">ปกติ (Low)</span>
+                      <tbody className="divide-y divide-slate-100 font-normal text-slate-800">
+                        <tr className="h-[76px]">
+                          <td className="px-6">
+                            <span className="inline-block rounded-md bg-green-100 px-3 py-1 text-[13px] font-medium text-green-700">ปกติ (Low)</span>
                           </td>
-                          <td className="px-4 py-3 text-right font-semibold">0 - 20%</td>
+                          <td className="px-6 text-right">0 - 20%</td>
                         </tr>
-                        <tr>
-                          <td className="px-4 py-3">
-                            <span className="inline-block rounded-md bg-amber-50 px-2 py-0.5 text-xs text-amber-600">เฝ้าระวัง (Moderate)</span>
+                        <tr className="h-[76px]">
+                          <td className="px-6">
+                            <span className="inline-block rounded-md bg-amber-100 px-3 py-1 text-[13px] font-medium text-amber-700">เฝ้าระวัง (Moderate)</span>
                           </td>
-                          <td className="px-4 py-3 text-right font-semibold">21 - 50%</td>
+                          <td className="px-6 text-right">21 - 50%</td>
                         </tr>
-                        <tr>
-                          <td className="px-4 py-3">
-                            <span className="inline-block rounded-md bg-orange-50 px-2 py-0.5 text-xs text-orange-600">เสี่ยง (High)</span>
+                        <tr className="h-[76px]">
+                          <td className="px-6">
+                            <span className="inline-block rounded-md bg-orange-100 px-3 py-1 text-[13px] font-medium text-orange-700">เสี่ยง (High)</span>
                           </td>
-                          <td className="px-4 py-3 text-right font-semibold">51 - 80%</td>
+                          <td className="px-6 text-right">51 - 80%</td>
                         </tr>
-                        <tr>
-                          <td className="px-4 py-3">
-                            <span className="inline-block rounded-md bg-red-50 px-2 py-0.5 text-xs text-red-600">ติดเชื้อ (Critical)</span>
+                        <tr className="h-[76px]">
+                          <td className="px-6">
+                            <span className="inline-block rounded-md bg-red-100 px-3 py-1 text-[13px] font-medium text-red-700">ติดเชื้อ (Critical)</span>
                           </td>
-                          <td className="px-4 py-3 text-right font-semibold">&gt; 80%</td>
+                          <td className="px-6 text-right">&gt; 80%</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
 
                   {/* Legend dots */}
-                  <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[12px] text-slate-500 font-semibold">
-                    <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-green-500" />ต่ำ (0-24)</span>
-                    <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-500" />ปานกลาง (25-49)</span>
-                    <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" />สูง (50-74)</span>
-                    <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-950" />สูงมาก (75-100)</span>
+                  <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-[13px] font-normal text-slate-600">
+                    <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-green-500" />ต่ำ (0-24)</span>
+                    <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-orange-400" />ปานกลาง (25-49)</span>
+                    <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-red-500" />สูง (50-74)</span>
+                    <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-red-700" />สูงมาก (75-100)</span>
                   </div>
                 </div>
               </div>
@@ -1019,22 +1021,15 @@ HN: {{hn}}
           </div>
 
           {/* Bottom Actions */}
-          <div className="flex items-center justify-end gap-4">
-            <button className="btn-secondary h-11 px-6">
+          <div className="flex min-h-[78px] items-center justify-end gap-4 rounded-2xl border border-black/10 bg-white px-7 shadow-sm">
+            <button className="h-[50px] min-w-[110px] rounded-xl border border-slate-300 bg-white px-7 text-[15px] font-medium text-slate-800 hover:bg-slate-50">
               ปิด
             </button>
-            <button onClick={handleSave} className="btn-primary h-11 px-6 bg-[#002d73] hover:bg-[#001d52]">
-              <Save size={16} /> บันทึกการตั้งค่า
+            <button onClick={handleSave} className="inline-flex h-[50px] min-w-[210px] items-center justify-center gap-2 rounded-xl bg-[#175beb] px-7 text-[15px] font-medium text-white shadow-sm hover:bg-[#124ed1]">
+              <Save size={18} /> บันทึกการตั้งค่า
             </button>
           </div>
 
-          {/* Warning Notification Banner */}
-          <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/50 p-4 text-xs text-slate-600">
-            <span className="text-[14px]">📅 15 มิ.ย. 2569</span>
-            <div className="flex-1 font-medium leading-5">
-              ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.
-            </div>
-          </div>
         </section>
       </div>
     </div>

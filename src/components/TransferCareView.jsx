@@ -79,7 +79,7 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
       </div>
 
       {/* ประวัติการส่งต่อ */}
-      <div className="sub-info-card" style={{ padding: '20px' }}>
+      {isTransferCompleted && <div className="sub-info-card" style={{ padding: '20px' }}>
         <div className="sub-info-card-header" style={{ marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border-color)' }}>
           <h4 className="sub-info-card-title">ประวัติการส่งต่อ</h4>
         </div>
@@ -121,12 +121,12 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
             <button className="page-button w-auto px-3" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>Next</button>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* เอกสารแนบ (ถ้ามี) */}
       <div className="sub-info-card" style={{ padding: '20px' }}>
         <div className="sub-info-card-header" style={{ marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border-color)' }}>
-          <h4 className="sub-info-card-title">เอกสารแนบ</h4>
+          <h4 className="sub-info-card-title">เอกสารแนบ (ถ้ามี)</h4>
         </div>
         {isTransferCompleted ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
@@ -153,8 +153,7 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
 
       {/* Alert bar */}
       {!isTransferCompleted && (
-        <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fef3c7', borderLeft: '4px solid var(--color-orange)', borderRadius: '8px', padding: '16px', display: 'flex', gap: '10px', alignItems: 'center', fontSize: '13px', color: '#b45309', textAlign: 'left' }}>
-          <span>⚠️</span>
+        <div style={{ backgroundColor: '#fffaf5', border: '1px solid #fed7aa', borderRadius: '8px', padding: '16px', display: 'flex', gap: '10px', alignItems: 'center', fontSize: '13px', color: '#c2410c', textAlign: 'left' }}>
           <span>ยังไม่ได้ส่งไปยังแผนก OPD/IPD กรุณาตรวจสอบข้อมูลก่อนยืนยันการส่งต่อ</span>
         </div>
       )}
@@ -179,7 +178,7 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
           </button>
         </div>
       ) : (
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 20px', border: '1px solid var(--border-color)', borderRadius: '10px', backgroundColor: 'white', boxShadow: 'var(--shadow-sm)' }}>
           <button
             type="button"
             className="btn-filled-primary"
@@ -195,12 +194,8 @@ export default function TransferCareView({ selectedPatient, isTransferCompleted,
         </div>
       )}
 
-      {/* Horizontal Timeline rendered at the bottom of the TransferCare success page */}
-      {isTransferCompleted && (
-        <div style={{ marginTop: '20px' }}>
-          <LocalTimeline />
-        </div>
-      )}
+      {/* Horizontal Timeline rendered at the bottom of the TransferCare page */}
+      <LocalTimeline />
 
       {/* Side Drawer Modal */}
       {isDrawerOpen && (
@@ -548,7 +543,11 @@ function LocalTimeline() {
         </div>
       </div>
 
-      <div className="timeline-legend" style={{ display: 'flex', gap: '16px', justifyContent: 'flex-start', marginTop: '20px', fontSize: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '12px', color: 'var(--text-medium)' }}>
+      <div style={{ marginTop: '18px', borderRadius: '7px', backgroundColor: '#f1f5f9', padding: '9px 12px', textAlign: 'left', fontSize: '12px', color: 'var(--text-medium)' }}>
+        หมายเหตุ: วันที่อาจเปลี่ยนแปลงได้ตามการกำหนดของโรงพยาบาล
+      </div>
+
+      <div className="timeline-legend" style={{ display: 'flex', gap: '16px', justifyContent: 'flex-start', marginTop: '12px', fontSize: '12px', color: 'var(--text-medium)' }}>
         <div className="legend-item" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span className="legend-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-success)' }}></span>
           <span>ดำเนินการสำเร็จ</span>

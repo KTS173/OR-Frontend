@@ -340,11 +340,6 @@ export default function UserManagementPage() {
         </footer>
       </section>
 
-      {/* Notice Banner */}
-      <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
-        <CalendarDays size={16} className="text-blue-500" />
-        <span>15 มิ.ย. 2569: ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
-      </div>
     </div>
   )
 }

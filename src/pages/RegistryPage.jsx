@@ -1,4 +1,4 @@
-import { Activity, AlertCircle, AlertTriangle, ArrowLeftRight, ArrowRight, Calendar, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Database, Download, Eye, File, History, Layers, Mail, PhoneCall, Plus, RefreshCw, RotateCcw, Scissors, Search, Settings2, ShieldCheck, Stethoscope, TimerReset, UserCheck, UserRound, X } from 'lucide-react'
+import { Activity, AlertCircle, AlertTriangle, ArrowLeftRight, ArrowRight, Calendar, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Database, Download, Eye, File, History, Layers, Mail, MoreVertical, PhoneCall, Plus, RefreshCw, RotateCcw, Scissors, Search, Settings2, ShieldCheck, Stethoscope, TimerReset, UserCheck, UserRound, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Filters from '../components/ui/Filters.jsx'
@@ -61,18 +61,35 @@ const opdMetrics = [
 function OpdQueuePage({ queueType, patients, loading, search, setSearch }) {
   const [selectedPatient, setSelectedPatient] = useState(null)
   const queueLabel = queueType.toUpperCase()
-  return <div className="space-y-4">
-    <section className="grid grid-cols-5 gap-4">{opdMetrics.map(([label, value, unit, Icon, color, bg, cardBg], index) => <article key={label} className="flex h-[140px] min-w-0 flex-col rounded-xl border border-black/10 p-[17px] shadow-sm" style={{ backgroundColor: cardBg }}><div className="flex items-start justify-between gap-2"><p className="whitespace-nowrap text-[14px] font-medium" style={{ color }}>{label}</p><span className="grid size-9 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: bg, color }}>{typeof Icon === 'string' ? <span className="validation-card-icon" style={{ backgroundColor: color, WebkitMaskImage: `url("${Icon}")`, maskImage: `url("${Icon}")` }} /> : <Icon size={20} />}</span></div><p className="mt-3 flex items-baseline gap-1.5 text-[28px] font-semibold leading-8" style={{ color }}><span>{value}</span><span className="text-[14px]">{unit}</span></p><p className={`mt-auto flex items-center whitespace-nowrap text-[12px] leading-4 ${index >= 3 ? 'text-red-500' : 'text-[#64748b]'}`}>{index >= 3 && <img src="/assets/icon/dashboard/up-red-margin.png" alt="" className="mr-1 h-[9px] w-3 object-contain" />}{index === 0 ? 'ต้องรับเคสวันนี้' : index === 1 ? 'ต้องติดตามวันนี้' : index === 2 ? 'เกินกำหนดแล้ว' : index === 3 ? '2 ราย จากเมื่อวาน' : '1 ราย จากเมื่อวาน'}</p></article>)}</section>
+  return <div className="opd-queue-page space-y-4">
+    <section className="grid grid-cols-5 gap-4">{opdMetrics.map(([label, value, unit, Icon, color, bg, cardBg], index) => <article key={label} className="flex h-[140px] min-w-0 flex-col rounded-xl border border-black/10 p-[17px] shadow-sm" style={{ backgroundColor: cardBg }}><div className="flex items-start justify-between gap-2"><p className="whitespace-nowrap text-[16px] font-medium" style={{ color }}>{label}</p><span className="grid size-10 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: bg, color }}>{typeof Icon === 'string' ? <span className="validation-card-icon" style={{ backgroundColor: color, WebkitMaskImage: `url("${Icon}")`, maskImage: `url("${Icon}")` }} /> : <Icon size={22} />}</span></div><p className="mt-2 flex items-baseline gap-1.5 text-[30px] font-medium leading-8" style={{ color }}><span>{value}</span><span className="text-[15px]">{unit}</span></p><p className={`mt-auto flex items-center whitespace-nowrap text-[13px] leading-4 ${index >= 3 ? 'text-red-500' : 'text-[#64748b]'}`}>{index >= 3 && <img src="/assets/icon/dashboard/up-red-margin.png" alt="" className="mr-1 h-[9px] w-3 object-contain" />}{index === 0 ? 'ต้องรับเคสวันนี้' : index === 1 ? 'ต้องติดตามวันนี้' : index === 2 ? 'เกินกำหนดแล้ว' : index === 3 ? '2 ราย จากเมื่อวาน' : '1 ราย จากเมื่อวาน'}</p></article>)}</section>
     <Filters search={search} onSearch={setSearch} validation />
-    <section className="flex h-[66px] items-center rounded-xl border border-black/10 bg-white px-4 shadow-sm"><div className="flex h-full items-center gap-6">{['ทั้งหมด (52)', 'รายการคนไข้จากแผนก OR ใหม่ (48)', 'รายการผู้ป่วยจากการย้ายผู้ป่วยจากแผนก IPD (4)'].map((label, index) => <button key={label} className={`h-full text-[13px] font-medium ${index === 0 ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}>{label}</button>)}</div></section>
+    <section className="flex h-[66px] items-center rounded-xl border border-black/10 bg-white px-4 shadow-sm"><div className="flex h-full items-center gap-6">{['ทั้งหมด (52)', 'รายการคนไข้จากแผนก OR ใหม่ (48)', 'รายการผู้ป่วยจากการย้ายผู้ป่วยจากแผนก IPD (4)'].map((label, index) => <button key={label} className={`h-full text-[16px] ${index === 0 ? 'border-b-2 border-[#175beb] font-medium text-[#175beb]' : 'font-normal text-[#424752]'}`}>{label}</button>)}</div></section>
     <OpdPatientTable patients={patients} loading={loading} onSelect={setSelectedPatient} />
-    {selectedPatient && <AcceptPatientModal patient={selectedPatient} onClose={() => setSelectedPatient(null)} />}
+    {selectedPatient && <AcceptPatientModal patient={selectedPatient} queueType={queueType} onClose={() => setSelectedPatient(null)} />}
   </div>
 }
 
 function OpdPatientTable({ patients, loading, onSelect }) {
   const rows = Array.from({ length: 10 }, (_, index) => patients[index % Math.max(patients.length, 1)]).filter(Boolean)
-  return <section className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm"><header className="flex h-[72px] items-center justify-between px-6"><h2 className="text-[18px] font-semibold text-[#002d73]">รายการติดตามผู้ป่วย (58 ราย)</h2><button className="inline-flex h-[40px] w-[146px] items-center justify-between rounded-lg border border-[#e2e8f0] px-4 text-[14px]"><span className="inline-flex items-center gap-3"><CalendarDays size={17} />วันนี้</span><ChevronRight size={14} className="rotate-90" /></button></header><div className="overflow-x-auto"><table className="w-full min-w-[1000px] text-[13px] text-[#434651]"><thead className="h-[40px] bg-[#f8fafc] font-semibold text-[#1e293b]"><tr>{['', 'HN', 'ชื่อผู้ป่วย', 'อายุ/เพศ', 'หัตถการ', 'ศัลยแพทย์', 'วันผ่าตัด', 'วันรับข้อมูล'].map((h, i) => <th key={`${h}-${i}`} className="px-4 text-left">{i === 0 ? <input type="checkbox" /> : h}</th>)}</tr></thead><tbody>{loading ? Array.from({ length: 10 }).map((_, i) => <tr key={i} className="h-[60px] border-t border-slate-100"><td colSpan="8" className="px-4"><div className="h-3 animate-pulse rounded bg-slate-100" /></td></tr>) : rows.map((p, index) => <tr key={`${p.id}-${index}`} onClick={() => onSelect(p)} className="h-[60px] cursor-pointer border-t border-slate-100 hover:bg-blue-50/40"><td className="px-4" onClick={e => e.stopPropagation()}><input type="checkbox" /></td><td className="px-4 font-semibold text-[#175beb]">{p.id}</td><td className="px-4"><span className="font-medium">{p.name}</span><small className="block text-[11px] text-[#64748b]">({index % 2 ? '3 มี.ค. 2514' : '13 ก.ค. 2507'})</small></td><td className="px-4">{p.age} / {p.sex}</td><td className="max-w-[140px] px-4 text-center">{index === 0 ? 'Laparoscopic Cholecystectomy' : index === 1 ? 'Total Knee Replacement (R)' : index === 2 ? 'CABG (On Pump)' : 'Cesarean Section'}</td><td className="px-4">นพ กมลชนก อัศวรุ่งโรจน์</td><td className="px-4">10 มิ.ย 2569</td><td className="px-4">15 มิ.ย 2569</td></tr>)}</tbody></table></div><footer className="flex h-[46px] items-center justify-between border-t border-[#e2e8f0] px-6 text-[13px] text-[#64748b]"><span>Showing 10 of 10 Historical Log</span><div className="flex gap-2"><button className="page-button w-auto px-3">Previous</button><button className="page-button bg-[#175beb] text-white">1</button><button className="page-button">2</button><button className="page-button">3</button><button className="page-button w-auto px-3">Next</button></div></footer></section>
+  const [selectedRows, setSelectedRows] = useState(new Set())
+  const allSelected = rows.length > 0 && selectedRows.size === rows.length
+  const toggleAll = () => setSelectedRows(allSelected ? new Set() : new Set(rows.map((_, index) => index)))
+  const toggleRow = (index) => setSelectedRows((current) => {
+    const next = new Set(current)
+    if (next.has(index)) next.delete(index)
+    else next.add(index)
+    return next
+  })
+
+  return <section className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm">
+    <header className="flex h-[72px] items-center justify-between px-6"><h2 className="text-[16px] font-medium text-[#002d73]">รายการติดตามผู้ป่วย (58 ราย)</h2><button className="inline-flex h-[40px] w-[146px] items-center justify-between rounded-lg border border-[#e2e8f0] px-4 text-[14px]"><span className="inline-flex items-center gap-3"><CalendarDays size={17} />วันนี้</span><ChevronRight size={14} className="rotate-90" /></button></header>
+    <div className="overflow-x-auto"><table className="w-full min-w-[1000px] text-[15px] text-[#434651]">
+      <thead className="h-[40px] bg-[#f8fafc] text-[14px] font-medium text-[#1e293b]"><tr>{['', 'HN', 'ชื่อผู้ป่วย', 'อายุ/เพศ', 'หัตถการ', 'ศัลยแพทย์', 'วันผ่าตัด', 'วันรับข้อมูล'].map((h, i) => <th key={`${h}-${i}`} className="px-4 text-left">{i === 0 ? <input type="checkbox" aria-label="เลือกทั้งหมด" checked={allSelected} onChange={toggleAll} /> : h}</th>)}</tr></thead>
+      <tbody>{loading ? Array.from({ length: 10 }).map((_, i) => <tr key={i} className="h-[60px] border-t border-slate-100"><td colSpan="8" className="px-4"><div className="h-3 animate-pulse rounded bg-slate-100" /></td></tr>) : rows.map((p, index) => <tr key={`${p.id}-${index}`} onClick={() => onSelect(p)} className="h-[60px] cursor-pointer border-t border-slate-100 hover:bg-blue-50/40"><td className="px-4" onClick={(event) => event.stopPropagation()}><input type="checkbox" aria-label={`เลือก ${p.name}`} checked={selectedRows.has(index)} onChange={() => toggleRow(index)} /></td><td className="px-4 font-semibold text-[#175beb]">{p.id}</td><td className="px-4"><span className="font-medium">{p.name}</span><small className="block text-[11px] text-[#64748b]">({index % 2 ? '3 มี.ค. 2514' : '13 ก.ค. 2507'})</small></td><td className="px-4">{p.age} / {p.sex}</td><td className="max-w-[140px] px-4 text-center">{index === 0 ? 'Laparoscopic Cholecystectomy' : index === 1 ? 'Total Knee Replacement (R)' : index === 2 ? 'CABG (On Pump)' : 'Cesarean Section'}</td><td className="px-4">นพ กมลชนก อัศวรุ่งโรจน์</td><td className="px-4">10 มิ.ย 2569</td><td className="px-4">15 มิ.ย 2569</td></tr>)}</tbody>
+    </table></div>
+    <footer className="flex h-[46px] items-center justify-between border-t border-[#e2e8f0] px-6 text-[14px] text-[#64748b]"><span>Showing 10 of 10 Historical Log</span><div className="flex gap-2"><button className="page-button w-auto px-3">Previous</button><button className="page-button bg-[#175beb] text-white">1</button><button className="page-button">2</button><button className="page-button">3</button><button className="page-button w-auto px-3">Next</button></div></footer>
+  </section>
 }
 
 const validationMetrics = [
@@ -91,7 +108,7 @@ function ValidationPage({ patients, loading, search, setSearch }) {
       return <article key={label} className="h-[138px] rounded-xl border border-black/10 bg-white p-[20px] shadow-sm"><div className="flex h-11 items-start justify-between"><p className="text-[18px] leading-5 font-medium" style={{ color: labelColor }}>{label}</p><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl" style={{ backgroundColor: iconBg }}><span className="validation-card-icon" style={{ backgroundColor: color, WebkitMaskImage: `url("${iconUrl}")`, maskImage: `url("${iconUrl}")` }} /></span></div><p className="pt-3 text-[32px] leading-9 font-semibold" style={{ color }}>{value} <span className="text-[14px]">{unit}</span></p></article>
     })}</section>
     <Filters search={search} onSearch={setSearch} validation />
-    <section className="flex h-[73px] items-center justify-between rounded-xl border border-black/10 bg-white px-[17px] shadow-sm"><div className="flex items-center gap-4">{['ทั้งหมด (58)', 'รอตรวจสอบ (18)', 'ยืนยันการตรวจสอบ (14)', 'เข้าเกณฑ์ (32)', 'ไม่เข้าเกณฑ์ (5)', 'ส่งเข้าแล้ว (5)'].map((item, i) => <button key={item} className={`h-9 px-3 text-[14px] ${i === 0 ? 'border-b-2 border-[#175beb] font-medium text-[#175beb]' : 'text-[#424752]'}`}>{item}</button>)}</div><button className="flex h-[38px] items-center gap-2 rounded-lg border border-[#e2e8f0] px-[13px] text-[14px]"><RefreshCw size={13} />รีเฟรช</button></section>
+    <section className="flex h-[68px] items-center justify-between rounded-xl border border-black/10 bg-white px-[17px] shadow-sm"><div className="flex items-center gap-4">{['ทั้งหมด (58)', 'รอตรวจสอบ (18)', 'ยืนยันการตรวจสอบ (14)', 'เข้าเกณฑ์ (32)', 'ไม่เข้าเกณฑ์ (5)', 'ส่งเข้าแล้ว (5)'].map((item, i) => <button key={item} className={`h-9 px-3 text-[16px] ${i === 0 ? 'border-b-2 border-[#175beb] font-medium text-[#175beb]' : 'text-[#424752]'}`}>{item}</button>)}</div><button className="flex h-[38px] items-center gap-2 rounded-lg border border-[#e2e8f0] px-[13px] text-[14px]"><RefreshCw size={13} />รีเฟรช</button></section>
     <PatientTable patients={patients} loading={loading} validation />
   </div>
 }
@@ -108,7 +125,7 @@ const myMetrics = [
 
 function MyFollowUpsPage({ patients, loading, search, setSearch }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <section className="grid grid-cols-5 gap-4">
         {myMetrics.map((m) => (
           <MetricCard key={m.label} {...m} dashboard />
@@ -139,7 +156,7 @@ function MyFollowTable({ patients, loading }) {
   return <section className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm"><header className="flex h-[72px] items-center justify-between px-6"><h2 className="text-[18px] font-semibold text-[#002d73]">รายการติดตามวันนี้ (48 ราย)</h2><button className="inline-flex h-10 w-[146px] items-center justify-between rounded-lg border border-slate-200 px-4"><CalendarDays size={17} />วันนี้<ChevronRight size={14} className="rotate-90" /></button></header><div className="overflow-x-auto"><table className="w-full min-w-[1100px] text-[13px]"><thead className="h-10 bg-slate-50"><tr>{['', 'HN', 'ชื่อผู้ป่วย', 'หัตถการ', 'ศัลยแพทย์', 'ความเสี่ยง SSI', 'สถานะประเมิน SSI', 'เริ่มนัดครั้งแรก'].map((x, i) => <th key={`${x}-${i}`} className="px-4 text-left">{i === 0 ? <input type="checkbox" /> : x}</th>)}</tr></thead><tbody>{!loading && rows.map((p, i) => <tr key={`${p.id}-${i}`} onClick={() => navigate(`/follow-ups/${p.id}`)} className="h-[70px] cursor-pointer border-t border-slate-100 hover:bg-blue-50/40"><td className="px-4" onClick={event => event.stopPropagation()}><input type="checkbox" /></td><td className="px-4 font-semibold">{p.id}</td><td className="px-4">{p.name}<small className="block text-slate-500">{p.age} ปี (17 ม.ค. 2501)</small></td><td className="px-4">TKA</td><td className="px-4">นพ กมลชนก อัศวรุ่งโรจน์</td><td className={`px-4 ${i ? 'text-red-500' : 'text-orange-500'}`}>● {i ? 'สูง' : 'ปานกลาง'}</td><td className="px-4"><span className={`rounded-lg px-2 py-1 ${i === 0 ? 'bg-slate-100 text-slate-500' : i === 5 ? 'bg-orange-50 text-orange-500' : i === 6 ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-600'}`}>{i === 0 ? 'รอประเมิน' : i === 5 ? 'สงสัย SSI' : i === 6 ? 'ติดเชื้อ SSI' : 'ไม่ติดเชื้อ SSI'}</span></td><td className="px-4">15 มิ.ย 2569</td></tr>)}</tbody></table></div><footer className="flex h-[46px] items-center justify-between border-t border-slate-200 px-6 text-[13px] text-slate-500"><span>Showing 10 of 10 Historical Log</span><div className="flex gap-2"><button className="page-button w-auto px-3">Previous</button><button className="page-button bg-[#175beb] text-white">1</button><button className="page-button">2</button><button className="page-button">3</button><button className="page-button w-auto px-3">Next</button></div></footer></section>
 }
 
-function AcceptPatientModal({ patient, onClose }) {
+function AcceptPatientModal({ patient, queueType, onClose }) {
   const navigate = useNavigate()
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
@@ -151,26 +168,26 @@ function AcceptPatientModal({ patient, onClose }) {
           <img src="/assets/icon/Alert Icon.png" alt="" className="h-20 w-20 object-contain" />
         </div>
 
-        <h2 className="mt-5 text-center text-[24px] font-semibold text-[#191c1e]">คุณจะเป็นผู้ดูแลคนไข้รายนี้</h2>
-        <p className="mt-2 text-center text-[15px] leading-6 text-slate-500">คุณต้องการรับผู้ป่วยรายนี้<br />เพื่อเป็นผู้รับผิดชอบในการติดตามใช่หรือไม่?</p>
+        <h2 className="mt-5 text-center text-[22px] font-medium text-[#191c1e]">คุณจะเป็นผู้ดูแลคนไข้รายนี้</h2>
+        <p className="mt-2 text-center text-[14px] leading-6 text-slate-500">คุณต้องการรับผู้ป่วยรายนี้<br />เพื่อเป็นผู้รับผิดชอบในการติดตามใช่หรือไม่?</p>
 
         {/* Patient info card */}
-        <div className="mt-5 rounded-xl bg-blue-50/60 p-4 text-[15px]">
-          <p className="font-semibold text-[#191c1e]">HN {patient.id}&nbsp;&nbsp;{patient.name}</p>
-          <p className="mt-1 text-slate-600">{patient.sex ?? 'ชาย'} • อายุ {patient.age ?? 68} ปี (17 ม.ค. 2501)</p>
-          <p className="mt-0.5 text-slate-600">หัตถการ: <strong className="font-semibold">{patient.abbrev ?? 'TKA'} (เข่าขวา)</strong></p>
+        <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+          <p className="text-[16px] font-semibold text-[#191c1e]">HN {patient.id}&nbsp;&nbsp;{patient.name}</p>
+          <p className="mt-2 text-[14px] font-normal text-slate-600">{patient.sex ?? 'ชาย'} • อายุ {patient.age ?? 68} ปี (17 ม.ค. 2501)</p>
+          <p className="mt-0.5 text-[14px] font-normal text-slate-600">หัตถการ: <strong className="text-[14px] font-medium">{patient.abbrev ?? 'TKA'} (เข่าขวา)</strong></p>
           <div className="mt-1 flex flex-wrap gap-x-6 text-slate-600">
-            <span>วันที่ผ่าตัด: {patient.surgeryDate}</span>
-            <span>วันที่จำหน่าย: 15 มิ.ย. 2569</span>
+            <span className="text-[14px] font-normal">วันที่ผ่าตัด: {patient.surgeryDate}</span>
+            <span className="text-[14px] font-normal">วันที่จำหน่าย: 15 มิ.ย. 2569</span>
           </div>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <button onClick={onClose} className="h-[50px] rounded-xl border border-slate-200 text-[15px] font-medium text-slate-700 hover:bg-slate-50">ยกเลิก</button>
+          <button onClick={onClose} className="h-[45px] rounded-xl border border-slate-200 text-[14px] font-normal text-slate-700 hover:bg-slate-50">ยกเลิก</button>
           <button
-            onClick={() => { navigate(`/cases/${patient.id}/create-follow-up`); onClose() }}
-            className="inline-flex h-[50px] items-center justify-center gap-2 rounded-xl bg-[#002d73] text-[15px] font-medium text-white hover:bg-[#001d52]"
-          >ใช่, รับเป็นผู้ดูแล <ArrowRight size={16} /></button>
+            onClick={() => { navigate(`/cases/${patient.id}/create-follow-up?source=${queueType}`); onClose() }}
+            className="inline-flex h-[45px] items-center justify-center gap-2 rounded-xl bg-blue-700 text-[14px] font-normal text-white hover:bg-[#001d52]"
+          >ใช่, รับเป็นผู้ดูแล <ArrowRight size={16} strokeWidth={2.5} /></button>
         </div>
       </section>
     </div>
@@ -178,6 +195,7 @@ function AcceptPatientModal({ patient, onClose }) {
 }
 
 function HistoryPage({ patients, loading, search, setSearch }) {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('all')
 
   const historyMetrics = [
@@ -186,7 +204,7 @@ function HistoryPage({ patients, loading, search, setSearch }) {
     { label: 'ย้ายไปแผนกอื่น', value: '276', unit: 'คน', tone: 'violet', subtext: 'รายการ' }
   ]
 
-  const historyRows = [
+  const initialHistoryRows = [
     { date: '15 มิ.ย. 2569', time: '10:15', hn: '0123456', name: 'นายสมชาย ใจดี', age: '68 ปี', birth: '17 ม.ค. 2501', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
     { date: '15 มิ.ย. 2569', time: '10:15', hn: '0234567', name: 'นางสาวรวิภา แก้วดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
     { date: '15 มิ.ย. 2569', time: '10:15', hn: '0234567', name: 'นางสาววิภาพร คำดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
@@ -195,6 +213,21 @@ function HistoryPage({ patients, loading, search, setSearch }) {
     { date: '15 มิ.ย. 2569', time: '10:15', hn: '456789', name: 'นายธีรดล อัคนิพงศ์', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' },
     { date: '15 มิ.ย. 2569', time: '10:15', hn: '456789', name: 'นายธีรดล อัคนิพงศ์', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', dept: 'OPD (ชื่อแผนก)', staff: '(ชื่อ-นามสกุลเจ้าหน้าที่)', ssi: 'ไม่ติดเชื้อ SSI' }
   ]
+  const historyRows = initialHistoryRows
+
+  const openHistoryPatient = (row) => {
+    navigate(`/suspected-cases/${row.hn}/info?source=history`, {
+      state: {
+        patient: {
+          ...row,
+          id: row.hn,
+          abbrev: row.procedure,
+          surgeryDate: row.date,
+          sex: row.sex ?? 'ชาย'
+        }
+      }
+    })
+  }
 
   return (
     <div className="flex flex-col gap-6 text-left pb-10">
@@ -262,11 +295,11 @@ function HistoryPage({ patients, loading, search, setSearch }) {
             />
           </div>
           <div className="flex gap-2">
-            <button className="flex-1 rounded-lg bg-[#175beb] h-9 text-[13px] font-medium text-white shadow-sm hover:bg-blue-700 flex items-center justify-center gap-1.5">
+            <button className="flex-1 rounded-lg bg-[#175beb] h-10 text-[13px] font-medium text-white shadow-sm hover:bg-blue-700 flex items-center justify-center gap-1.5">
               <Search size={14} />
               ค้นหา
             </button>
-            <button className="rounded-lg border border-slate-200 bg-white px-4 h-9 text-[13px] font-medium text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1.5">
+            <button className="rounded-lg border border-slate-200 bg-white px-4 h-10 text-[13px] font-medium text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1.5">
               <RotateCcw size={14} />
               ล้างตัวกรอง
             </button>
@@ -307,7 +340,7 @@ function HistoryPage({ patients, loading, search, setSearch }) {
           <h2 className="text-[16px] font-semibold text-[#002d73]">ประวัติการส่งต่อ</h2>
         </header>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px] text-[13px] text-[#434651]">
+          <table className="history-transfer-table w-full min-w-[1750px] text-[13px] text-[#434651]">
             <thead className="h-10 bg-slate-50 font-medium text-slate-700">
               <tr>
                 <th className="px-4 py-2 text-left">วันที่/เวลา</th>
@@ -317,6 +350,10 @@ function HistoryPage({ patients, loading, search, setSearch }) {
                 <th className="px-4 py-2 text-left">แผนกติดตามเดิม</th>
                 <th className="px-4 py-2 text-left">ผู้รับผิดชอบ</th>
                 <th className="px-4 py-2 text-left">ผลการประเมินSSIล่าสุด</th>
+                <th className="px-4 py-2 text-center">สถานะติดตาม</th>
+                <th className="px-4 py-2 text-center">สถานะการส่งต่อ</th>
+                <th className="px-4 py-2 text-center">แผนกปลายทาง</th>
+                <th className="px-4 py-2 text-center">จัดการ</th>
               </tr>
             </thead>
             <tbody>
@@ -341,6 +378,20 @@ function HistoryPage({ patients, loading, search, setSearch }) {
                       {row.ssi}
                     </span>
                   </td>
+                  <td className="px-4 py-2 text-center">
+                    <span className={`inline-flex rounded-lg px-2.5 py-1 text-[12px] font-medium ${(row.followStatus ?? (idx < 3 ? 'ติดตามสำเร็จ' : 'เคยติดตามสำเร็จก่อนส่งต่อ')) === 'ติดตามสำเร็จ' ? 'bg-emerald-50 text-emerald-600' : 'bg-violet-50 text-violet-600'}`}>
+                      {row.followStatus ?? (idx < 3 ? 'ติดตามสำเร็จ' : 'เคยติดตามสำเร็จก่อนส่งต่อ')}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    {(row.transferStatus ?? (idx < 3 ? 'ไม่มีการส่งต่อ' : 'ย้ายแผนก')) === 'ไม่มีการส่งต่อ' ? <span className="text-slate-500">–</span> : <span className="inline-flex rounded-lg bg-blue-50 px-2.5 py-1 text-[12px] font-medium text-blue-600">{row.transferStatus ?? 'ย้ายแผนก'}</span>}
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    {(row.destination ?? (idx < 3 ? '-' : 'IPD (ชื่อแผนก)')) === '-' ? <span className="text-slate-500">–</span> : <span className="leading-5 text-slate-700">{row.destination ?? 'IPD (ชื่อแผนก)'}</span>}
+                  </td>
+                  <td className="px-4 py-2 text-center">
+                    <button type="button" onClick={() => openHistoryPatient(row)} aria-label={`ดูข้อมูล ${row.name}`} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-[#175beb] hover:bg-blue-50"><Eye size={16} /></button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -358,11 +409,6 @@ function HistoryPage({ patients, loading, search, setSearch }) {
         </footer>
       </section>
 
-      {/* Notice Banner */}
-      <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
-        <Calendar size={16} className="text-blue-500" />
-        <span>15 มิ.ย. 2569: ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
-      </div>
     </div>
   );
 }
@@ -370,6 +416,13 @@ function HistoryPage({ patients, loading, search, setSearch }) {
 function SuspectedSSIPage({ type, patients, loading, search, setSearch }) {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('all')
+  const [confirmedCases, setConfirmedCases] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('or-confirmed-ssi-cases') ?? '[]')
+    } catch {
+      return []
+    }
+  })
 
   const metrics = [
     { label: 'เคสรอแพทย์ตรวจ', value: '18', unit: 'เคส', tone: 'orange', subtext: 'รอตรวจสอบเคสวันนี้' },
@@ -386,6 +439,38 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch }) {
     { hn: '0234567', name: 'นางสาวรวิภา แก้วดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', surgeon: 'นพ กมลชนก อัศวรุ่งโรจน์', date: '10/6/2569', risk: 'สูง', riskColor: 'text-red-500', status: 'สงสัย SSI' },
     { hn: '0234567', name: 'นางสาววิภาพร คำดี', age: '62 ปี', birth: '13 ก.ค. 2507', procedure: 'TKA', surgeon: 'นพ กมลชนก อัศวรุ่งโรจน์', date: '10/6/2569', risk: 'สูง', riskColor: 'text-red-500', status: 'สงสัย SSI' }
   ]
+
+  const caseKey = (patient) => `${patient.hn}-${patient.name}`
+  const confirmedKeys = new Set(confirmedCases.map(caseKey))
+  const visibleRows = type === 'confirmed'
+    ? confirmedCases
+    : type === 'suspected'
+      ? ssiRows.filter((patient) => !confirmedKeys.has(caseKey(patient)))
+      : ssiRows
+
+  const moveToConfirmedSSI = (patient) => {
+    const nextCases = confirmedKeys.has(caseKey(patient))
+      ? confirmedCases
+      : [...confirmedCases, { ...patient, status: 'ยืนยัน SSI' }]
+
+    setConfirmedCases(nextCases)
+    localStorage.setItem('or-confirmed-ssi-cases', JSON.stringify(nextCases))
+    navigate('/confirmed-ssi')
+  }
+
+  const openSSIPatient = (patient) => {
+    navigate(`/suspected-cases/${patient.hn}/info?source=${type}`, {
+      state: {
+        patient: {
+          ...patient,
+          id: patient.hn,
+          abbrev: patient.procedure,
+          surgeryDate: patient.date,
+          sex: patient.sex ?? 'ชาย'
+        }
+      }
+    })
+  }
 
   return (
     <div className="flex flex-col gap-6 text-left pb-10">
@@ -442,12 +527,12 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch }) {
               placeholder="ค้นหา HN, ชื่อผู้ป่วย, หัตถการ..."
             />
           </div>
-          <div className="flex gap-2">
-            <button className="flex-1 rounded-lg bg-[#175beb] h-9 text-[13px] font-medium text-white shadow-sm hover:bg-blue-700 flex items-center justify-center gap-1.5">
+          <div className="flex w-full gap-2">
+            <button className="flex h-9 w-2/5 items-center justify-center gap-1.5 rounded-lg bg-[#175beb] text-[13px] font-medium text-white shadow-sm hover:bg-blue-700">
               <Search size={14} />
               ค้นหา
             </button>
-            <button className="rounded-lg border border-slate-200 bg-white px-4 h-9 text-[13px] font-medium text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1.5">
+            <button className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white text-[13px] font-medium text-slate-600 hover:bg-slate-50">
               <RotateCcw size={14} />
               ล้างตัวกรอง
             </button>
@@ -492,7 +577,7 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch }) {
           </button>
         </header>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px] text-[13px] text-[#434651]">
+          <table className="w-full min-w-[2300px] text-[13px] text-[#434651]">
             <thead className="h-10 bg-slate-50 font-semibold text-[#1e293b]">
               <tr>
                 <th className="px-4 py-2 text-left" style={{ width: '40px' }}><input type="checkbox" /></th>
@@ -503,13 +588,27 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch }) {
                 <th className="px-4 py-2 text-left">วันผ่าตัด</th>
                 <th className="px-4 py-2 text-left">ความเสี่ยง SSI</th>
                 <th className="px-4 py-2 text-left">สถานะประเมิน SSI</th>
+                <th className="px-4 py-2 text-center">เริ่มนัดครั้งแรก</th>
+                <th className="px-4 py-2 text-center">รอบติดตาม</th>
+                <th className="px-4 py-2 text-center">รอบปัจจุบัน</th>
+                <th className="px-4 py-2 text-center">นัดติดตามถัดไป</th>
+                <th className="px-4 py-2 text-center">ช่องทางติดต่อ</th>
+                <th className="px-4 py-2 text-center">สถานะตรวจ SSI</th>
+                <th className="px-4 py-2 text-center">จัดการ</th>
               </tr>
             </thead>
             <tbody>
-              {ssiRows.map((row, idx) => (
+              {visibleRows.length === 0 && (
+                <tr>
+                  <td colSpan={15} className="h-28 text-center text-[14px] text-slate-400">
+                    ยังไม่มีรายการเคสยืนยัน SSI
+                  </td>
+                </tr>
+              )}
+              {visibleRows.map((row, idx) => (
                 <tr
                   key={idx}
-                  onClick={() => navigate(`/suspected-cases/${row.hn}/info`)}
+                  onClick={() => openSSIPatient(row)}
                   className="h-[70px] border-t border-slate-100 hover:bg-blue-50/20 cursor-pointer"
                 >
                   <td className="px-4 py-2" onClick={e => e.stopPropagation()}><input type="checkbox" /></td>
@@ -537,6 +636,70 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch }) {
                       </span>
                     )}
                   </td>
+                  <td className="px-4 py-2 text-center whitespace-nowrap">15 มิ.ย 2569</td>
+                  <td className="px-4 py-2 text-center whitespace-nowrap">
+                    <span className="block">{idx % 3 === 1 ? 'Day 90' : 'Day 30'}</span>
+                    <span className="block font-medium text-[#175beb]">({idx % 3 === 1 ? '8' : '6'} รอบ)</span>
+                  </td>
+                  <td className="px-4 py-2 text-center whitespace-nowrap">
+                    <span className="block">Day {[1, 7, 14, 30][idx % 4]}</span>
+                    <span className="block text-[#175beb]">รอบติดตาม {Math.min(idx + 1, 3)}/{idx % 3 === 1 ? '8' : '6'} รอบ</span>
+                    <span className="block text-orange-500">วันนี้</span>
+                  </td>
+                  <td className="px-4 py-2 text-center whitespace-nowrap">
+                    <span className="block">Day 7</span>
+                    <span className="block text-[12px]">22 มิ.ย.2569</span>
+                  </td>
+                  <td className="px-4 py-2 text-center whitespace-nowrap">081-234-5678</td>
+                  <td className="px-4 py-2 text-center whitespace-nowrap">
+                    <span className={`inline-flex rounded-lg px-3 py-1 text-[12px] font-medium ${
+                      type === 'confirmed'
+                        ? 'bg-green-50 text-green-600'
+                        : 'bg-orange-50 text-orange-500'
+                    }`}>
+                      {type === 'confirmed'
+                        ? 'ประเมิน SSI เสร็จสิ้น'
+                        : type === 'doctor'
+                          ? 'รอตรวจสอบ'
+                          : 'รอแพทย์ตรวจสอบ'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                      <button
+                        type="button"
+                        aria-label="ดูรายละเอียด"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          openSSIPatient(row)
+                        }}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-[#175beb] hover:bg-blue-50"
+                      >
+                        <Eye size={16} />
+                      </button>
+                      {type === 'suspected' && (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            moveToConfirmedSSI(row)
+                          }}
+                          className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-red-500 px-4 text-[12px] font-medium text-white shadow-sm hover:bg-red-600"
+                        >
+                          <AlertCircle size={16} />
+                          เข้าข่ายการติดเชื้อ SSI
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        aria-label="เมนูเพิ่มเติม"
+                        onClick={(event) => event.stopPropagation()}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-[#175beb] hover:bg-blue-50"
+                      >
+                        <MoreVertical size={17} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -554,17 +717,12 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch }) {
         </footer>
       </section>
 
-      {/* Notice Banner */}
-      <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
-        <Calendar size={16} className="text-blue-500" />
-        <span>15 มิ.ย. 2569: ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
-      </div>
     </div>
   );
 }
 
 function NotificationsCenterPage() {
-  const [selectedNotification, setSelectedNotification] = useState(null);
+  const navigate = useNavigate()
   const [dateRange, setDateRange] = useState('01/05/2569 - 01/06/2569');
   const [notifType, setNotifType] = useState('ทั้งหมด');
   const [status, setStatus] = useState('ทั้งหมด');
@@ -665,11 +823,33 @@ function NotificationsCenterPage() {
   ]);
 
   const handleOpenDetail = (notif) => {
-    setSelectedNotification(notif);
-    // Mark as read
     setNotifications(prev =>
       prev.map(n => n.id === notif.id ? { ...n, unread: false } : n)
-    );
+    )
+
+    const patientId = notif.patient.hn.replace(/\D/g, '')
+    const patientState = {
+      id: patientId,
+      name: notif.patient.name,
+      age: 68,
+      sex: 'ชาย',
+      abbrev: 'TKA',
+      procedure: 'Total Knee Arthroplasty (R)',
+      surgeon: 'นพ. อธิวัฒน์ ศรีกมล',
+      surgeryDate: '10 มิ.ย. 2569'
+    }
+
+    if (notif.type.includes('สงสัยการติดเชื้อ SSI')) {
+      navigate(`/suspected-cases/${patientId}/info?source=suspected`, { state: { patient: patientState } })
+      return
+    }
+
+    if (notif.type.includes('เคสใหม่จากห้องผ่าตัด')) {
+      navigate(`/cases/${patientId}?source=validation`, { state: { patient: patientState } })
+      return
+    }
+
+    navigate(`/follow-ups/${patientId}?tab=evaluation&source=notifications`, { state: { patient: patientState } })
   };
 
   return (
@@ -827,62 +1007,6 @@ function NotificationsCenterPage() {
         </footer>
       </section>
 
-      {/* Notice Banner */}
-      <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
-        <Calendar size={16} className="text-blue-500" />
-        <span>15 มิ.ย. 2569: ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
-      </div>
-
-      {/* Detail Dialog Modal */}
-      {selectedNotification && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 animate-fade-in font-sans">
-          <section className="relative w-full max-w-[500px] rounded-2xl bg-white p-6 shadow-2xl">
-            <button
-              onClick={() => setSelectedNotification(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
-            >
-              <X size={20} />
-            </button>
-
-            <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-              <span className={`grid h-10 w-10 place-items-center rounded-xl ${selectedNotification.unread ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'
-                }`}>
-                <Bell size={20} />
-              </span>
-              <div>
-                <h3 className="text-base font-bold text-slate-800">{selectedNotification.type}</h3>
-                <p className="text-xs text-slate-400 mt-0.5">{selectedNotification.time}</p>
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-4">
-              <div className="rounded-xl bg-slate-50 p-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">ข้อมูลผู้ป่วย / เคส</p>
-                <p className="mt-1.5 text-sm font-bold text-slate-800">{selectedNotification.patient.name}</p>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  {selectedNotification.patient.hn} • เลขที่ใบผ่าตัด: {selectedNotification.patient.or}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">รายละเอียดการแจ้งเตือน</p>
-                <p className="mt-1.5 text-sm text-slate-600 leading-relaxed font-medium">
-                  {selectedNotification.fullDetail}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setSelectedNotification(null)}
-                className="h-[40px] rounded-xl bg-[#002d73] hover:bg-[#001d52] px-6 text-sm font-semibold text-white transition"
-              >
-                รับทราบ
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
     </div>
   );
 }
@@ -932,17 +1056,19 @@ const StaffIcon = ({ size = 24, ...props }) => (
 function CentralSearchPage() {
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState('ทั้งหมด');
+  const [selectedRows, setSelectedRows] = useState(new Set([1]));
+  const navigate = useNavigate();
 
   const categories = [
-    { label: 'ทั้งหมด', count: 8642 },
-    { label: 'ผู้ป่วย', count: 1250 },
-    { label: 'หัตถการ', count: 58 },
-    { label: 'การติดตาม', count: 118 },
-    { label: 'เอกสาร', count: 128 },
-    { label: 'การส่งต่อ', count: 24 },
-    { label: 'SSI', count: 12 },
-    { label: 'แพทย์', count: 4 },
-    { label: 'แผนก', count: 14 }
+    { label: 'ทั้งหมด', icon: Database },
+    { label: 'ผู้ป่วย', icon: UserRound },
+    { label: 'หัตถการ', icon: Stethoscope },
+    { label: 'การติดตาม', icon: History },
+    { label: 'เอกสาร', icon: File },
+    { label: 'การส่งต่อ', icon: ArrowLeftRight },
+    { label: 'SSI', iconSrc: '/assets/icon/central-search-ssi.svg' },
+    { label: 'แพทย์', icon: DoctorIcon },
+    { label: 'แผนก', icon: Database }
   ];
 
   const popularKeywords = [
@@ -972,24 +1098,35 @@ function CentralSearchPage() {
     });
   }, [query, activeTab, results]);
 
+  const allSelected = filteredResults.length > 0 && filteredResults.every((row) => selectedRows.has(row.id));
+  const toggleAll = () => setSelectedRows(allSelected ? new Set() : new Set(filteredResults.map((row) => row.id)));
+  const toggleRow = (id) => setSelectedRows((current) => {
+    const next = new Set(current);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  });
+
   return (
     <div className="space-y-4">
       {/* Top metrics summary */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+        <div className="flex h-[142px] items-start justify-between rounded-xl border border-black/10 bg-white p-5 shadow-sm">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase">การค้นหาวันนี้</p>
-            <p className="mt-2 text-2xl font-bold text-[#175beb]">1,286 <span className="text-xs font-medium text-[#175beb]/75">ครั้ง</span></p>
+            <p className="text-[14px] font-medium text-[#175beb]">การค้นหาวันนี้</p>
+            <p className="mt-7 text-[30px] font-semibold leading-none text-[#175beb]">1,286</p>
+            <p className="mt-2 text-[12px] text-slate-500">ครั้ง</p>
           </div>
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-[#175beb]">
             <Search size={20} />
           </span>
         </div>
 
-        <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+        <div className="flex h-[142px] items-start justify-between rounded-xl border border-black/10 bg-white p-5 shadow-sm">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase">ผลลัพธ์ทั้งหมด</p>
-            <p className="mt-2 text-2xl font-bold text-[#10b981]">8,642 <span className="text-xs font-medium text-[#10b981]/75">รายการ</span></p>
+            <p className="text-[14px] font-medium text-emerald-600">ผลลัพธ์ทั้งหมด</p>
+            <p className="mt-7 text-[30px] font-semibold leading-none text-emerald-600">8,642</p>
+            <p className="mt-2 text-[12px] text-slate-500">รายการ</p>
           </div>
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-[#10b981]">
             <Layers size={20} />
@@ -998,8 +1135,8 @@ function CentralSearchPage() {
       </div>
 
       {/* Main Search Panel Card */}
-      <section className="rounded-xl border border-black/10 bg-white p-6 shadow-sm space-y-4">
-        <h2 className="flex items-center gap-2 text-[18px] font-semibold text-[#002d73]">
+      <section className="space-y-4 rounded-xl border border-black/10 bg-white p-6 shadow-sm">
+        <h2 className="flex items-center gap-2 text-[16px] font-semibold text-[#191c1e]">
           <Search size={19} className="text-[#175beb]" />
           ค้นหาทุกข้อมูลจากทุกแหล่งในระบบ
         </h2>
@@ -1013,104 +1150,103 @@ function CentralSearchPage() {
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="ค้นหา HN, AN, ชื่อผู้ป่วย, เบอร์โทร, หัตถการ, แพทย์, แผนก, เอกสาร, หมายเหตุ, ประวัติติดตาม..."
-              className="h-[38px] flex-1 rounded-lg border border-slate-200 px-3 text-xs text-slate-600 font-semibold outline-none focus:border-[#175beb]"
+              className="h-[44px] min-w-0 flex-1 rounded-lg border border-slate-200 px-3 text-[13px] text-slate-600 outline-none focus:border-slate-300 focus:ring-0"
             />
-            <button className="inline-flex h-[38px] items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 text-xs font-bold text-white hover:bg-blue-700 transition">
+            <button className="inline-flex h-[39px] w-[112px] items-center justify-center gap-2 rounded-lg bg-blue-600 text-[14px] font-medium text-white transition hover:bg-blue-700">
+              <Search size={16} />
               ค้นหา
             </button>
             <button
               onClick={() => setQuery('')}
-              className="inline-flex h-[38px] items-center justify-center gap-2 rounded-lg border border-slate-200 px-5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+              className="inline-flex h-[39px] w-[138px] items-center justify-center gap-2 rounded-lg border border-slate-200 text-[14px] font-medium text-slate-600 transition hover:bg-slate-50"
             >
+              <RotateCcw size={16} />
               ล้างตัวกรอง
             </button>
           </div>
         </div>
 
         {/* Categories Tabs Selector */}
-        <div className="flex flex-wrap gap-2 pt-2">
-          {categories.map((cat) => (
+        <div className="grid grid-cols-5 gap-2">
+          {categories.map((cat) => {
+            const CategoryIcon = cat.icon;
+            return (
             <button
               key={cat.label}
               onClick={() => setActiveTab(cat.label)}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border transition ${activeTab === cat.label
+              className={`inline-flex h-[42px] items-center gap-2 rounded-lg border px-4 text-[14px] font-medium transition ${activeTab === cat.label
                 ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
                 : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
             >
+              {cat.iconSrc ? <img src={cat.iconSrc} alt="" className="h-[14px] w-[15px] object-contain" /> : <CategoryIcon size={15} />}
               {cat.label}
             </button>
-          ))}
-        </div>
-
-        {/* Popular searches tags */}
-        <div className="pt-2 border-t border-slate-50 flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] font-bold text-slate-400">คำค้นหายอดนิยม 🔥</span>
-          {popularKeywords.map(keyword => (
-            <button
-              key={keyword}
-              onClick={() => setQuery(keyword)}
-              className="inline-flex rounded bg-slate-50 hover:bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600 border border-slate-100 transition"
-            >
-              {keyword}
-            </button>
-          ))}
+          )})}
         </div>
       </section>
+
+      <div className="flex flex-col items-start gap-2">
+        <span className="inline-flex items-center gap-1.5 text-[15px] font-medium text-slate-600">คำค้นยอดนิยม <img src="/assets/icon/central-search-popular.svg" alt="" className="h-[14px] w-[13px] object-contain" /></span>
+        <div className="flex flex-wrap items-center gap-2">
+          {popularKeywords.map(keyword => <button key={keyword} onClick={() => setQuery(keyword)} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[12px] text-slate-600 hover:bg-slate-50">{keyword}</button>)}
+        </div>
+      </div>
 
       {/* Result Card Grid */}
       <section className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm">
         <header className="flex h-[64px] items-center justify-between px-6 border-b border-slate-100">
-          <h2 className="text-[16px] font-bold text-[#002d73]">ผลการค้นหา ({filteredResults.length} รายการ)</h2>
+          <h2 className="text-[16px] font-semibold text-[#191c1e]">ผลการค้นหา <span className="font-normal text-slate-500">({activeTab === 'ทั้งหมด' && !query ? '8,642' : filteredResults.length} รายการ)</span></h2>
         </header>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1000px] text-[13px] text-[#434651] font-sans border-collapse">
-            <thead className="h-[46px] bg-[#f8fafc] font-bold text-[#1e293b]">
+          <table className="w-full min-w-[1000px] border-collapse font-sans text-[15px] text-[#434651]">
+            <thead className="h-[46px] bg-[#f8fafc] text-[13px] font-normal text-slate-500 [&_th]:font-normal">
               <tr className="border-b border-slate-100">
-                <th className="px-4 text-left w-12"><input type="checkbox" /></th>
+                <th className="w-12 px-4 text-left"><input className="cursor-pointer" type="checkbox" checked={allSelected} onChange={toggleAll} /></th>
                 <th className="px-4 text-left">ประเภทข้อมูล</th>
                 <th className="px-4 text-left">HN / AN</th>
                 <th className="px-4 text-left">ชื่อผู้ป่วย</th>
                 <th className="px-4 text-left">รายการที่พบ</th>
                 <th className="px-4 text-left">แผนก</th>
                 <th className="px-4 text-left">วันที่อัปเดตล่าสุด</th>
-                <th className="px-4 text-left">สถานะ</th>
-                <th className="px-6 text-right">การดำเนินการ</th>
+                <th className="w-[160px] px-4 text-center">สถานะ</th>
+                <th className="w-[140px] whitespace-nowrap px-6 text-center">การดำเนินการ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredResults.map((row) => {
                 const Icon = row.icon;
                 return (
-                  <tr key={row.id} className="h-[68px] hover:bg-slate-50/60 transition">
-                    <td className="px-4"><input type="checkbox" /></td>
+                  <tr key={row.id} className={`${selectedRows.has(row.id) ? 'bg-blue-50/40' : ''} h-[64px] transition hover:bg-slate-50/60`}>
+                    <td className="px-4"><input className="cursor-pointer" type="checkbox" checked={selectedRows.has(row.id)} onChange={() => toggleRow(row.id)} /></td>
                     <td className="px-4">
-                      <span className="inline-flex items-center gap-2 font-bold text-slate-700">
-                        <span className="grid h-8 w-8 place-items-center rounded bg-slate-100 text-slate-500">
-                          <Icon size={16} />
-                        </span>
+                      <span className="inline-flex items-center gap-2 font-normal text-slate-700">
+                        <Icon size={16} className="text-slate-500" />
                         {row.type}
                       </span>
                     </td>
-                    <td className="px-4 font-bold text-slate-800">{row.code}</td>
+                    <td className="px-4 font-normal text-slate-800">{row.code}</td>
                     <td className="px-4">
-                      <span className="font-bold text-slate-800 block">{row.name}</span>
-                      {row.sub && <small className="block text-[11px] text-slate-400 font-semibold mt-0.5">{row.sub}</small>}
+                      <span className="block font-normal text-slate-800">{row.name}</span>
+                      {row.sub && <small className="mt-0.5 block text-[13px] font-normal text-slate-400">{row.sub}</small>}
                     </td>
-                    <td className="px-4 text-slate-500 text-xs font-semibold">{row.found}</td>
-                    <td className="px-4 text-slate-600 font-bold">{row.dept}</td>
-                    <td className="px-4 text-slate-400 text-xs font-medium">{row.date}</td>
-                    <td className="px-4">
-                      {row.statusType === 'green-pill' && <span className="inline-block rounded-md bg-emerald-50 px-2 py-0.5 text-xs text-emerald-600 font-bold border border-emerald-100">{row.status}</span>}
-                      {row.statusType === 'purple-pill' && <span className="inline-block rounded-md bg-purple-50 px-2 py-0.5 text-xs text-purple-600 font-bold border border-purple-100">{row.status}</span>}
-                      {row.statusType === 'blue-pill' && <span className="inline-block rounded-md bg-blue-50 px-2 py-0.5 text-xs text-blue-600 font-bold border border-blue-100">{row.status}</span>}
-                      {row.statusType === 'orange-border' && <span className="inline-block rounded-md bg-white border border-orange-200 px-2 py-0.5 text-xs text-orange-500 font-bold">{row.status}</span>}
-                      {row.statusType === 'blue-border' && <span className="inline-block rounded-md bg-white border border-blue-200 px-2 py-0.5 text-xs text-blue-600 font-bold">{row.status}</span>}
-                      {row.statusType === 'green-border' && <span className="inline-block rounded-md bg-white border border-emerald-200 px-2 py-0.5 text-xs text-emerald-600 font-bold">{row.status}</span>}
+                    <td className="px-4 font-normal text-slate-500">{row.found}</td>
+                    <td className="px-4 font-normal text-slate-600">{row.dept}</td>
+                    <td className="px-4 leading-5">
+                      <span className="block font-normal text-slate-800">{row.date.split(' ').slice(0, -1).join(' ')}</span>
+                      <span className="block font-normal text-slate-500">{row.date.split(' ').at(-1)}</span>
                     </td>
-                    <td className="px-6 text-right">
-                      <button className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-[#175beb] hover:bg-slate-50 transition">
+                    <td className="w-[160px] px-4 text-center">
+                      {row.statusType === 'green-pill' && <span className="inline-block rounded-md border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[13px] font-normal text-emerald-600">{row.status}</span>}
+                      {row.statusType === 'purple-pill' && <span className="inline-block rounded-md border border-purple-100 bg-purple-50 px-2 py-0.5 text-[13px] font-normal text-purple-600">{row.status}</span>}
+                      {row.statusType === 'blue-pill' && <span className="inline-block rounded-md border border-blue-100 bg-blue-50 px-2 py-0.5 text-[13px] font-normal text-blue-600">{row.status}</span>}
+                      {row.statusType === 'orange-border' && <span className="inline-block rounded-md border border-orange-200 bg-white px-2 py-0.5 text-[13px] font-normal text-orange-500">{row.status}</span>}
+                      {row.statusType === 'blue-border' && <span className="inline-block rounded-md border border-blue-200 bg-white px-2 py-0.5 text-[13px] font-normal text-blue-600">{row.status}</span>}
+                      {row.statusType === 'green-border' && <span className="inline-block rounded-md border border-emerald-200 bg-white px-2 py-0.5 text-[13px] font-normal text-emerald-600">{row.status}</span>}
+                    </td>
+                    <td className="px-6 text-center">
+                      <button onClick={() => navigate(`/cases/${row.code}?source=search`)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#175beb] transition hover:bg-blue-50">
                         <Eye size={14} />
                       </button>
                     </td>
@@ -1133,11 +1269,6 @@ function CentralSearchPage() {
         </footer>
       </section>
 
-      {/* Notice Banner */}
-      <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
-        <Calendar size={16} className="text-blue-500" />
-        <span>15 มิ.ย. 2569: ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
-      </div>
     </div>
   );
 }
@@ -1174,72 +1305,72 @@ function HisSyncPage() {
     <div className="space-y-4">
       {/* Top sync summaries */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+        <div className="flex min-h-[130px] items-center justify-between rounded-xl border border-black/10 bg-white p-5 shadow-sm">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase">ซิงค์ล่าสุดสำเร็จ</p>
-            <p className="mt-2 text-2xl font-bold text-[#175beb]">14/06/2569</p>
-            <p className="mt-1 flex items-center gap-0.5 text-xs font-semibold text-emerald-500">
-              <span className="text-emerald-500 font-bold">↑ 8%</span> จากเมื่อวาน
+            <p className="text-[15px] font-medium text-[#175beb]">ซิงค์ล่าสุดสำเร็จ</p>
+            <p className="mt-7 text-[34px] font-medium leading-none text-[#175beb]">14/06/2569</p>
+            <p className="mt-3 flex items-center gap-2 text-[14px] font-normal text-slate-500">
+              <span className="font-medium text-[#00a65a]">↑ 8%</span> จากเมื่อวาน
             </p>
           </div>
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600">
-            <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
+          <span className="grid h-12 w-12 place-items-center self-start rounded-xl bg-blue-50 text-[#175beb]">
+            <RefreshCw size={25} strokeWidth={2.4} className={isSyncing ? 'animate-spin' : ''} />
           </span>
         </div>
 
-        <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+        <div className="flex min-h-[130px] items-center justify-between rounded-xl border border-black/10 bg-white p-5 shadow-sm">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase">ซิงค์สำเร็จ</p>
-            <p className="mt-2 text-2xl font-bold text-[#10b981]">1,248</p>
-            <p className="mt-1 flex items-center gap-0.5 text-xs font-semibold text-emerald-500">
-              <span className="text-emerald-500 font-bold">↑ 8%</span> จากเมื่อวาน
+            <p className="text-[15px] font-medium text-[#008f57]">ซิงค์สำเร็จ</p>
+            <p className="mt-7 text-[34px] font-medium leading-none text-[#008f57]">1,248</p>
+            <p className="mt-3 flex items-center gap-2 text-[14px] font-normal text-slate-500">
+              <span className="font-medium text-[#00a65a]">↑ 8%</span> จากเมื่อวาน
             </p>
           </div>
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
-            <CheckCircle2 size={20} />
+          <span className="grid h-12 w-12 place-items-center self-start rounded-xl bg-emerald-50 text-[#00a65a]">
+            <CheckCircle2 size={24} fill="currentColor" className="text-[#00a65a] [&>path]:stroke-white" />
           </span>
         </div>
 
-        <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+        <div className="flex min-h-[130px] items-center justify-between rounded-xl border border-black/10 bg-white p-5 shadow-sm">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase">ซิงค์ล้มเหลว</p>
-            <p className="mt-2 text-2xl font-bold text-red-500">36</p>
-            <p className="mt-1 flex items-center gap-0.5 text-xs font-semibold text-red-500">
-              <span className="text-red-500 font-bold">↑ 12%</span> จากเมื่อวาน
+            <p className="text-[15px] font-medium text-[#e3262e]">ซิงค์ล้มเหลว</p>
+            <p className="mt-7 text-[34px] font-medium leading-none text-[#e3262e]">36</p>
+            <p className="mt-3 flex items-center gap-2 text-[14px] font-normal text-slate-500">
+              <span className="font-medium text-[#ed1c24]">↑ 12%</span> จากเมื่อวาน
             </p>
           </div>
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-red-50 text-red-500">
-            <AlertCircle size={20} />
+          <span className="grid h-12 w-12 place-items-center self-start rounded-xl bg-blue-50 text-[#e3262e]">
+            <AlertTriangle size={25} fill="currentColor" className="[&>path]:stroke-white" />
           </span>
         </div>
       </div>
 
       {/* Database Search Filter panel */}
       <section className="rounded-xl border border-black/10 bg-white p-6 shadow-sm">
-        <h2 className="flex items-center gap-2 text-[18px] font-semibold text-[#002d73] mb-4">
+        <h2 className="mb-5 flex items-center gap-2 text-[17px] font-medium text-[#002d73]">
           <Search size={19} className="text-[#175beb]" />
           ค้นหาข้อมูล
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="text-[13px] font-medium text-slate-600">เลือกช่วงวันที่</label>
+            <label className="text-[15px] font-medium text-slate-600">เลือกช่วงวันที่</label>
             <div className="relative mt-1">
               <input
                 type="text"
                 value={dateRange}
                 onChange={e => setDateRange(e.target.value)}
-                className="h-[38px] w-full rounded-lg border border-slate-200 pl-10 pr-4 text-xs font-semibold text-slate-600"
+                className="h-[38px] w-full rounded-lg border border-slate-200 pl-10 pr-4 text-[15px] font-medium text-slate-600"
               />
               <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             </div>
           </div>
 
           <div>
-            <label className="text-[13px] font-medium text-slate-600">ฐานข้อมูล</label>
+            <label className="text-[15px] font-medium text-slate-600">ฐานข้อมูล</label>
             <select
               value={db}
               onChange={e => setDb(e.target.value)}
-              className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-600 font-semibold"
+              className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-[15px] text-slate-600 font-medium"
             >
               <option>ทั้งหมด</option>
               <option>ผู้ป่วย, แพทย์, แผนก</option>
@@ -1248,11 +1379,11 @@ function HisSyncPage() {
           </div>
 
           <div>
-            <label className="text-[13px] font-medium text-slate-600">สถานะการซิงค์</label>
+            <label className="text-[15px] font-medium text-slate-600">สถานะการซิงค์</label>
             <select
               value={syncStatus}
               onChange={e => setSyncStatus(e.target.value)}
-              className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-600 font-semibold"
+              className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-[15px] text-slate-600 font-medium"
             >
               <option>ทั้งหมด</option>
               <option>สำเร็จ</option>
@@ -1262,24 +1393,24 @@ function HisSyncPage() {
         </div>
 
         <div className="mt-4 flex items-end gap-3">
-          <label className="flex-1 text-[13px] font-semibold text-slate-600">
+          <label className="flex-1 text-[13px] font-medium text-slate-600">
             คำค้นหา
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="ค้นหาข้อมูลตาราง..."
-              className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-[#175beb]"
+              className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-[15px] outline-none focus:border-[#175beb]"
             />
           </label>
-          <button className="inline-flex h-[38px] items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 text-xs font-bold text-white hover:bg-blue-700 transition">
-            ค้นหา
+          <button className="inline-flex h-[38px] items-center justify-center gap-2 rounded-lg bg-blue-600 px-7 text-[15px] font-normal text-white transition hover:bg-blue-700">
+            <Search size={14} /> ค้นหา
           </button>
           <button
             onClick={() => { setSearch(''); setDateRange('12 พ.ค. 2569 - 18 พ.ค. 2569'); }}
-            className="inline-flex h-[38px] items-center justify-center gap-2 rounded-lg border border-slate-200 px-5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+            className="inline-flex h-[38px] items-center justify-center gap-2 rounded-lg border border-slate-200 px-5 text-[15px] font-normal text-slate-600 transition hover:bg-slate-50"
           >
-            ล้างตัวกรอง
+            <RotateCcw size={14} /> ล้างตัวกรอง
           </button>
         </div>
       </section>
@@ -1287,49 +1418,55 @@ function HisSyncPage() {
       {/* Data Sources Table Card */}
       <section className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm">
         <header className="flex h-[72px] items-center justify-between px-6 border-b border-slate-100">
-          <h2 className="text-[18px] font-semibold text-[#002d73]">แหล่งข้อมูล (Data Sources)</h2>
-          <button className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
+          <h2 className="text-[17px] font-medium text-[#002d73]">แหล่งข้อมูล (Data Sources)</h2>
+          <Link to="/settings" className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-medium text-slate-600 transition hover:bg-slate-50">
             <Settings2 size={14} /> ตั้งค่าการซิงค์
-          </button>
+          </Link>
         </header>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1000px] text-[13px] text-[#434651] font-sans border-collapse">
-            <thead className="h-[46px] bg-[#f8fafc] font-bold text-[#1e293b]">
+          <table className="w-full min-w-[1000px] table-fixed border-collapse font-sans text-[14px] text-[#434651]">
+            <colgroup>
+              <col className="w-[8%]" /><col className="w-[18%]" /><col className="w-[17%]" />
+              <col className="w-[14%]" /><col className="w-[14%]" /><col className="w-[12%]" /><col className="w-[17%]" />
+            </colgroup>
+            <thead className="h-[46px] bg-[#f8fafc] px-2 font-bold text-[#1e293b]">
               <tr className="border-b border-slate-100">
-                <th className="px-4 py-3 text-left">ID_table</th>
-                <th className="px-4 py-3 text-left">ประเภทข้อมูล</th>
-                <th className="px-4 py-3 text-left">สถานะการเชื่อมต่อ</th>
-                <th className="px-4 py-3 text-left">ซิงค์ล่าสุด</th>
-                <th className="px-4 py-3 text-left">สถานะการรับ</th>
-                <th className="px-4 py-3 text-left">จำนวนข้อมูล</th>
-                <th className="px-6 py-3 text-right">การทำงาน</th>
+                <th className="px-3 py-3 text-center">ID_table</th>
+                <th className="px-3 py-3 text-center">ประเภทข้อมูล</th>
+                <th className="px-3 py-3 text-center">สถานะการเชื่อมต่อ</th>
+                <th className="px-3 py-3 text-center">ซิงค์ล่าสุด</th>
+                <th className="px-3 py-3 text-center">สถานะการรับ</th>
+                <th className="px-3 py-3 text-center">จำนวนข้อมูล</th>
+                <th className="whitespace-nowrap px-3 py-3 text-center">การทำงาน</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {sources.map((row) => (
-                <tr key={row.id} className="h-[68px] hover:bg-slate-50/60 transition">
-                  <td className="px-4 text-slate-400 font-bold">{row.id}</td>
-                  <td className="px-4 font-bold text-slate-800">{row.type}</td>
-                  <td className="px-4">
+                <tr key={row.id} className="h-[104px] transition hover:bg-slate-50/60">
+                  <td className="px-3 text-center font-medium text-slate-600">{row.id}</td>
+                  <td className="whitespace-pre-line px-3 text-center font-normal leading-5 text-slate-700">{row.type.replaceAll(', ', ',\n')}</td>
+                  <td className="px-3 text-center">
                     <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600">
                       <span className="h-2 w-2 rounded-full bg-[#10b981]" />
                       {row.status}
                     </span>
                   </td>
-                  <td className="px-4 text-slate-500 font-semibold">{row.lastSync}</td>
-                  <td className="px-4 text-emerald-600 font-bold">{row.receive}</td>
-                  <td className="px-4 font-semibold text-slate-800">{row.count}</td>
-                  <td className="px-6 text-right">
-                    <div className="flex items-center justify-end gap-3">
+                  <td className="px-3 text-center text-[12px] font-normal leading-4 text-slate-600">{row.lastSync.split(' ').map((part) => <span key={part} className="block">{part}</span>)}</td>
+                  <td className="px-3 text-center font-medium text-emerald-600">{row.receive}</td>
+                  <td className="px-3 text-center font-medium text-slate-700">{row.count}</td>
+                  <td className="px-3 text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button type="button" title="ดูข้อมูล" className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-blue-600 transition hover:bg-blue-50"><Eye size={14} /></button>
                       <button
                         onClick={() => triggerSync(row.id, row.type)}
                         disabled={isSyncing}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+                        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-blue-100 bg-white px-3 text-xs font-medium text-blue-600 transition hover:bg-blue-50"
                       >
                         <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
                         ซิงค์ข้อมูล
                       </button>
+                      <button type="button" title="เมนูเพิ่มเติม" className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-blue-600 transition hover:bg-slate-50"><MoreVertical size={14} /></button>
                     </div>
                   </td>
                 </tr>
@@ -1350,11 +1487,6 @@ function HisSyncPage() {
         </footer>
       </section>
 
-      {/* Notice Banner */}
-      <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
-        <Calendar size={16} className="text-blue-500" />
-        <span>15 มิ.ย. 2569: ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
-      </div>
     </div>
   );
 }

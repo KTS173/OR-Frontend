@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react'
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Line, LineChart, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Link } from 'react-router-dom'
 import MetricCard from '../components/ui/MetricCard.jsx'
 import PatientTable from '../components/ui/PatientTable.jsx'
@@ -39,18 +39,18 @@ export default function DashboardPage() {
       <section className="dashboard-charts">
 
         {/* SSI Trend Line Chart */}
-        <article className="or-card flex h-[326px] flex-col gap-3 rounded-2xl p-[21px]">
+        <article className="or-card flex h-[330px] flex-col gap-2 rounded-2xl p-[18px]">
           <CardHeading title="แนวโน้มอัตราการติดเชื้อแผลผ่าตัด (SSI)" />
           <div className="min-h-0 flex-1">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={ssiTrend} margin={{ top: 12, right: 24, left: 0, bottom: 4 }}>
+              <LineChart data={ssiTrend} margin={{ top: 12, right: 24, left: 0, bottom: 2 }}>
                 <CartesianGrid stroke="#e9edf3" />
-                <XAxis dataKey="month" tick={{ fontSize: 16, fill: '#667085' }} />
-                <YAxis domain={[0, 2]} ticks={[0, 0.5, 1, 1.5, 2]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 16, fill: '#667085' }} />
+                <XAxis dataKey="month" tick={{ fontSize: 14, fill: '#667085' }} />
+                <YAxis domain={[0, 2]} ticks={[0, 0.5, 1, 1.5, 2]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 14, fill: '#667085' }} />
                 <Tooltip formatter={(v) => `${v}%`} />
                 <Legend
                   verticalAlign="bottom"
-                  wrapperStyle={{ fontSize: 16, paddingTop: 14 }}
+                  wrapperStyle={{ fontSize: 14, paddingTop: 14 }}
                   payload={[
                     { value: 'สงสัย SSI',   type: 'line', color: '#f97316' },
                     { value: 'ยืนยัน SSI',  type: 'line', color: '#ef4444' },
@@ -67,21 +67,30 @@ export default function DashboardPage() {
         </article>
 
         {/* Surgery Rates Horizontal Bar Chart */}
-        <article className="or-card h-[326px] overflow-hidden rounded-xl">
+        <article className="or-card h-[330px] overflow-hidden rounded-xl">
           <CardHeading title="เคสแยกการผ่าตัด" side />
-          <div className="h-[268px] px-3 pb-2 pt-3">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={surgeryRates} layout="vertical" margin={{ left: 8, right: 52, top: 4 }}>
-                <CartesianGrid horizontal={false} stroke="#e9edf3" />
-                <XAxis type="number" domain={[0, 2]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 16 }} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 16, fill: '#475467' }} width={130} />
-                <Tooltip formatter={(v) => `${v}%`} />
-                <Bar dataKey="rate" radius={[0, 6, 6, 0]} barSize={13}>
-                  {surgeryRates.map((item, i) => <Cell key={item.name} fill={barColors[i]} />)}
-                  <LabelList dataKey="rate" position="right" formatter={(v) => `${v}%`} style={{ fontSize: 16, fill: '#475467', fontWeight: 600 }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="flex h-[273px] flex-col px-6 pb-3 pt-4">
+            <div className="flex min-h-0 flex-1 flex-col justify-between">
+              {surgeryRates.map((item, i) => (
+                <div key={item.name}>
+                  <div className="mb-1 flex items-center justify-between gap-3 text-[13px] leading-4 font-basexdg text-[#475467]">
+                    <span>{item.name}</span>
+                    <span className="shrink-0 font-semibold">{item.rate.toFixed(2)}%</span>
+                  </div>
+                  <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${Math.min(item.rate / 2 * 100, 100)}%`, backgroundColor: barColors[i] }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 grid grid-cols-5 border-t border-slate-200 pt-2 text-[12px] font-medium text-slate-500">
+              {['0%', '0.5%', '1%', '1.5%', '2%'].map((tick, i) => (
+                <span key={tick} className={i === 0 ? 'text-left' : i === 4 ? 'text-right' : 'text-center'}>{tick}</span>
+              ))}
+            </div>
           </div>
         </article>
       </section>
@@ -91,27 +100,27 @@ export default function DashboardPage() {
         <div className="grid gap-4">
 
           {/* Follow-up Summary Donut */}
-          <article className="or-card overflow-hidden">
-            <div className="border-b border-slate-100 px-5 py-4 text-base font-bold text-[#10386f]">สรุปการติดตามประจำวัน</div>
-            <div className="flex min-h-[205px] flex-col items-stretch gap-2 px-4 py-3 sm:flex-row sm:items-center">
-              <div className="relative h-36 min-w-36 flex-1">
+          <article className="or-card flex min-h-[200px] flex-col overflow-hidden">
+            <div className="border-b border-slate-100 px-8 py-5 text-[16px] leading-6 font-medium text-[#002d73]">สรุปการติดตามประจำวัน</div>
+            <div className="flex min-h-[200px] flex-1 flex-col items-center gap-3 px-7 py-0 sm:flex-row sm:justify-between">
+              <div className="relative h-[190px] w-[190px] shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={followUpSummary} dataKey="value" innerRadius={42} outerRadius={65} paddingAngle={0}>
+                    <Pie data={followUpSummary} dataKey="value" innerRadius={53} outerRadius={92} paddingAngle={0} stroke="none">
                       {followUpSummary.map((item) => <Cell key={item.name} fill={item.color} />)}
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
-                <div className="pointer-events-none absolute inset-0 grid place-content-center text-center text-xs text-slate-500">
-                  ทั้งหมด<strong className="block text-xl text-slate-800">214</strong>เคส
+                <div className="pointer-events-none absolute inset-0 grid place-content-center text-center text-[15px] font-medium leading-6 text-slate-500">
+                  ทั้งหมด<strong className="block text-[28px] leading-9 font-medium text-slate-900">214</strong>เคส
                 </div>
               </div>
-              <div className="min-w-0 space-y-2.5 sm:min-w-[210px]">
+              <div className="w-full min-w-0 space-y-3 sm:max-w-[310px] sm:flex-1">
                 {followUpSummary.map((item) => (
-                  <div key={item.name} className="flex items-center gap-2 text-xs">
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: item.color }} />
-                    <span className="flex-1 text-slate-600">{item.name}</span>
-                    <span className="font-semibold text-slate-700">{item.value} ({(item.value / 214 * 100).toFixed(1)}%)</span>
+                  <div key={item.name} className="grid grid-cols-[14px_minmax(0,1fr)_auto] items-center gap-3 text-[14px] leading-5">
+                    <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: item.color }} />
+                    <span className="min-w-0 text-slate-700 text-[16px]">{item.name}</span>
+                    <span className="whitespace-nowrap text-[16px] text-slate-700">{item.value} ({(item.value / 214 * 100).toFixed(1)}%)</span>
                   </div>
                 ))}
               </div>
@@ -119,14 +128,14 @@ export default function DashboardPage() {
           </article>
 
           {/* My Tasks */}
-          <article className="or-card overflow-hidden">
-            <div className="border-b border-slate-100 px-5 py-4 text-base font-bold text-[#10386f]">งานของฉันวันนี้</div>
-            <div className="divide-y divide-slate-100 px-5">
+          <article className="or-card flex min-h-[300px] flex-col overflow-hidden">
+            <div className="border-b border-slate-100 px-8 py-5 text-[16px] leading-6 font-medium text-[#002d73]">งานของฉันวันนี้</div>
+            <div className="divide-y divide-slate-100 px-8">
               {followUpTasks.map((task, i) => {
                 const iconUrl = `/assets/icon/dashboard/${taskIcons[i]}`
                 return (
                   <div key={task.label} className="flex items-center gap-3 py-4">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-50">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-50">
                       <span
                         className="dashboard-task-icon"
                         aria-hidden="true"
@@ -136,16 +145,16 @@ export default function DashboardPage() {
                         }}
                       />
                     </span>
-                    <p className="min-w-0 flex-1 text-xs font-semibold text-slate-700">{task.label}</p>
-                    <span className="text-[16px] text-slate-500">{task.count} รายการ</span>
-                    <span className={`rounded-full px-2.5 py-1 text-[16px] font-semibold ${metaBadge[task.metaTone] ?? metaBadge.gray}`}>
+                    <p className="min-w-0 flex-1 text-[15px] font-medium text-slate-700">{task.label}</p>
+                    <span className="text-[15px] text-slate-500">{task.count} รายการ</span>
+                    <span className={`rounded-full px-3 py-1 text-[15px] font-medium ${metaBadge[task.metaTone] ?? metaBadge.gray}`}>
                       {task.meta}
                     </span>
                   </div>
                 )
               })}
             </div>
-            <Link to="/my-follow-ups" className="flex items-center justify-end gap-1 border-t border-slate-100 px-5 py-3 text-xs font-semibold text-blue-600">
+            <Link to="/my-follow-ups" className="mt-auto flex items-center justify-end gap-1 border-t border-slate-100 px-5 py-4 text-[15px] font-medium text-blue-600">
               ดูงานทั้งหมด <ArrowRight size={14} />
             </Link>
           </article>

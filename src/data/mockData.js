@@ -1,5 +1,5 @@
 export const dashboardMetrics = [
-  { label: 'เคสทั้งหมด',             value: '1,250', unit: 'คน',        trend: '+15%', tone: 'blue'   },
+  { label: 'เคสผ่าตัดทั้งหมด',             value: '1,250', unit: 'คน',        trend: '+15%', tone: 'blue'   },
   { label: 'เคสผ่าตัดวันนี้',         value: '32',    unit: 'คน',        trend: '+15%', tone: 'cyan'   },
   { label: 'รอตรวจสอบจาก OR',        value: '18',    unit: 'คน',        trend: '+5%',  tone: 'amber'  },
   { label: 'ส่งเข้า OPD/IPD แล้ว',   value: '24',    unit: 'คน',        trend: '+8%',  tone: 'violet' },

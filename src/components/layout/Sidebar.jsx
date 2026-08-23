@@ -21,26 +21,27 @@ import {
   Users,
 } from 'lucide-react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { useState } from 'react'
 
 const primaryMenu = [
   { label: 'แดชบอร์ด', path: '/dashboard', icon: LayoutDashboard },
   { label: 'ตรวจสอบเคสจาก OR', path: '/or-validation', icon: ClipboardCheck },
-  { label: 'คิว OPD', path: '/opd-queue', icon: ClipboardList, badge: 17 },
-  { label: 'คิว IPD', path: '/ipd-queue', icon: BedSingle, badge: 15 },
-  { label: 'งานติดตามของฉัน', path: '/my-follow-ups', icon: ListChecks, badge: 1 },
+  { label: 'คิว OPD', path: '/opd-queue', icon: ClipboardList },
+  { label: 'คิว IPD', path: '/ipd-queue', icon: BedSingle },
+  { label: 'งานติดตามของฉัน', path: '/my-follow-ups', icon: ListChecks },
   { label: 'ปฏิทินติดตาม', path: '/calendar', icon: CalendarDays },
   { label: 'ประวัติการติดตาม', path: '/history', icon: RotateCcw },
 ]
 
 const ssiMenu = [
-  { label: 'เคสสงสัย SSI', path: '/suspected-ssi', icon: ShieldAlert, badge: 2, danger: true },
-  { label: 'เคสยืนยัน SSI', path: '/confirmed-ssi', icon: ShieldCheck, badge: 1, danger: true },
+  { label: 'เคสสงสัย SSI', path: '/suspected-ssi', icon: ShieldAlert, danger: true },
+  { label: 'เคสยืนยัน SSI', path: '/confirmed-ssi', icon: ShieldCheck, danger: true },
   { label: 'แพทย์ตรวจสอบ SSI', path: '/doctor-review', icon: Stethoscope },
 ]
 
 const reportMenu = [
   { label: 'รายงานและวิเคราะห์', path: '/reports', icon: ChartNoAxesColumnIncreasing },
-  { label: 'การแจ้งเตือน', path: '/notifications', icon: Bell, badge: 12, danger: true },
+  { label: 'การแจ้งเตือน', path: '/notifications', icon: Bell, danger: true },
 ]
 
 const adminMenu = [
@@ -52,11 +53,22 @@ const adminMenu = [
 ]
 
 function NavItems({ items, onNavigate }) {
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
+  const caseSource = pathname.startsWith('/cases/') ? new URLSearchParams(search).get('source') : null
+  const followUpSource = pathname.startsWith('/follow-ups/') ? new URLSearchParams(search).get('source') : null
+  const suspectedCaseSource = pathname.startsWith('/suspected-cases/') ? new URLSearchParams(search).get('source') : null
+  const isQueueCaseFlow = caseSource === 'opd' || caseSource === 'ipd'
   return items.map(({ label, path, icon: Icon, badge, danger }) => {
-    const isActive = pathname === path || 
-      (path === '/my-follow-ups' && pathname.startsWith('/cases/')) ||
-      (path === '/doctor-review' && pathname.startsWith('/suspected-cases/'))
+    const isActive = pathname === path ||
+      (path === `/${caseSource}-queue` && isQueueCaseFlow) ||
+      (path === '/or-validation' && pathname.startsWith('/cases/') && !isQueueCaseFlow) ||
+      (path === '/my-follow-ups' && pathname.startsWith('/follow-ups/') && !['history', 'calendar'].includes(followUpSource)) ||
+      (path === '/history' && pathname.startsWith('/follow-ups/') && followUpSource === 'history') ||
+      (path === '/history' && pathname.startsWith('/suspected-cases/') && suspectedCaseSource === 'history') ||
+      (path === '/calendar' && pathname.startsWith('/follow-ups/') && followUpSource === 'calendar') ||
+      (path === '/suspected-ssi' && pathname.startsWith('/suspected-cases/') && suspectedCaseSource === 'suspected') ||
+      (path === '/confirmed-ssi' && pathname.startsWith('/suspected-cases/') && suspectedCaseSource === 'confirmed') ||
+      (path === '/doctor-review' && pathname.startsWith('/suspected-cases/') && suspectedCaseSource === 'doctor')
 
     return (
       <NavLink
@@ -64,7 +76,7 @@ function NavItems({ items, onNavigate }) {
         to={path}
         onClick={onNavigate}
         className={
-          `group flex h-[50px] items-center gap-4 rounded-[9px] px-4 text-[15px] font-medium transition ${
+          `group flex h-[50px] items-center gap-4 rounded-[9px] px-4 text-[15px] font-normal transition ${
             isActive
               ? 'bg-blue-600 text-white shadow-lg shadow-blue-950/30'
               : 'text-[#d7e5f3] hover:bg-white/8 hover:text-white'
@@ -85,6 +97,7 @@ function NavItems({ items, onNavigate }) {
 
 export default function Sidebar({ open, onClose }) {
   const navigate = useNavigate()
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false)
 
   const logout = () => {
     sessionStorage.removeItem('or-smart-auth')
@@ -120,15 +133,26 @@ export default function Sidebar({ open, onClose }) {
         </nav>
 
         <div className="shrink-0 px-6 pb-6">
-          <div className="mb-2 flex h-[104px] items-center gap-3 rounded-[9px] border border-blue-200/60 bg-white/5 px-4">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-2 border-white bg-[#f5dfd5] text-lg">👩🏻</div>
+          <button
+            type="button"
+            aria-expanded={adminMenuOpen}
+            onClick={() => setAdminMenuOpen((current) => !current)}
+            className="mb-2 flex h-[104px] w-full items-center gap-3 rounded-[9px] border border-blue-200/60 bg-white/5 px-4 text-left transition hover:bg-white/10"
+          >
+            <img
+              src="/assets/images/admin-profile.svg"
+              alt="AdminHospitalBK"
+              className="h-9 w-9 shrink-0 rounded-full border-2 border-white object-cover"
+            />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-medium">AdminHospitalBK</p>
               <p className="mt-1 flex items-center gap-2 text-[12px] text-blue-100"><span className="h-2 w-2 rounded-full bg-emerald-400" />Admin</p>
             </div>
-            <ChevronLeft size={17} className="-rotate-90" />
-          </div>
-          <button onClick={logout} className="flex h-[50px] w-full items-center gap-4 rounded-[9px] border border-blue-200/60 px-5 text-[14px] font-semibold text-white hover:bg-white/8"><LogOut size={20} />ออกจากระบบ</button>
+            <ChevronLeft size={17} className={`transition-transform ${adminMenuOpen ? 'rotate-90' : '-rotate-90'}`} />
+          </button>
+          {adminMenuOpen && (
+            <button onClick={logout} className="flex h-[50px] w-full items-center gap-4 rounded-[9px] border border-blue-200/60 px-5 text-[14px] font-semibold text-white hover:bg-white/8"><LogOut size={20} />ออกจากระบบ</button>
+          )}
         </div>
         <div className="grid min-h-[72px] shrink-0 place-items-center border-t border-white/10 text-[16px] font-medium text-blue-50">Bangkok Hospital OR SMART v1.0</div>
       </aside>
