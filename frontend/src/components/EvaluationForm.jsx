@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Plus,
   CheckCircle2,
@@ -13,25 +13,34 @@ import {
 import { api } from '../services/api.js'
 
 export default function EvaluationForm({ selectedPatient, setSelectedPatient }) {
+  const [activeFollowUp, setActiveFollowUp] = useState(null)
+  const [symptomConfig, setSymptomConfig] = useState([])
+  const [methodConfig, setMethodConfig] = useState([])
+  const [riskLevels, setRiskLevels] = useState([
+    { id: 'low', name: 'ต่ำ', min: 0, max: 24, color: '#10b981' },
+    { id: 'moderate', name: 'ปานกลาง', min: 25, max: 50, color: '#f59e0b' },
+    { id: 'high', name: 'สูง', min: 51, max: 74, color: '#ef4444' },
+    { id: 'critical', name: 'สูงมาก', min: 75, max: 100, color: '#7f1d1d' },
+  ])
   // Evaluation Form States
-  const [followUpDate, setFollowUpDate] = useState('15 มิ.ย. 2569');
-  const [followUpTime, setFollowUpTime] = useState('09:00');
-  const [followUpMethod, setFollowUpMethod] = useState('phone'); // phone, sms, hospital
-  const [followerName, setFollowerName] = useState('OPD Nurse B');
-  const [contactPhone, setContactPhone] = useState(selectedPatient?.phone || '081-234-5678');
-  const [contactStatus, setContactStatus] = useState('success'); // success, failed
+  const [followUpDate, setFollowUpDate] = useState('');
+  const [followUpTime, setFollowUpTime] = useState('');
+  const [followUpMethod, setFollowUpMethod] = useState(''); // phone, sms, hospital
+  const [followerName, setFollowerName] = useState('');
+  const [contactPhone, setContactPhone] = useState(selectedPatient?.phone || '');
+  const [contactStatus, setContactStatus] = useState(''); // success, failed
   const [contactLocation, setContactLocation] = useState('');
   const [remarks, setRemarks] = useState('');
 
   // CDC Symptoms
   const [symptoms, setSymptoms] = useState({
-    fever: 'no',
-    pain: 'no',
-    swell: 'no',
-    red: 'no',
-    pus: 'no',
-    smell: 'no',
-    gap: 'no'
+    fever: '',
+    pain: '',
+    swell: '',
+    red: '',
+    pus: '',
+    smell: '',
+    gap: ''
   });
   const [otherSymptom, setOtherSymptom] = useState('');
 
@@ -44,41 +53,87 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
   const [otherCheckboxesText, setOtherCheckboxesText] = useState('');
 
   // Post-discharge treatments
-  const [dischargeTreatment, setDischargeTreatment] = useState('none'); // none, metDoctor, other
+  const [dischargeTreatment, setDischargeTreatment] = useState(''); // none, metDoctor, other
   const [dischargeTreatmentText, setDischargeTreatmentText] = useState('');
 
   // Preliminary Evaluation
-  const [evalResult, setEvalResult] = useState('not_infected'); // not_infected, suspect_ssi
+  const [evalResult, setEvalResult] = useState(''); // not_infected, suspect_ssi, confirmed_ssi
   const [evalRemarks, setEvalRemarks] = useState('');
-  const [nextAppointment, setNextAppointment] = useState('Day 7 - 22 มิ.ย. 2569');
+  const [nextAppointment, setNextAppointment] = useState('');
 
   // Modal Visibility State
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isSubmitToDoctorModalOpen, setIsSubmitToDoctorModalOpen] = useState(false);
-  const [appointmentType, setAppointmentType] = useState('normal');
+  const [appointmentType, setAppointmentType] = useState('');
 
   // Submit to Doctor Notification Options States
-  const [notifySurgeon, setNotifySurgeon] = useState(true);
-  const [notifyDashboard, setNotifyDashboard] = useState(true);
-  const [notifySMS, setNotifySMS] = useState(true);
-  const [notifyPhone, setNotifyPhone] = useState('081-234-5678');
+  const [notifySurgeon, setNotifySurgeon] = useState(false);
+  const [notifyDashboard, setNotifyDashboard] = useState(false);
+  const [notifySMS, setNotifySMS] = useState(false);
+  const [notifyPhone, setNotifyPhone] = useState('');
+
+  const resetAssessmentFields = () => {
+    setFollowUpMethod(''); setFollowerName(''); setContactStatus(''); setContactLocation(''); setRemarks('')
+    setSymptoms({ fever: '', pain: '', swell: '', red: '', pus: '', smell: '', gap: '' })
+    setOtherSymptom(''); setOtherCheckboxes({ nausea: false, musclePain: false, other: false }); setOtherCheckboxesText('')
+    setDischargeTreatment(''); setDischargeTreatmentText(''); setEvalResult(''); setEvalRemarks('')
+  }
+
+  useEffect(() => {
+    let active = true
+    api.getFollowUps(selectedPatient.operationNo).then((rows) => {
+      if (!active) return
+      const followUp = rows.find((item) => item.status === 'ACTIVE') || null
+      setActiveFollowUp(followUp)
+      const index = followUp?.current_round_index || 0
+      const round = followUp?.schedule?.[index]
+      const nextRound = followUp?.schedule?.[index + 1]
+      if (round) { setFollowUpDate(round.date || ''); setFollowUpTime(round.time || ''); setNextAppointment(nextRound?.date || '') }
+    }).catch(() => setActiveFollowUp(null))
+    return () => { active = false }
+  }, [selectedPatient.operationNo])
+
+  useEffect(() => {
+    api.getSettings().then(settings => {
+      const configuredSymptoms = (settings.ssiCriteria || []).filter(item => item.enabled !== false)
+      setSymptomConfig(configuredSymptoms)
+      setSymptoms(Object.fromEntries(configuredSymptoms.map(item => [String(item.id), ''])))
+      setMethodConfig((settings.methods || []).filter(item => item.name))
+      if (Array.isArray(settings.riskLevels) && settings.riskLevels.length) setRiskLevels(settings.riskLevels.map(level => level.id === 'moderate' && Number(level.max) === 49 ? { ...level, max: 50 } : level.id === 'high' && Number(level.min) === 50 ? { ...level, min: 51 } : level))
+    }).catch(() => { setSymptomConfig([]); setMethodConfig([]) })
+  }, [])
+
+  const requiredSymptomsAnswered = symptomConfig.length > 0 && symptomConfig.every(item => symptoms[String(item.id)])
+  const answeredSymptoms = Object.values(symptoms).filter(Boolean)
+  const assessmentPoints = answeredSymptoms.reduce((sum, value) => /^(has|yes|true|มี)$/i.test(String(value)) ? sum + 1 : /^(unknown|unsure|ไม่ทราบ)$/i.test(String(value)) ? sum + 0.5 : sum, 0)
+  const calculatedScore = answeredSymptoms.length ? Number(((assessmentPoints / answeredSymptoms.length) * 100).toFixed(2)) : null
+  const calculatedRisk = calculatedScore == null ? null : riskLevels.find(level => calculatedScore >= Number(level.min) && calculatedScore <= Number(level.max)) || riskLevels[riskLevels.length - 1]
+  const suggestedResult = calculatedScore == null ? '' : calculatedRisk?.id === 'low' ? 'not_infected' : 'suspect_ssi'
+  const activeRoundIndex = activeFollowUp?.current_round_index || 0
+  const activeRound = activeFollowUp?.schedule?.[activeRoundIndex]
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const scheduledDay = activeRound?.date ? new Date(`${activeRound.date}T00:00:00`) : null
+  const roundIsDue = activeRoundIndex === 0 || !scheduledDay || today >= scheduledDay
+  const canSave = Boolean(roundIsDue && activeFollowUp && followUpDate && followUpTime && followUpMethod && followerName && contactStatus && dischargeTreatment && evalResult && requiredSymptomsAnswered)
 
   return (
     <>
+      {!activeFollowUp && <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">ยังไม่มี Follow-up ที่กำลังดำเนินการ จึงยังไม่สามารถบันทึกผลประเมินได้</div>}
+      {activeFollowUp && !roundIsDue && <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-700">ยังไม่ถึงวันประเมิน {activeRound?.day || `รอบที่ ${activeRoundIndex + 1}`} กำหนดวันที่ {activeRound?.date} แบบประเมินจะเปิดให้บันทึกเมื่อถึงวันติดตาม</div>}
       <div className="evaluation-form-grid">
         {/* Left Column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* ข้อมูลการติดตาม */}
           <div className="sub-info-card" style={{ flex: 1 }}>
             <div className="sub-info-card-header">
-              <h4 className="sub-info-card-title">ข้อมูลการติดตาม</h4>
+              <h4 className="sub-info-card-title">ข้อมูลการติดตาม {activeFollowUp?.schedule?.[activeFollowUp.current_round_index || 0]?.day || ''}</h4>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div className="form-group">
                 <label>วันที่ติดตาม <span className="text-red-500 font-bold">*</span></label>
                 <input
-                  type="text"
+                  type="date"
                   className="form-input"
                   value={followUpDate}
                   onChange={(e) => setFollowUpDate(e.target.value)}
@@ -87,7 +142,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
               <div className="form-group">
                 <label>เวลาติดตาม <span className="text-red-500 font-bold">*</span></label>
                 <input
-                  type="text"
+                  type="time"
                   className="form-input"
                   value={followUpTime}
                   onChange={(e) => setFollowUpTime(e.target.value)}
@@ -98,36 +153,11 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             <div className="form-group" style={{ marginBottom: '16px' }}>
               <label>วิธีการติดตาม <span className="text-red-500 font-bold">*</span></label>
               <div className="radio-group-horizontal">
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    name="followUpMethod"
-                    className="radio-input"
-                    checked={followUpMethod === 'phone'}
-                    onChange={() => setFollowUpMethod('phone')}
-                  />
-                  <span>โทรศัพท์</span>
-                </label>
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    name="followUpMethod"
-                    className="radio-input"
-                    checked={followUpMethod === 'sms'}
-                    onChange={() => setFollowUpMethod('sms')}
-                  />
-                  <span>SMS</span>
-                </label>
-                <label className="radio-label">
-                  <input
-                    type="radio"
-                    name="followUpMethod"
-                    className="radio-input"
-                    checked={followUpMethod === 'hospital'}
-                    onChange={() => setFollowUpMethod('hospital')}
-                  />
-                  <span>พบที่ รพ.</span>
-                </label>
+                {methodConfig.map(method => <label key={method.id} className="radio-label">
+                  <input type="radio" name="followUpMethod" className="radio-input" checked={followUpMethod === method.name} onChange={() => setFollowUpMethod(method.name)} />
+                  <span>{method.name}</span>
+                </label>)}
+                {!methodConfig.length && <span className="text-sm text-slate-400">ยังไม่ได้ตั้งค่าวิธีติดตาม</span>}
               </div>
             </div>
 
@@ -226,27 +256,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
               รองรับไฟล์ .jpg .jpeg .png ขนาดไม่เกิน 5 MB (อัปโหลดได้สูงสุด 5 รูป)
             </div>
             <div className="wound-images-grid">
-              <div className="wound-image-box">
-                <img src="/surgical_suture_healing.png" alt="Wound" />
-                <button type="button" className="wound-image-remove" onClick={() => alert('ลบรูปภาพแผล')}>×</button>
-                <span className="wound-image-box-label">22 มิ.ย. 2569 09:06น.</span>
-              </div>
-              <div className="wound-image-box wound-image-add" onClick={() => alert('อัปโหลดรูปภาพแผล')}>
-                <Plus size={16} />
-                <span className="wound-image-box-label">22 มิ.ย. 2569 09:06น.</span>
-              </div>
-              <div className="wound-image-box wound-image-add" onClick={() => alert('อัปโหลดรูปภาพแผล')}>
-                <Plus size={16} />
-                <span className="wound-image-box-label">22 มิ.ย. 2569 09:06น.</span>
-              </div>
-              <div className="wound-image-box wound-image-add" onClick={() => alert('อัปโหลดรูปภาพแผล')}>
-                <Plus size={16} />
-                <span className="wound-image-box-label">22 มิ.ย. 2569 09:06น.</span>
-              </div>
-              <div className="wound-image-box wound-image-add" onClick={() => alert('อัปโหลดรูปภาพแผล')}>
-                <Plus size={16} />
-                <span className="wound-image-box-label">22 มิ.ย. 2569 09:06น.</span>
-              </div>
+              {Array.from({ length: 5 }).map((_, index) => <button key={index} type="button" className="wound-image-box wound-image-add" onClick={() => alert('ระบบอัปโหลดไฟล์ยังไม่เชื่อมต่อ')}><Plus size={16} /><span className="wound-image-box-label">เพิ่มรูปภาพ</span></button>)}
             </div>
           </div>
         </div>
@@ -269,17 +279,9 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { id: 'fever', label: 'มีไข้ (อุณหภูมิ ≥ 38°C)' },
-                  { id: 'pain', label: 'ปวดแผล/เจ็บแผลเพิ่มขึ้น' },
-                  { id: 'swell', label: 'แผลบวม' },
-                  { id: 'red', label: 'แผลแดง' },
-                  { id: 'pus', label: 'มีน้ำเหลือง/หนองจากแผล' },
-                  { id: 'smell', label: 'กลิ่นผิดปกติจากแผล' },
-                  { id: 'gap', label: 'แผลแยก' }
-                ].map(item => (
+                {symptomConfig.map(item => (
                   <tr key={item.id}>
-                    <td>{item.label}</td>
+                    <td>{item.name}</td>
                     <td className="assessment-table-center">
                       <input
                         type="radio"
@@ -309,6 +311,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                     </td>
                   </tr>
                 ))}
+                {!symptomConfig.length && <tr><td colSpan="4" className="py-6 text-center text-slate-400">ยังไม่ได้ตั้งค่าอาการสำหรับแบบประเมิน</td></tr>}
                 <tr>
                   <td>อื่นๆ</td>
                   <td colSpan="3">
@@ -325,28 +328,6 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
               </tbody>
             </table>
 
-            <button
-              type="button"
-              className="clear-btn"
-              style={{
-                marginTop: '12px',
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '13.5px',
-                padding: '10px',
-                border: '1px dashed #175beb',
-                borderRadius: '8px',
-                backgroundColor: '#ffffff',
-                color: '#175beb',
-                fontWeight: '500',
-                transition: 'all 0.2s',
-              }}
-              onClick={() => alert('เพิ่มช่องกรอกข้อมูลสำเร็จ')}
-            >
-              + เพิ่มข้อมูลการประเมิน
-            </button>
           </div>
 
           {/* อาการอื่นๆ และ การรักษา (รวมอยู่ในบาร์/การ์ดเดียวกัน) */}
@@ -451,24 +432,13 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             </div>
 
             <div className="form-group" style={{ marginBottom: '16px' }}>
-              <label>ผลการประเมิน <span className="text-red-500 font-bold">*</span></label>
-              <div className="evaluation-toggle-group">
-                <button
-                  type="button"
-                  className={`toggle-btn toggle-btn-success ${evalResult === 'not_infected' ? 'active' : ''}`}
-                  onClick={() => setEvalResult('not_infected')}
-                >
-                  <span className="dot dot-green" style={{ display: evalResult === 'not_infected' ? 'inline-block' : 'none' }}></span>
-                  <span>ไม่เข้าข่ายการติดเชื้อ</span>
-                </button>
-                <button
-                  type="button"
-                  className={`toggle-btn toggle-btn-warning ${evalResult === 'suspect_ssi' ? 'active' : ''}`}
-                  onClick={() => setEvalResult('suspect_ssi')}
-                >
-                  <span className="dot dot-orange" style={{ display: evalResult === 'suspect_ssi' ? 'inline-block' : 'none' }}></span>
-                  <span>เข้าข่ายสงสัย SSI</span>
-                </button>
+              <label>ผลการประเมิน SSI (ระบบคำนวณอัตโนมัติ)</label>
+              <div className={`mt-2 rounded-lg border px-3 py-2.5 ${suggestedResult === 'suspect_ssi' ? 'border-orange-200 bg-orange-50' : suggestedResult === 'not_infected' ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
+                {calculatedScore == null ? <p className="text-[12px] text-slate-500">กรุณาตอบแบบประเมินอาการให้ครบ</p> : <div className="flex items-center justify-between gap-3"><div><p className="text-[12px] font-semibold text-slate-700">ผลคำนวณจากแบบประเมิน: <span style={{ color: calculatedRisk?.color }}>{calculatedRisk?.name || '-'}</span></p><p className="mt-0.5 text-[11px] text-slate-500">ระบบใช้เป็นข้อมูลประกอบ ผลที่บันทึกยึดตามเจ้าหน้าที่</p></div><strong className="text-[15px]" style={{ color: calculatedRisk?.color }}>{calculatedScore}%</strong></div>}
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <button type="button" onClick={() => setEvalResult('not_infected')} className={`rounded-lg border px-3 py-2.5 text-[13px] font-semibold ${evalResult === 'not_infected' ? 'border-emerald-500 bg-emerald-50 text-emerald-600' : 'border-slate-200 bg-white text-slate-600'}`}>ไม่เข้าข่ายการติดเชื้อ</button>
+                <button type="button" onClick={() => setEvalResult('suspect_ssi')} className={`rounded-lg border px-3 py-2.5 text-[13px] font-semibold ${evalResult === 'suspect_ssi' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-slate-200 bg-white text-slate-600'}`}>เข้าข่ายสงสัย SSI</button>
               </div>
             </div>
 
@@ -495,7 +465,8 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                   className="form-input w-full"
                   style={{ paddingLeft: '36px', height: '38px', fontSize: '13px' }}
                   value={nextAppointment}
-                  onChange={(e) => setNextAppointment(e.target.value)}
+                  readOnly
+                  title="ระบบกำหนดให้อัตโนมัติตามรอบ Follow-up"
                 />
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               </div>
@@ -512,37 +483,45 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
               <AlertCircle size={14} />
               <span>เกินกำหนด</span>
             </span>
-          ) : (
-            <span className="badge-outlined" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-orange)', borderColor: 'var(--color-orange)' }}>
-              <Clock size={14} />
-              <span>เกินกำหนด</span>
-            </span>
-          )}
+          ) : <span className="badge-outlined" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', borderColor: '#cbd5e1' }}><Clock size={14} /><span>ยังไม่ประเมิน</span></span>}
         </div>
         <div className="action-bar-right">
           <button
             type="button"
             className="btn-outlined-primary"
             style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            onClick={() => setSelectedPatient(null)}
+            onClick={() => setSelectedPatient?.(null)}
           >
             ปิด
           </button>
-          <button
+          {evalResult === 'suspect_ssi' && <button
             type="button"
             className="btn-outlined-primary"
-            onClick={() => {
-              setIsSubmitToDoctorModalOpen(true);
-            }}
+            disabled={!canSave}
+            onClick={() => setIsSubmitToDoctorModalOpen(true)}
           >
             <span>บันทึกการประเมิน/ส่งให้แพทย์ประเมิน</span>
-          </button>
+          </button>}
           <button
             type="button"
             className="btn-filled-primary"
+            disabled={!canSave}
             onClick={async () => {
               try {
-                await api.createEvaluation(selectedPatient.operationNo, { evaluationType: 'SSI', result: evalResult, data: { followUpDate, followUpTime, followUpMethod, followerName, contactPhone, contactStatus, contactLocation, remarks, symptoms, otherSymptom, otherCheckboxes, otherCheckboxesText, dischargeTreatment, dischargeTreatmentText, evalRemarks, nextAppointment }, evaluatedBy: followerName })
+                const saved = await api.createEvaluation(selectedPatient.operationNo, { evaluationType: 'SSI', result: evalResult, score: calculatedScore, roundIndex: activeFollowUp.current_round_index || 0, data: { followUpDate, followUpTime, followUpMethod, followerName, contactPhone, contactStatus, contactLocation, remarks, symptoms, otherSymptom, otherCheckboxes, otherCheckboxesText, dischargeTreatment, dischargeTreatmentText, evalRemarks, nextAppointment, calculatedRisk: calculatedRisk?.id, suggestedResult }, evaluatedBy: followerName })
+                const completedIndex = activeFollowUp.current_round_index || 0
+                if (saved.nextRound) {
+                  const followingRound = activeFollowUp.schedule?.[completedIndex + 2]
+                  setFollowUpDate(saved.nextRound.date || '')
+                  setFollowUpTime(saved.nextRound.time || '')
+                  setNextAppointment(followingRound?.date || '')
+                  setActiveFollowUp((item) => ({ ...item, current_round_index: completedIndex + 1 }))
+                  resetAssessmentFields()
+                } else if (saved.followUpCompleted) {
+                  setActiveFollowUp(null)
+                  setNextAppointment('')
+                }
+                window.dispatchEvent(new Event('operations-updated'))
                 setIsSaveModalOpen(true)
               } catch (error) { alert(error.message) }
             }}
@@ -572,6 +551,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 onChange={(e) => setAppointmentType(e.target.value)}
                 className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-[14.5px] font-semibold text-slate-700 appearance-none outline-none cursor-pointer pr-10 shadow-sm transition hover:border-slate-300"
               >
+                <option value="">เลือกการดำเนินการต่อ</option>
                 <option value="normal">คนไข้เข้ารับการนัดปกติ</option>
                 <option value="followup">ติดตามอาการเพิ่มเติม</option>
                 <option value="refer">ส่งต่อแพทย์ผู้เชี่ยวชาญ</option>
@@ -590,10 +570,10 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 <div className="modal-patient-info-list">
                   <span className="modal-patient-hn">HN {selectedPatient.id}</span>
                   <span className="modal-patient-meta">
-                    หัตถการ: {selectedPatient.procedure} | รอบติดตาม: {selectedPatient.round || 'Day 1'}
+                    หัตถการ: {selectedPatient.procedure || '-'}
                   </span>
                   <span className="modal-patient-time">
-                    วันที่นัดติดตาม: {selectedPatient.followUp || '15 มิ.ย. 2569'} เวลา 09:00 น.
+                    วันที่ประเมิน: {followUpDate || '-'} เวลา {followUpTime || '-'}
                   </span>
                 </div>
               </div>
@@ -614,7 +594,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', whiteSpace: 'nowrap' }}
                 onClick={() => {
                   setIsSaveModalOpen(false);
-                  setSelectedPatient(null);
+                  setSelectedPatient?.(null);
                 }}
               >
                 <span>ไปยังรายการติดตามของฉัน</span>
@@ -653,10 +633,10 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 <div className="modal-patient-info-list">
                   <span className="modal-patient-hn">HN {selectedPatient.id}</span>
                   <span className="modal-patient-meta">
-                    หัตถการ: {selectedPatient.procedure} | รอบติดตาม: {selectedPatient.round || 'Day 1'}
+                    หัตถการ: {selectedPatient.procedure || '-'}
                   </span>
                   <span className="modal-patient-time">
-                    วันที่นัดติดตาม: {selectedPatient.followUp || '15 มิ.ย. 2569'} เวลา 09:00 น.
+                    วันที่ประเมิน: {followUpDate || '-'} เวลา {followUpTime || '-'}
                   </span>
                 </div>
               </div>
@@ -666,20 +646,20 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             <div className="modal-timeline-stats">
               <div className="stats-col">
                 <span className="stats-col-label">การผ่าตัด</span>
-                <span className="stats-col-value">{selectedPatient.procedure} (ขาซ้าย)</span>
+                <span className="stats-col-value">{selectedPatient.procedure || '-'}</span>
               </div>
               <div className="stats-col">
                 <span className="stats-col-label">รอบปัจจุบัน</span>
                 <span className="stats-col-value" style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span>{selectedPatient.round} (รอบที่ 1/6)</span>
-                  <span style={{ fontSize: '10px', color: 'var(--text-light)', fontWeight: 'normal' }}>15 มิ.ย. 2569</span>
+                  <span>{selectedPatient.round || '-'}</span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-light)', fontWeight: 'normal' }}>{followUpDate || '-'}</span>
                 </span>
               </div>
               <div className="stats-col">
                 <span className="stats-col-label">นัดติดตามถัดไป</span>
                 <span className="stats-col-value" style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span>Day 7 (รอบที่ 2/6)</span>
-                  <span style={{ fontSize: '10px', color: 'var(--color-primary)', fontWeight: 'normal' }}>22 มิ.ย. 2569 | 09:00 น.</span>
+                  <span>{nextAppointment || '-'}</span>
+                  <span style={{ fontSize: '10px', color: 'var(--color-primary)', fontWeight: 'normal' }}>ตามรอบที่กำหนดใน Follow-up</span>
                 </span>
               </div>
             </div>
@@ -688,11 +668,11 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
             <div className="modal-surgeon-info">
               <h4 className="modal-section-title">ข้อมูลศัลยแพทย์ผู้ผ่าตัด</h4>
               <div className="surgeon-detail-box">
-                <span className="surgeon-name-title">นพ.อธิวัฒน์ ศิริกมล</span>
-                <span className="surgeon-meta-text">ศัลยแพทย์กระดูกและข้อ</span>
+                <span className="surgeon-name-title">{selectedPatient.surgeon || '-'}</span>
+                <span className="surgeon-meta-text">ศัลยแพทย์ผู้ทำหัตถการ</span>
                 <div style={{ display: 'flex', gap: '24px', marginTop: '4px' }}>
-                  <span className="surgeon-meta-text">แผนก: <strong>Orthopedic OR</strong></span>
-                  <span className="surgeon-meta-text">เบอร์โทร: <strong>02-123-3210</strong></span>
+                  <span className="surgeon-meta-text">แผนก: <strong>{selectedPatient.department || '-'}</strong></span>
+                  <span className="surgeon-meta-text">เบอร์โทร: <strong>-</strong></span>
                 </div>
               </div>
             </div>
@@ -742,8 +722,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                           value={notifyPhone}
                           onChange={(e) => setNotifyPhone(e.target.value)}
                         >
-                          <option value="081-234-5678">081-234-5678</option>
-                          <option value="089-999-8888">089-999-8888</option>
+                          <option value="">ยังไม่มีเบอร์โทรศัพท์</option>
                         </select>
                       </div>
                     </div>
@@ -772,13 +751,13 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
                 type="button"
                 className="btn-filled-primary"
                 style={{ padding: '12px 24px', flex: '1 1 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', whiteSpace: 'nowrap' }}
-                onClick={() => {
-                  if (selectedPatient) {
-                    selectedPatient.status = 'รอแพทย์ตรวจสอบ'; // Change status
-                    selectedPatient.isCompleted = true;
-                  }
-                  setIsSubmitToDoctorModalOpen(false);
-                  setSelectedPatient(null);
+                onClick={async () => {
+                  try {
+                    await api.createEvaluation(selectedPatient.operationNo, { evaluationType: 'SSI', result: 'suspect_ssi', roundIndex: activeFollowUp.current_round_index || 0, data: { followUpDate, followUpTime, followUpMethod, followerName, contactPhone, contactStatus, contactLocation, remarks, symptoms, otherSymptom, otherCheckboxes, otherCheckboxesText, dischargeTreatment, dischargeTreatmentText, evalRemarks, nextAppointment, submittedToDoctor: true }, evaluatedBy: followerName })
+                    window.dispatchEvent(new Event('operations-updated'))
+                    setIsSubmitToDoctorModalOpen(false)
+                    alert('บันทึกลงประวัติและส่งไปที่แพทย์ตรวจสอบ SSI แล้ว')
+                  } catch (error) { alert(error.message) }
                 }}
               >
                 <span>ส่งให้ศัลยแพทย์ (Submit to Surgeon)</span>

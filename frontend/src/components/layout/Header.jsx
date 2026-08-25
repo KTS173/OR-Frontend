@@ -1,5 +1,8 @@
 import { Bell, CalendarDays, ChevronDown, Menu } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useApiQuery } from '../../hooks/useApiQuery.js'
+import { api } from '../../services/api.js'
 
 const routeTitles = {
   '/dashboard': 'แดชบอร์ด',
@@ -16,13 +19,17 @@ const routeTitles = {
   '/notifications': 'ศูนย์แจ้งเตือน (Notifications Center)',
   '/central-search': 'ค้นหาข้อมูลกลาง',
   '/documents': 'เอกสารข่าวสารกลาง',
-  '/his-sync': 'ซิงค์ข้อมูลหลัก',
+  '/his-sync': 'ข้อมูลที่เชื่อมต่อจาก HIS / TrackCare',
   '/settings': 'ตั้งค่า',
   '/users': 'จัดการผู้ใช้',
 }
 
 export default function Header({ onMenu }) {
   const { pathname, search } = useLocation()
+  const navigate = useNavigate()
+  const { data: notifications, refetch } = useApiQuery(api.getNotifications)
+  const unreadCount = notifications.filter((notification) => !notification.read_at).length
+  useEffect(() => { const refresh = () => refetch(); const timer = window.setInterval(refresh, 60000); window.addEventListener('operations-updated', refresh); return () => { window.clearInterval(timer); window.removeEventListener('operations-updated', refresh) } }, [refetch])
   const isSetup = search.includes('setup=true')
   let title = pathname.endsWith('/create-follow-up') ? 'สร้างบันทึกการเฝ้าระวัง (Create Follow-up)' : pathname.startsWith('/cases/') || pathname.startsWith('/follow-ups/') ? (isSetup ? 'ตั้งค่ารอบ follow-up' : 'งานติดตามของฉัน') : routeTitles[pathname] ?? 'OR SMART SSI'
 
@@ -40,14 +47,14 @@ export default function Header({ onMenu }) {
     <header className="sticky top-0 z-20 flex min-h-[var(--or-header-height)] items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur sm:px-[var(--or-header-padding)]">
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <button onClick={onMenu} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 lg:hidden" aria-label="เปิดเมนู"><Menu size={19} /></button>
-        <h1 className="min-w-0 truncate text-base leading-5 font-medium text-[#175beb] sm:text-xl xl:text-[24px]">{title}</h1>
+        <h1 className="min-w-0 truncate py-1 text-base leading-normal font-medium text-[#175beb] sm:text-xl xl:text-[24px]">{title}</h1>
       </div>
       <div className="flex shrink-0 items-center gap-2 sm:gap-6">
         <button className="hidden h-[42px] w-[182px] items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-[17px] py-[9px] text-[14px] font-normal leading-6 text-[#1f2937] md:flex"><span className="flex items-center gap-2"><CalendarDays size={18} />{new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium' }).format(new Date())}</span><ChevronDown size={12} /></button>
         <div className="hidden h-8 w-px bg-[#e2e8f0] sm:block" />
-        <button className="bell-btn relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800 hover:shadow-md" aria-label="การแจ้งเตือน">
+        <button onClick={() => navigate('/notifications')} className="bell-btn relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800 hover:shadow-md" aria-label={`การแจ้งเตือนที่ยังไม่ได้อ่าน ${unreadCount} รายการ`}>
           <Bell size={20} className="bell-icon transition-transform duration-200" />
-          <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gradient-to-r from-red-500 to-rose-600 text-[10px] font-bold text-white shadow-sm animate-pulse-subtle">1</span>
+          {unreadCount > 0 && <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-gradient-to-r from-red-500 to-rose-600 px-1 text-[10px] font-bold text-white shadow-sm animate-pulse-subtle">{unreadCount > 99 ? '99+' : unreadCount}</span>}
         </button>
       </div>
     </header>

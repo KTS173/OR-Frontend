@@ -66,6 +66,18 @@
     cursor: pointer;
   }
 
+  img,
+  svg,
+  input,
+  textarea {
+    max-width: 100%;
+  }
+
+  input,
+  textarea {
+    min-width: 0;
+  }
+
   select {
     max-width: 100%;
     min-width: 0;
@@ -248,6 +260,35 @@ table :is(thead, tbody, tfoot, tr)[class*="border-slate-100"] {
 
   .or-card {
     border-radius: 12px;
+  }
+
+  .or-page {
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  .evaluation-form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .wound-images-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .timeline-card {
+    overflow-x: auto;
+    padding: 16px;
+  }
+
+  .timeline-track-container {
+    min-width: 640px;
+  }
+
+  .timeline-card-header {
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
   .card {
@@ -888,12 +929,46 @@ table :is(thead, tbody, tfoot, tr)[class*="border-slate-100"] {
 }
 
 .sub-info-card-title {
-  font-size: 14.5px;
-  font-weight: 600;
-  color: var(--text-dark);
+  font-size: 16px;
+  line-height: 1.75rem;
+  font-weight: 500;
+  color: #002d73;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.block-section-title {
+  font-size: 16px;
+  line-height: 1.75rem;
+  font-weight: 500;
+  color: #002d73;
+}
+
+/* Use the follow-up timeline heading as the typography standard for every
+   sub-view block without changing card, table, or content layout. */
+.sub-info-card > h4:first-child,
+.sub-info-card > header h4:first-child {
+  font-size: 16px;
+  line-height: 1.75rem;
+  font-weight: 500;
+  color: #002d73;
+}
+
+/* System-wide block heading standard. This intentionally targets heading
+   elements only; card geometry, tables, metrics, and content remain intact. */
+.or-page :is(section, article, div):is(.rounded-xl, .rounded-2xl, .or-card, .card, .sub-info-card) > :is(h2, h3, h4):first-child,
+.or-page :is(section, article, div):is(.rounded-xl, .rounded-2xl, .or-card, .card, .sub-info-card) > header :is(h2, h3, h4),
+.or-page article.rounded-2xl > div:first-child > :is(h2, h3, h4):first-child,
+.or-page .card-title > :is(h2, h3, h4),
+.or-page .sub-info-card-header > :is(h2, h3, h4),
+.or-page :is(section, article, div):is(.rounded-xl, .rounded-2xl, .or-card, .card, .sub-info-card):not(.bg-emerald-50, .bg-red-50, .bg-orange-50) > div:first-child > :is(h2, h3, h4):first-child,
+.or-page :is(section, article, div):is(.rounded-xl, .rounded-2xl, .or-card, .card, .sub-info-card):not(.bg-emerald-50, .bg-red-50, .bg-orange-50) > div:first-child > div:first-child > :is(h2, h3, h4):first-child,
+.or-page .timeline-card .timeline-title {
+  font-size: 16px !important;
+  line-height: 1.75rem !important;
+  font-weight: 500 !important;
+  color: #002d73 !important;
 }
 
 .sub-info-card-link {
@@ -2130,9 +2205,10 @@ table :is(thead, tbody, tfoot, tr)[class*="border-slate-100"] {
 }
 
 .timeline-title {
-  font-size: 14.5px;
-  font-weight: 600;
-  color: var(--text-dark);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.75rem;
+  color: #002d73;
 }
 
 .timeline-subtitle {
@@ -2143,6 +2219,12 @@ table :is(thead, tbody, tfoot, tr)[class*="border-slate-100"] {
 .timeline-track-container {
   padding: 20px 0 10px;
   position: relative;
+}
+
+/* Keep real inserted-activity markers centred on the timeline after restoring
+   the compact, original typography. */
+.timeline-track-container > .absolute.z-20 {
+  transform: translate(-50%, 8px);
 }
 
 .timeline-line {

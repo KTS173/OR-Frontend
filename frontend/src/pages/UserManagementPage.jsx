@@ -1,7 +1,11 @@
-import { CalendarDays, Edit2, LogIn, Search, UserCheck, UserMinus, UserPlus, Users } from 'lucide-react'
+import { Edit2, LogIn, Save, Search, Trash2, UserCheck, UserMinus, UserPlus, Users, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import PageHeader from '../components/ui/PageHeader.jsx'
 import { api } from '../services/api.js'
+
+const roleLabels = {
+  ADMIN: 'Admin', OR: 'OR STAFF', OPD: 'OPD NURSE', IPD: 'IPD NURSE',
+  DOCTOR: 'PHYSICIAN', PHYSICIAN: 'PHYSICIAN', VIEWER: 'VIEWER'
+}
 
 export default function UserManagementPage() {
   const [roleFilter, setRoleFilter] = useState('ทั้งหมด')
@@ -9,17 +13,20 @@ export default function UserManagementPage() {
   const [statusFilter, setStatusFilter] = useState('ทั้งหมด')
   const [searchQuery, setSearchQuery] = useState('')
   const [activeRoleTab, setActiveRoleTab] = useState('ทั้งหมด')
+  const [editor, setEditor] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [notice, setNotice] = useState('')
 
   // User table rows
   const [usersList, setUsersList] = useState([])
 
-  useEffect(() => {
-    api.getUsers().then((rows) => setUsersList(rows.map((user, index) => ({
-      ...user, order: index + 1, dept: user.department || '-',
+  const loadUsers = () => api.getUsers().then((rows) => setUsersList(rows.map((user, index) => ({
+      ...user, roleRaw: user.role, role: roleLabels[String(user.role || '').toUpperCase()] || user.role,
+      order: index + 1, dept: user.department || '-',
       status: user.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ปิดใช้งาน',
       lastLogin: user.last_login_at ? new Date(user.last_login_at).toLocaleString('th-TH') : '-'
-    })))).catch((error) => alert(error.message))
-  }, [])
+    })))).catch((error) => setNotice(error.message))
+  useEffect(() => { loadUsers() }, [])
 
   const filteredUsers = usersList.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) || user.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -33,7 +40,7 @@ export default function UserManagementPage() {
   const rolePills = [
     { 
       label: 'Admin', 
-      count: 0, 
+      count: 0,
       inactiveClass: 'bg-blue-50/50 border-blue-200 text-blue-700 hover:bg-blue-50',
       activeClass: 'bg-blue-600 text-white border-blue-600'
     },
@@ -68,6 +75,13 @@ export default function UserManagementPage() {
       activeClass: 'bg-slate-600 text-white border-slate-600'
     }
   ]
+  const visibleRolePills = rolePills.filter(pill => usersList.some(user => user.role.toUpperCase() === pill.label.toUpperCase()))
+  const loggedInToday = usersList.filter(user => {
+    if (!user.last_login_at) return false
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date())
+    const loginDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date(user.last_login_at))
+    return loginDate === today
+  }).length
 
   const getRoleStyle = (role) => {
     switch (role.toUpperCase()) {
@@ -81,28 +95,26 @@ export default function UserManagementPage() {
   }
 
   const handleAddUser = async () => {
-    const name = prompt('กรอกชื่อผู้ใช้งาน:')
-    if (!name) return
-    const email = prompt('กรอกอีเมล:')
-    if (!email) return
-    const role = prompt('กรอกบทบาท (เช่น Admin, OPD NURSE, IPD NURSE, PHYSICIAN, OR STAFF, VIEWER):', 'OPD NURSE')
-    if (!role) return
-    const dept = prompt('กรอกแผนก:', 'ผู้ป่วยนอก')
-    if (!dept) return
+    setEditor({ title: 'เพิ่มผู้ใช้งาน', values: { name: '', email: '', role: 'OPD', department: '', status: 'ACTIVE', password: '' } })
+  }
 
+  const handleEditUser = user => setEditor({ id: user.id, title: 'แก้ไขผู้ใช้งาน', values: { name: user.name, email: user.email, role: user.roleRaw, department: user.dept === '-' ? '' : user.dept, status: user.status === 'ใช้งานอยู่' ? 'ACTIVE' : 'INACTIVE' } })
+  const updateEditor = (key, value) => setEditor(current => ({ ...current, values: { ...current.values, [key]: value } }))
+  const saveUser = async () => {
+    if (!editor.values.name.trim() || !editor.values.email.trim() || !editor.values.role) return
     try {
-      const user = await api.createUser({ name, email, role, department: dept })
-      setUsersList([...usersList, { ...user, order: usersList.length + 1, dept: user.department || '-', status: 'ใช้งานอยู่', lastLogin: '-' }])
-    } catch (error) { alert(error.message) }
+      if (editor.id) await api.updateUser(editor.id, editor.values)
+      else await api.createUser(editor.values)
+      setEditor(null); await loadUsers(); setNotice('บันทึกข้อมูลผู้ใช้งานเรียบร้อยแล้ว')
+    } catch (error) { setNotice(error.message) }
+  }
+  const deleteUser = async () => {
+    try { await api.deleteUser(deleteTarget.id); setDeleteTarget(null); await loadUsers(); setNotice('ลบผู้ใช้งานเรียบร้อยแล้ว') }
+    catch (error) { setDeleteTarget(null); setNotice(error.message) }
   }
 
   return (
     <div className="space-y-6 font-sans">
-      <PageHeader
-        title="จัดการผู้ใช้งาน"
-        description="กำหนดบัญชี บทบาท และสิทธิ์ตามโครงสร้างองค์กร"
-      />
-
       {/* Top 4 summaries cards */}
       <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {/* Total Users */}
@@ -122,7 +134,7 @@ export default function UserManagementPage() {
           <div>
             <p className="text-xs font-semibold text-[#10b981] uppercase">ใช้งานอยู่</p>
             <p className="mt-2 text-2xl font-bold text-[#10b981]">{usersList.filter(user => user.status === 'ใช้งานอยู่').length} <span className="text-xs font-medium text-slate-400">คน</span></p>
-            <p className="mt-1 text-emerald-500 text-xs font-bold">คิดเป็น 91.0%</p>
+            <p className="mt-1 text-emerald-500 text-xs font-bold">คิดเป็น {usersList.length ? ((usersList.filter(user => user.status === 'ใช้งานอยู่').length / usersList.length) * 100).toFixed(1) : '0.0'}%</p>
           </div>
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-[#10b981]">
             <UserCheck size={20} />
@@ -134,7 +146,7 @@ export default function UserManagementPage() {
           <div>
             <p className="text-xs font-semibold text-[#f59e0b] uppercase">ถูกปิดใช้งาน</p>
             <p className="mt-2 text-2xl font-bold text-[#f59e0b]">{usersList.filter(user => user.status !== 'ใช้งานอยู่').length} <span className="text-xs font-medium text-slate-400">คน</span></p>
-            <p className="mt-1 text-orange-500 text-xs font-bold">คิดเป็น 9.0%</p>
+            <p className="mt-1 text-orange-500 text-xs font-bold">คิดเป็น {usersList.length ? ((usersList.filter(user => user.status !== 'ใช้งานอยู่').length / usersList.length) * 100).toFixed(1) : '0.0'}%</p>
           </div>
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-[#f59e0b]">
             <UserMinus size={20} />
@@ -145,8 +157,8 @@ export default function UserManagementPage() {
         <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-purple-600 uppercase">เข้าใช้งานวันนี้</p>
-            <p className="mt-2 text-2xl font-bold text-purple-600">{usersList.filter(user => user.lastLogin !== '-').length} <span className="text-xs font-medium text-slate-400">คน</span></p>
-            <p className="mt-1 text-slate-400 text-xs font-bold">อัปเดต ณ 09:30 น.</p>
+            <p className="mt-2 text-2xl font-bold text-purple-600">{loggedInToday} <span className="text-xs font-medium text-slate-400">คน</span></p>
+            <p className="mt-1 text-slate-400 text-xs font-bold">อ้างอิงจากประวัติเข้าสู่ระบบจริง</p>
           </div>
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-purple-50 text-purple-600">
             <LogIn size={20} />
@@ -169,12 +181,7 @@ export default function UserManagementPage() {
               className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-600 font-semibold"
             >
               <option>ทั้งหมด</option>
-              <option>Admin</option>
-              <option>OPD NURSE</option>
-              <option>IPD NURSE</option>
-              <option>PHYSICIAN</option>
-              <option>OR STAFF</option>
-              <option>VIEWER</option>
+              {[...new Set(usersList.map(user => user.role))].map(role => <option key={role}>{role}</option>)}
             </select>
           </div>
 
@@ -186,11 +193,7 @@ export default function UserManagementPage() {
               className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-600 font-semibold"
             >
               <option>ทั้งหมด</option>
-              <option>เทคโนโลยีสารสนเทศ</option>
-              <option>ผู้ป่วยนอก</option>
-              <option>ผู้ป่วยใน</option>
-              <option>ศัลยกรรม</option>
-              <option>เจ้าหน้าที่ระดับสูง</option>
+              {[...new Set(usersList.map(user => user.dept).filter(dept => dept && dept !== '-'))].map(dept => <option key={dept}>{dept}</option>)}
             </select>
           </div>
 
@@ -242,10 +245,10 @@ export default function UserManagementPage() {
           <span>ทั้งหมด</span>
           <span className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
             activeRoleTab === 'ทั้งหมด' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
-          }`}>156</span>
+          }`}>{usersList.length}</span>
         </button>
 
-        {rolePills.map(pill => {
+        {visibleRolePills.map(pill => {
           const isSelected = activeRoleTab === pill.label;
           return (
             <button
@@ -282,7 +285,6 @@ export default function UserManagementPage() {
           <table className="w-full min-w-[1000px] text-[13px] text-[#434651] font-sans border-collapse">
             <thead className="h-[46px] bg-[#f8fafc] font-bold text-[#1e293b]">
               <tr className="border-b border-slate-100">
-                <th className="px-4 text-left w-12"><input type="checkbox" /></th>
                 <th className="px-4 text-left">ลำดับ</th>
                 <th className="px-4 text-left">USERNAME / ชื่อผู้ใช้งาน</th>
                 <th className="px-4 text-left">EMAIL / อีเมล</th>
@@ -296,7 +298,6 @@ export default function UserManagementPage() {
             <tbody className="divide-y divide-slate-100">
               {filteredUsers.map((row) => (
                 <tr key={row.id} className="h-[64px] hover:bg-slate-50/60 transition">
-                  <td className="px-4"><input type="checkbox" /></td>
                   <td className="px-4 font-bold text-slate-400">{row.order}</td>
                   <td className="px-4 font-bold text-slate-800">{row.name}</td>
                   <td className="px-4 text-slate-500 font-semibold">{row.email}</td>
@@ -305,39 +306,40 @@ export default function UserManagementPage() {
                   </td>
                   <td className="px-4 font-bold text-slate-600">{row.dept}</td>
                   <td className="px-4">
-                    <span className="inline-flex rounded bg-emerald-50 px-2.5 py-0.5 text-xs text-emerald-600 font-bold border border-emerald-100">
+                    <span className={`inline-flex rounded px-2.5 py-0.5 text-xs font-bold border ${row.status === 'ใช้งานอยู่' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
                       {row.status}
                     </span>
                   </td>
                   <td className="px-4 text-slate-400 text-xs font-semibold">{row.lastLogin}</td>
-                  <td className="px-6 text-right">
-                    <button className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-[#175beb] hover:bg-slate-50 transition">
+                  <td className="px-6 text-right"><div className="flex justify-end gap-1">
+                    <button onClick={() => handleEditUser(row)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-blue-600 hover:bg-blue-50 transition" aria-label={`แก้ไข ${row.name}`}>
                       <Edit2 size={13} />
                     </button>
-                  </td>
+                    <button onClick={() => setDeleteTarget(row)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 transition" aria-label={`ลบ ${row.name}`}><Trash2 size={14} /></button>
+                  </div></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <footer className="flex h-[46px] items-center justify-between border-t border-slate-200 px-6 text-[13px] text-slate-500 font-sans">
+        <footer className="flex h-[46px] items-center border-t border-slate-200 px-6 text-[13px] text-slate-500 font-sans">
           <span>แสดง {filteredUsers.length} รายการ</span>
-          <div className="flex gap-2">
-            <button className="page-button w-auto px-3">Previous</button>
-            <button className="page-button bg-[#175beb] text-white">1</button>
-            <button className="page-button">2</button>
-            <button className="page-button">3</button>
-            <button className="page-button w-auto px-3">Next</button>
-          </div>
         </footer>
       </section>
 
-      {/* Notice Banner */}
-      <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
-        <CalendarDays size={16} className="text-blue-500" />
-        <span>15 มิ.ย. 2569: ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
-      </div>
+      {editor && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 p-4" onMouseDown={() => setEditor(null)}><div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl" onMouseDown={event => event.stopPropagation()}><div className="flex items-center justify-between border-b px-6 py-5"><h3 className="text-lg font-semibold">{editor.title}</h3><button onClick={() => setEditor(null)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X size={20} /></button></div><div className="grid gap-4 px-6 py-5 sm:grid-cols-2">
+        <label className="text-sm font-medium text-slate-700">ชื่อผู้ใช้งาน <span className="text-red-500">*</span><input autoFocus className="field mt-2" value={editor.values.name} onChange={event => updateEditor('name', event.target.value)} /></label>
+        <label className="text-sm font-medium text-slate-700">อีเมล <span className="text-red-500">*</span><input type="email" className="field mt-2" value={editor.values.email} disabled={Boolean(editor.id)} onChange={event => updateEditor('email', event.target.value)} /></label>
+        <label className="text-sm font-medium text-slate-700">บทบาท <span className="text-red-500">*</span><select className="field mt-2" value={editor.values.role} onChange={event => updateEditor('role', event.target.value)}>{Object.entries({ ADMIN: 'Admin', OR: 'OR STAFF', OPD: 'OPD NURSE', IPD: 'IPD NURSE', DOCTOR: 'PHYSICIAN', VIEWER: 'VIEWER' }).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        <label className="text-sm font-medium text-slate-700">แผนก<input className="field mt-2" value={editor.values.department} onChange={event => updateEditor('department', event.target.value)} /></label>
+        {!editor.id && <label className="text-sm font-medium text-slate-700">รหัสผ่าน<input type="password" className="field mt-2" value={editor.values.password} onChange={event => updateEditor('password', event.target.value)} placeholder="หากไม่ระบุ ระบบจะใช้ค่าเริ่มต้น" /></label>}
+        <label className="text-sm font-medium text-slate-700">สถานะ<select className="field mt-2" value={editor.values.status} onChange={event => updateEditor('status', event.target.value)}><option value="ACTIVE">ใช้งานอยู่</option><option value="INACTIVE">ปิดใช้งาน</option></select></label>
+      </div><div className="flex justify-end gap-3 border-t px-6 py-4"><button className="btn-secondary" onClick={() => setEditor(null)}>ยกเลิก</button><button className="btn-primary" onClick={saveUser}><Save size={15} />บันทึก</button></div></div></div>}
+
+      {deleteTarget && <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/45 p-4" onMouseDown={() => setDeleteTarget(null)}><div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl" onMouseDown={event => event.stopPropagation()}><span className="mx-auto grid size-14 place-items-center rounded-full bg-red-50 text-red-500"><Trash2 size={25} /></span><h3 className="mt-4 text-lg font-semibold">ยืนยันการลบผู้ใช้งาน</h3><p className="mt-2 text-sm text-slate-500">ต้องการลบ “{deleteTarget.name}” ออกจากระบบหรือไม่</p><div className="mt-6 flex gap-3"><button className="btn-secondary flex-1" onClick={() => setDeleteTarget(null)}>ยกเลิก</button><button className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700" onClick={deleteUser}>ลบข้อมูล</button></div></div></div>}
+
+      {notice && <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/35 p-4" onMouseDown={() => setNotice('')}><div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl" onMouseDown={event => event.stopPropagation()}><UserCheck className="mx-auto text-emerald-500" size={44} /><p className="mt-4 text-sm text-slate-700">{notice}</p><button className="btn-primary mt-5 w-full" onClick={() => setNotice('')}>ตกลง</button></div></div>}
     </div>
   )
 }

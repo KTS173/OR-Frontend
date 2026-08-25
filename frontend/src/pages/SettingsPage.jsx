@@ -1,23 +1,22 @@
 import { Bell, Calendar, CheckCircle2, Database, Edit2, Info, Plus, RefreshCw, Save, Settings, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import PageHeader from '../components/ui/PageHeader.jsx'
 import { api } from '../services/api.js'
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState(0)
-  const [ssiSubTab, setSsiSubTab] = useState('no') // 'no' (ไม่มี) or 'yes' (มี)
   const [notifSubTab, setNotifSubTab] = useState('pre') // 'pre' (ตั้งค่าแจ้งเตือนล่วงหน้า) or 'template' (จัดการ Template แจ้งเตือน)
+  const [editor, setEditor] = useState(null)
+  const [notice, setNotice] = useState(null)
 
   // 1. SSI Criteria State
   const [ssiCriteria, setSsiCriteria] = useState([
-    { id: 1, name: 'มีไข้ (อุณหภูมิ ≥ 38°C)', score: 0, enabled: true, selection: 0 },
-    { id: 2, name: 'ปวดแผล/เจ็บแผลเพิ่มขึ้น', score: 0, enabled: true, selection: 0 },
-    { id: 3, name: 'แผลบวม', score: 0, enabled: true, selection: 0 },
-    { id: 4, name: 'แผลแดง', score: 0, enabled: true, selection: 0 },
-    { id: 5, name: 'มีน้ำเหลือง/หนองจากแผล', score: 0, enabled: true, selection: 0 },
-    { id: 6, name: 'กลิ่นผิดปกติจากแผล', score: 0, enabled: true, selection: 0 },
-    { id: 7, name: 'แผลแยก', score: 0, enabled: true, selection: 0 },
-    { id: 8, name: 'แผลแยก', score: 0, enabled: true, selection: 0 },
+    { id: 'fever', name: 'มีไข้ (อุณหภูมิ ≥ 38°C)', enabled: true },
+    { id: 'pain', name: 'ปวดแผล/เจ็บแผลเพิ่มขึ้น', enabled: true },
+    { id: 'swell', name: 'แผลบวม', enabled: true },
+    { id: 'red', name: 'แผลแดง', enabled: true },
+    { id: 'pus', name: 'มีน้ำเหลือง/หนองจากแผล', enabled: true },
+    { id: 'smell', name: 'กลิ่นผิดปกติจากแผล', enabled: true },
+    { id: 'gap', name: 'แผลแยก', enabled: true },
   ])
 
   // 2. Follow-up Schedule State
@@ -37,103 +36,87 @@ export default function SettingsPage() {
     { id: 2, name: 'ประเมินอาการและรูปแผล' },
     { id: 3, name: 'แพทย์เรียกพบเข้าตรวจ' },
   ])
+  const [riskLevels, setRiskLevels] = useState([
+    { id: 'low', name: 'ต่ำ', min: 0, max: 24, color: '#10b981' },
+    { id: 'moderate', name: 'ปานกลาง', min: 25, max: 50, color: '#f59e0b' },
+    { id: 'high', name: 'สูง', min: 51, max: 74, color: '#ef4444' },
+    { id: 'critical', name: 'สูงมาก', min: 75, max: 100, color: '#7f1d1d' },
+  ])
 
   // 3. HIS Sync Settings State
-  const [syncFreq, setSyncFreq] = useState('ทุก 15 นาที')
-  const [syncStart, setSyncStart] = useState('05:00')
-  const [syncEnd, setSyncEnd] = useState('05:00')
-  const [syncEnabled, setSyncEnabled] = useState(true)
+  const [syncFreq, setSyncFreq] = useState('')
+  const [syncStart, setSyncStart] = useState('')
+  const [syncEnd, setSyncEnd] = useState('')
+  const [syncEnabled, setSyncEnabled] = useState(false)
 
   // 4. SMS Alerts Config State
   const [alertTypes, setAlertTypes] = useState({
-    followUpDue: true,
-    appointmentReminder: true,
-    noAssessmentResponse: true,
-    overdue: true,
-    prepAlert: true,
-    others: true
+    followUpDue: false, appointmentReminder: false, noAssessmentResponse: false,
+    overdue: false, prepAlert: false, others: false
   })
 
   const [staffRoles, setStaffRoles] = useState({
-    orStaff: true,
-    physician: true,
-    ipdNurse: true,
-    opdNurse: true,
-    admin: true
+    orStaff: false, physician: false, ipdNurse: false, opdNurse: false, admin: false
   })
 
   const [staffChannels, setStaffChannels] = useState({
-    sms: true,
-    dashboard: true
+    sms: false, dashboard: false
   })
 
   const [staffConditions, setStaffConditions] = useState({
-    hasPhone: true,
-    noResponseOnly: true
+    hasPhone: false, noResponseOnly: false
   })
 
   const [patientChannels, setPatientChannels] = useState({
-    sms: true
+    sms: false
   })
 
   const [patientConditions, setPatientConditions] = useState({
-    hasPhone: true
+    hasPhone: false
   })
+  const [staffRecipientEnabled, setStaffRecipientEnabled] = useState(false)
+  const [patientRecipientEnabled, setPatientRecipientEnabled] = useState(false)
+  const [footerAnnouncement, setFooterAnnouncement] = useState({ date: '', message: '', enabled: false })
 
   // SMS Pre-alert Table Interval Times State
   const [intervals, setIntervals] = useState([
-    { id: 1, type: 'ติดตามผู้ป่วย (Follow-up Due)', desc: 'แจ้งเตือนก่อนถึงวันติดตาม', val1: '3 วัน', val2: '1 วัน', val3: '4 ชั่วโมง', val4: '1 ชั่วโมง', enabled: true },
-    { id: 2, type: 'นัดหมายติดตาม (Appointment)', desc: 'แจ้งเตือนก่อนวันนัดหมาย', val1: '3 วัน', val2: '1 วัน', val3: '4 ชั่วโมง', val4: '1 ชั่วโมง', enabled: true },
-    { id: 3, type: 'ผู้ป่วยยังไม่ตอบแบบประเมิน', desc: 'แจ้งเตือนซ้ำเมื่อผู้ป่วยยังไม่ตอบ', val1: '2 วัน', val2: '1 วัน', val3: '', val4: '', enabled: true },
-    { id: 4, type: 'ติดตามเกินกำหนด (Overdue)', desc: 'แจ้งเตือนเมื่อเกินกำหนด', val1: '1 วัน', val2: '3 วัน', val3: '7 วัน', val4: '', enabled: true },
-    { id: 5, type: 'อื่นๆ (กำหนดเอง)', desc: 'กำหนดช่วงเวลาเอง', selection: 'เลือกช่วงเวลา', enabled: true }
+    { id: 'follow-up-due', type: 'ติดตามผู้ป่วย (Follow-up Due)', desc: 'แจ้งเตือนก่อนถึงวันติดตาม', val1: '3 วัน', val2: '1 วัน', val3: '4 ชั่วโมง', val4: '1 ชั่วโมง', enabled: false },
+    { id: 'appointment', type: 'นัดหมายติดตาม (Appointment)', desc: 'แจ้งเตือนก่อนวันนัดหมาย', val1: '3 วัน', val2: '1 วัน', val3: '4 ชั่วโมง', val4: '1 ชั่วโมง', enabled: false },
+    { id: 'no-assessment', type: 'ผู้ป่วยยังไม่ตอบแบบประเมิน', desc: 'แจ้งเตือนซ้ำเมื่อผู้ป่วยยังไม่ตอบ', val1: '2 วัน', val2: '1 วัน', val3: '', val4: '', enabled: false },
+    { id: 'overdue', type: 'ติดตามเกินกำหนด (Overdue)', desc: 'แจ้งเตือนเมื่อเกินกำหนด', val1: '1 วัน', val2: '3 วัน', val3: '7 วัน', val4: '', enabled: false },
+    { id: 'custom', type: 'อื่นๆ (กำหนดเอง)', desc: 'กำหนดช่วงเวลาเอง', val1: 'เลือกช่วงเวลา', val2: '', val3: '', val4: '', enabled: false },
   ])
 
   // Notification Template State
-  const [selectedTemplate, setSelectedTemplate] = useState('Follow-up')
-  const [templateText, setTemplateText] = useState(`มีผู้ป่วยครบกำหนดติดตามอาการหลังผ่าตัด
-
-ผู้ป่วย: {{patient_name}}
-HN: {{hn}}
-หัตถการ: {{procedure}}
-รอบติดตาม: {{follow_up_day}}
-กำหนดติดตาม: {{due_date}} {{due_time}}
-ระดับความเสี่ยง: {{risk_level}}
-
-กรุณาดำเนินการติดตามและบันทึกผลในระบบ`)
+  const [selectedTemplate, setSelectedTemplate] = useState('')
+  const [templateText, setTemplateText] = useState('')
 
   useEffect(() => {
     api.getSettings().then((saved) => {
       if (saved.ssiCriteria) setSsiCriteria(saved.ssiCriteria)
       if (saved.schedules) setSchedules(saved.schedules)
       if (saved.methods) setMethods(saved.methods)
+      if (Array.isArray(saved.riskLevels) && saved.riskLevels.length) setRiskLevels(saved.riskLevels.map(level => level.id === 'moderate' && Number(level.max) === 49 ? { ...level, max: 50 } : level.id === 'high' && Number(level.min) === 50 ? { ...level, min: 51 } : level))
       if (saved.sync) { setSyncFreq(saved.sync.freq); setSyncStart(saved.sync.start); setSyncEnd(saved.sync.end); setSyncEnabled(saved.sync.enabled) }
-      if (saved.alertTypes) setAlertTypes(saved.alertTypes)
-      if (saved.staffRoles) setStaffRoles(saved.staffRoles)
-      if (saved.staffChannels) setStaffChannels(saved.staffChannels)
-      if (saved.staffConditions) setStaffConditions(saved.staffConditions)
-      if (saved.patientChannels) setPatientChannels(saved.patientChannels)
-      if (saved.patientConditions) setPatientConditions(saved.patientConditions)
-      if (saved.intervals) setIntervals(saved.intervals)
+      if (saved.notificationPreferencesConfigured === true) {
+        if (saved.alertTypes) setAlertTypes(saved.alertTypes)
+        if (saved.staffRoles) setStaffRoles({ ...saved.staffRoles, physician: false })
+        if (saved.staffChannels) setStaffChannels(saved.staffChannels)
+        if (saved.staffConditions) setStaffConditions(saved.staffConditions)
+        if (saved.patientChannels) setPatientChannels(saved.patientChannels)
+        if (saved.patientConditions) setPatientConditions(saved.patientConditions)
+        if (saved.intervals) setIntervals(saved.intervals)
+        setStaffRecipientEnabled(saved.staffRecipientEnabled === true)
+        setPatientRecipientEnabled(saved.patientRecipientEnabled === true)
+      }
       if (saved.notificationTemplate) { setSelectedTemplate(saved.notificationTemplate.name); setTemplateText(saved.notificationTemplate.text) }
-    }).catch((error) => alert(error.message))
+      if (saved.footerAnnouncement) setFooterAnnouncement({ date: '', message: '', enabled: false, ...saved.footerAnnouncement })
+    }).catch((error) => setNotice({ type: 'error', text: error.message }))
   }, [])
 
   const handleToggleSsi = (id) => {
     setSsiCriteria(prev =>
       prev.map(item => item.id === id ? { ...item, enabled: !item.enabled } : item)
-    )
-  }
-
-  const handleSelectionChange = (id, val) => {
-    setSsiCriteria(prev =>
-      prev.map(item => item.id === id ? { ...item, selection: val } : item)
-    )
-  }
-
-  const handleScoreChange = (id, val) => {
-    setSsiCriteria(prev =>
-      prev.map(item => item.id === id ? { ...item, score: Number(val) || 0 } : item)
     )
   }
 
@@ -148,47 +131,53 @@ HN: {{hn}}
       prev.map(item => item.id === id ? { ...item, enabled: !item.enabled } : item)
     )
   }
+  const updateIntervalValue = (id, key, value) => setIntervals(items => items.map(item => item.id === id ? { ...item, [key]: value } : item))
 
   const addSsiCriterion = () => {
-    const name = prompt('กรอกชื่ออาการ/อาการแสดง:')
-    if (name) {
-      setSsiCriteria(prev => [
-        ...prev,
-        { id: Date.now(), name, score: 0, enabled: true, selection: 0 }
-      ])
-    }
+    setEditor({ type: 'symptom', title: 'เพิ่มอาการ/อาการแสดง', values: { name: '' } })
+  }
+
+  const editSsiCriterion = (id) => {
+    const current = ssiCriteria.find(item => item.id === id)
+    setEditor({ type: 'symptom', id, title: 'แก้ไขอาการ/อาการแสดง', values: { name: current.name } })
   }
 
   const addScheduleDay = () => {
-    const dayName = prompt('กรอกวันติดตาม (เช่น Day 45):')
-    const desc = prompt('กรอกคำอธิบาย:')
-    if (dayName && desc) {
-      setSchedules(prev => [
-        ...prev,
-        { id: Date.now(), order: String(prev.length + 1), day: dayName, desc, enabled: true }
-      ])
-    }
+    setEditor({ type: 'schedule', title: 'เพิ่มวันติดตาม', values: { day: '', desc: '' } })
   }
 
   const addMethod = () => {
-    const name = prompt('กรอกวิธีติดตาม:')
-    if (name) {
-      setMethods(prev => [
-        ...prev,
-        { id: Date.now(), name }
-      ])
-    }
+    setEditor({ type: 'method', title: 'เพิ่มวิธีติดตาม', values: { name: '' } })
+  }
+
+  const editSchedule = (id) => {
+    const current = schedules.find(item => item.id === id)
+    setEditor({ type: 'schedule', id, title: 'แก้ไขวันติดตาม', values: { day: current.day, desc: current.desc } })
+  }
+
+  const editMethod = (id) => {
+    const current = methods.find(item => item.id === id)
+    setEditor({ type: 'method', id, title: 'แก้ไขวิธีติดตาม', values: { name: current.name } })
   }
 
   const addInterval = () => {
-    const name = prompt('กรอกประเภทการแจ้งเตือน:')
-    const desc = prompt('กรอกคำอธิบาย:')
-    if (name && desc) {
-      setIntervals(prev => [
-        ...prev,
-        { id: Date.now(), type: name, desc, val1: '1 วัน', val2: '', val3: '', val4: '', enabled: true }
-      ])
-    }
+    setEditor({ type: 'interval', title: 'เพิ่มช่วงเวลาการแจ้งเตือน', values: { type: '', desc: '', val1: '' } })
+  }
+
+  const editInterval = (id) => {
+    const current = intervals.find(item => item.id === id)
+    setEditor({ type: 'interval', id, title: 'แก้ไขช่วงเวลาการแจ้งเตือน', values: { type: current.type, desc: current.desc || '', val1: current.val1 || '' } })
+  }
+
+  const updateEditor = (key, value) => setEditor(current => ({ ...current, values: { ...current.values, [key]: value } }))
+  const saveEditor = () => {
+    const { type, id, values } = editor
+    if (type === 'symptom' && values.name.trim()) setSsiCriteria(items => id ? items.map(item => item.id === id ? { ...item, name: values.name.trim() } : item) : [...items, { id: `symptom-${Date.now()}`, name: values.name.trim(), enabled: true }])
+    if (type === 'schedule' && values.day.trim() && values.desc.trim()) setSchedules(items => id ? items.map(item => item.id === id ? { ...item, ...values } : item) : [...items, { id: Date.now(), order: String(items.length + 1), ...values, enabled: true }])
+    if (type === 'method' && values.name.trim()) setMethods(items => id ? items.map(item => item.id === id ? { ...item, name: values.name.trim() } : item) : [...items, { id: Date.now(), name: values.name.trim() }])
+    if (type === 'interval' && values.type.trim() && values.desc.trim() && values.val1.trim()) setIntervals(items => id ? items.map(item => item.id === id ? { ...item, ...values } : item) : [...items, { id: Date.now(), ...values, val2: '', val3: '', val4: '', enabled: true }])
+    else if ((type === 'symptom' && !values.name.trim()) || (type === 'schedule' && (!values.day.trim() || !values.desc.trim())) || (type === 'method' && !values.name.trim()) || (type === 'interval' && (!values.type.trim() || !values.desc.trim() || !values.val1.trim()))) return
+    setEditor(null)
   }
 
   const tabsConfig = [
@@ -216,25 +205,17 @@ HN: {{hn}}
 
   const handleSave = async () => {
     try {
-      await api.saveSettings({ ssiCriteria, schedules, methods, sync: { freq: syncFreq, start: syncStart, end: syncEnd, enabled: syncEnabled }, alertTypes, staffRoles, staffChannels, staffConditions, patientChannels, patientConditions, intervals, notificationTemplate: { name: selectedTemplate, text: templateText } })
-      alert('บันทึกการตั้งค่าเรียบร้อยแล้ว!')
-    } catch (error) { alert(error.message) }
+      await api.saveSettings({ ssiCriteria, riskLevels, schedules, methods, sync: { freq: syncFreq, start: syncStart, end: syncEnd, enabled: syncEnabled }, notificationPreferencesConfigured: true, alertTypes, staffRoles: { ...staffRoles, physician: false }, staffChannels, staffConditions, patientChannels, patientConditions, staffRecipientEnabled, patientRecipientEnabled, intervals, notificationTemplate: { name: selectedTemplate, text: templateText }, footerAnnouncement })
+      window.dispatchEvent(new Event('footer-announcement-updated'))
+      setNotice({ type: 'success', text: 'บันทึกการตั้งค่าเรียบร้อยแล้ว' })
+    } catch (error) { setNotice({ type: 'error', text: error.message }) }
   }
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        title="ตั้งค่าระบบ (Settings)"
-        description="ตั้งค่าระบบ"
-      />
-
       <div className="grid gap-6 xl:grid-cols-[330px_1fr]">
         {/* Left Tabs Sidebar */}
         <aside className="flex flex-col gap-2 rounded-2xl border border-black/10 bg-white p-3 shadow-sm h-fit">
-          <div className="px-3 py-2.5 border-b border-slate-100 mb-1 text-left">
-            <h3 className="font-bold text-[16px] text-slate-800">ตั้งค่าระบบ</h3>
-          </div>
           {tabsConfig.map((item, index) => {
             const Icon = item.icon
             const isActive = activeTab === index
@@ -279,78 +260,19 @@ HN: {{hn}}
                   <h2 className="text-[18px] font-semibold text-[#002d73]">ตั้งค่าเกณฑ์ SSI <span className="text-[14px] text-slate-400 font-normal ml-2">(SSI Criteria Setting)</span></h2>
                 </div>
 
-                {/* Sub tabs "ไม่มี" / "มี" */}
-                <div className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
-                  <div className="flex border-b border-slate-100">
-                    <button
-                      onClick={() => setSsiSubTab('no')}
-                      className={`pb-3 px-6 text-[15px] font-semibold transition ${
-                        ssiSubTab === 'no' ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-slate-400'
-                      }`}
-                    >
-                      ไม่มี
-                    </button>
-                    <button
-                      onClick={() => setSsiSubTab('yes')}
-                      className={`pb-3 px-6 text-[15px] font-semibold transition ${
-                        ssiSubTab === 'yes' ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-slate-400'
-                      }`}
-                    >
-                      มี
-                    </button>
-                  </div>
-                </div>
-
                 {/* Table list of SSI Symptoms */}
                 <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm text-left">
-                  <div className="flex items-center justify-between pb-3 text-[14px] font-semibold text-slate-500 border-b border-slate-100 font-sans">
-                    <span className="flex-1">รายการ</span>
-                    <div className="flex items-center gap-12">
-                      <span className="w-16 text-center">คะแนน</span>
-                      <span className="w-24 text-right flex items-center justify-end gap-2">
-                        เปิดใช้งานทั้งหมด
-                      </span>
+                  <h3 className="mb-4 text-[17px] font-bold text-slate-800">แบบประเมินอาการ (CDC SSI)</h3>
+                  <div className="overflow-hidden rounded-xl border border-slate-200">
+                    <div className="grid grid-cols-[1fr_80px_80px_80px_150px] items-center bg-slate-50 px-4 py-3 text-[13px] font-semibold text-slate-600">
+                      <span>อาการ/อาการแสดง</span><span className="text-center">ไม่มี</span><span className="text-center">มี</span><span className="text-center">ไม่ทราบ</span><span className="text-center">ดำเนินการ</span>
                     </div>
-                  </div>
-
-                  <div className="divide-y divide-slate-100 font-sans">
+                  <div className="divide-y divide-slate-200 font-sans">
                     {ssiCriteria.map((item, idx) => (
-                      <div key={item.id} className="flex items-center justify-between py-4 text-[14px]">
-                        <span className="flex-1 font-medium text-slate-700 flex items-center gap-3">
-                          <span className="text-slate-400 w-5">{idx + 1}.</span>
-                          {item.name}
-                        </span>
-
-                        <div className="flex items-center gap-12">
-                          {/* 3 Circular Radio Buttons */}
-                          <div className="flex items-center gap-3">
-                            {[0, 1, 2].map((val) => (
-                              <button
-                                key={val}
-                                type="button"
-                                onClick={() => handleSelectionChange(item.id, val)}
-                                className={`h-5 w-5 rounded-full border flex items-center justify-center transition ${
-                                  item.selection === val
-                                    ? 'border-[#175beb] bg-[#175beb]/10'
-                                    : 'border-slate-300 bg-white hover:border-slate-400'
-                                }`}
-                              >
-                                {item.selection === val && (
-                                  <span className="h-2.5 w-2.5 rounded-full bg-[#175beb]" />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-
-                          {/* Score Input */}
-                          <input
-                            type="number"
-                            value={item.score}
-                            onChange={(e) => handleScoreChange(item.id, e.target.value)}
-                            className="w-16 h-9 rounded-lg border border-slate-200 text-center font-semibold text-slate-700 outline-none focus:border-[#175beb] focus:ring-1 focus:ring-[#175beb]"
-                          />
-
-                          {/* Toggle Switch */}
+                      <div key={item.id} className="grid grid-cols-[1fr_80px_80px_80px_150px] items-center px-4 py-4 text-[14px]">
+                        <span className="font-medium text-slate-700">{item.name}</span>
+                        {[0, 1, 2].map(value => <span key={value} className="mx-auto h-5 w-5 rounded-full border border-slate-400" />)}
+                        <div className="flex items-center justify-center gap-3">
                           <button
                             type="button"
                             onClick={() => handleToggleSsi(item.id)}
@@ -364,9 +286,12 @@ HN: {{hn}}
                               }`}
                             />
                           </button>
+                          <button type="button" onClick={() => editSsiCriterion(item.id)} className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50" aria-label={`แก้ไข ${item.name}`}><Edit2 size={16} /></button>
+                          <button type="button" onClick={() => setSsiCriteria(items => items.filter(current => current.id !== item.id))} className="rounded-lg p-1.5 text-red-500 hover:bg-red-50" aria-label={`ลบ ${item.name}`}><Trash2 size={16} /></button>
                         </div>
                       </div>
                     ))}
+                  </div>
                   </div>
 
                   {/* Add Symptom Button */}
@@ -393,42 +318,12 @@ HN: {{hn}}
                           <th className="px-4 py-3 text-right">ช่วงคะแนน (%)</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
-                        <tr>
-                          <td className="px-4 py-3">
-                            <span className="inline-block rounded-md bg-[#ecfdf5] px-2 py-0.5 text-xs text-[#10b981]">ปกติ (Low)</span>
-                          </td>
-                          <td className="px-4 py-3 text-right font-semibold">0 - 20%</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-3">
-                            <span className="inline-block rounded-md bg-amber-50 px-2 py-0.5 text-xs text-amber-600">เฝ้าระวัง (Moderate)</span>
-                          </td>
-                          <td className="px-4 py-3 text-right font-semibold">21 - 50%</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-3">
-                            <span className="inline-block rounded-md bg-orange-50 px-2 py-0.5 text-xs text-orange-600">เสี่ยง (High)</span>
-                          </td>
-                          <td className="px-4 py-3 text-right font-semibold">51 - 80%</td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-3">
-                            <span className="inline-block rounded-md bg-red-50 px-2 py-0.5 text-xs text-red-600">ติดเชื้อ (Critical)</span>
-                          </td>
-                          <td className="px-4 py-3 text-right font-semibold">&gt; 80%</td>
-                        </tr>
-                      </tbody>
+                      <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">{riskLevels.map(level => <tr key={level.id}><td className="px-4 py-3"><span className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs" style={{ color: level.color, backgroundColor: `${level.color}12` }}><i className="size-2 rounded-full" style={{ backgroundColor: level.color }} />{level.name}</span></td><td className="px-4 py-3"><div className="flex items-center justify-end gap-2"><input type="number" min="0" max="100" value={level.min} onChange={event => setRiskLevels(items => items.map(item => item.id === level.id ? { ...item, min: Number(event.target.value) } : item))} className="h-9 w-20 rounded-lg border border-slate-200 px-2 text-center" /><span>-</span><input type="number" min="0" max="100" value={level.max} onChange={event => setRiskLevels(items => items.map(item => item.id === level.id ? { ...item, max: Number(event.target.value) } : item))} className="h-9 w-20 rounded-lg border border-slate-200 px-2 text-center" /><span>%</span></div></td></tr>)}</tbody>
                     </table>
                   </div>
 
                   {/* Legend dots */}
-                  <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[12px] text-slate-500 font-semibold">
-                    <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-green-500" />ต่ำ (0-24)</span>
-                    <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-500" />ปานกลาง (25-49)</span>
-                    <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" />สูง (50-74)</span>
-                    <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-950" />สูงมาก (75-100)</span>
-                  </div>
+                  <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[12px] text-slate-500 font-semibold">{riskLevels.map(level => <span key={level.id} className="flex items-center gap-1.5"><i className="size-2 rounded-full" style={{ backgroundColor: level.color }} />{level.name} ({level.min}–{level.max}%)</span>)}</div>
                 </div>
               </div>
             )}
@@ -480,7 +375,7 @@ HN: {{hn}}
                           </td>
                           <td className="px-4 py-3.5 text-right">
                             <div className="flex justify-end gap-3 text-slate-400">
-                              <button className="hover:text-blue-600 transition">
+                              <button onClick={() => editSchedule(item.id)} className="hover:text-blue-600 transition">
                                 <Edit2 size={15} className="text-blue-600 hover:text-blue-800" />
                               </button>
                               <button
@@ -518,7 +413,7 @@ HN: {{hn}}
                           <span className="font-semibold text-slate-800">{method.name}</span>
                         </div>
                         <div className="flex items-center gap-3 text-slate-400">
-                          <button className="hover:text-blue-600 transition">
+                          <button onClick={() => editMethod(method.id)} className="hover:text-blue-600 transition">
                             <Edit2 size={15} className="text-blue-600 hover:text-blue-800" />
                           </button>
                           <button
@@ -558,10 +453,10 @@ HN: {{hn}}
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-[#002d73] text-[16px]">HIS</span>
                       <span className="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-100 px-3 py-0.5 text-[11px] font-bold text-emerald-600">
-                        เชื่อมต่อแล้ว
+                        ยังไม่ได้เชื่อมต่อ
                       </span>
                     </div>
-                    <div className="space-y-2 text-[13px] font-medium text-slate-600">
+                    <div className="hidden space-y-2 text-[13px] font-medium text-slate-600">
                       <div className="flex justify-between">
                         <span className="text-slate-400">ระบบ</span>
                         <span className="text-slate-800">Bangkok Hospital HIS</span>
@@ -589,10 +484,10 @@ HN: {{hn}}
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-[#002d73] text-[16px]">TrackCare</span>
                       <span className="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-100 px-3 py-0.5 text-[11px] font-bold text-emerald-600">
-                        เชื่อมต่อแล้ว
+                        ยังไม่ได้เชื่อมต่อ
                       </span>
                     </div>
-                    <div className="space-y-2 text-[13px] font-medium text-slate-600">
+                    <div className="hidden space-y-2 text-[13px] font-medium text-slate-600">
                       <div className="flex justify-between">
                         <span className="text-slate-400">ระบบ</span>
                         <span className="text-slate-800">TrackCare</span>
@@ -631,13 +526,7 @@ HN: {{hn}}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
-                        {[
-                          { sys: 'HIS', info: 'ข้อมูลผู้ป่วย', status: 'สำเร็จ', detail: 'HN 66012345', date: '15 มิ.ย. 2569 10:15 น.' },
-                          { sys: 'HIS', info: 'ข้อมูลการผ่าตัด', status: 'สำเร็จ', detail: 'CASE-2569-000123', date: '15 มิ.ย. 2569 10:14 น.' },
-                          { sys: 'HIS', info: 'ข้อมูลการจำหน่าย', status: 'สำเร็จ', detail: 'DIS-2569-000456', date: '15 มิ.ย. 2569 10:13 น.' },
-                          { sys: 'TrackCare', info: 'ข้อมูลนัดหมาย', status: 'สำเร็จ', detail: 'APT-2569-000789', date: '15 มิ.ย. 2569 10:16 น.' },
-                          { sys: 'TrackCare', info: 'ข้อมูลทีมแพทย์', status: 'สำเร็จ', detail: 'DR-2569-001234', date: '15 มิ.ย. 2569 10:16 น.' }
-                        ].map((row, idx) => (
+                        {[].map((row, idx) => (
                           <tr key={idx}>
                             <td className="px-4 py-3 text-slate-900 font-bold">{row.sys}</td>
                             <td className="px-4 py-3 text-slate-600">{row.info}</td>
@@ -651,6 +540,7 @@ HN: {{hn}}
                             <td className="px-4 py-3 text-right text-slate-500 font-semibold">{row.date}</td>
                           </tr>
                         ))}
+                        <tr><td colSpan="5" className="px-4 py-8 text-center text-slate-400">ยังไม่มีข้อมูลการซิงค์ เนื่องจากยังไม่ได้เชื่อมต่อระบบ</td></tr>
                       </tbody>
                     </table>
                   </div>
@@ -766,17 +656,18 @@ HN: {{hn}}
                 </div>
 
                 {notifSubTab === 'pre' && (
-                  <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm text-left space-y-6 font-sans">
+                  <div className="space-y-6 text-left font-sans">
+                    <section className="rounded-2xl border border-black/10 bg-white p-7 shadow-sm">
                     {/* Header Details */}
                     <div>
-                      <h3 className="text-[15px] font-bold text-[#002d73]">เปิดใช้งานการแจ้งเตือน SMS ล่วงหน้า</h3>
-                      <p className="text-[12px] text-[#64748b] mt-1">เปิด/ปิด การส่ง SMS ล่วงหน้าก่อนถึงกำหนดนัดติดตามหรือเหตุการณ์สำคัญ</p>
+                      <h3 className="text-[20px] font-semibold text-slate-900">เปิดใช้งานการแจ้งเตือน SMS ล่วงหน้า</h3>
+                      <p className="mt-2 text-[14px] text-slate-500">เปิด/ปิด การส่ง SMS ล่วงหน้าก่อนถึงกำหนดนัดติดตามหรือเหตุการณ์สำคัญ</p>
                     </div>
 
                     {/* Alert Types Checkboxes */}
-                    <div className="space-y-2">
-                      <p className="text-[13px] font-semibold text-[#002d73]">ประเภทการแจ้งเตือน</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="mt-6 space-y-3">
+                      <p className="text-[15px] font-semibold text-slate-800">ประเภทการแจ้งเตือน</p>
+                      <div className="grid gap-3 md:grid-cols-2">
                         {[
                           { key: 'followUpDue', label: 'ติดตามผู้ป่วย (Follow-up Due)' },
                           { key: 'appointmentReminder', label: 'นัดหมายติดตาม (Appointment Reminder)' },
@@ -785,46 +676,46 @@ HN: {{hn}}
                           { key: 'prepAlert', label: 'คิว/นัดหมายที่ต้องเตรียมตัวล่วงหน้า' },
                           { key: 'others', label: 'อื่นๆ (กำหนดเอง)' }
                         ].map((item) => (
-                          <label key={item.key} className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                          <label key={item.key} className="flex items-center gap-3 text-[14px] font-medium text-slate-700 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={alertTypes[item.key]}
                               onChange={(e) => setAlertTypes({ ...alertTypes, [item.key]: e.target.checked })}
-                              className="h-4 w-4 rounded border-slate-300 text-[#175beb] accent-[#175beb]"
+                              className="h-5 w-5 rounded border-slate-300 text-[#175beb] accent-[#175beb]"
                             />
                             {item.label}
                           </label>
                         ))}
                       </div>
                     </div>
+                    </section>
 
                     {/* Checkbox Config Panels (Staff & Patients) */}
                     <div className="grid gap-6 md:grid-cols-2">
                       {/* Staff Card */}
-                      <div className="rounded-xl border border-slate-100 p-5 space-y-4">
-                        <h4 className="font-bold text-[#002d73] text-[14px]">เปิดใช้งานการแจ้งเตือน SMS ล่วงหน้า (ผู้รับ (เจ้าหน้าที่))</h4>
+                      <div className="min-h-[420px] rounded-2xl border border-black/10 bg-white p-7 shadow-sm space-y-6">
+                        <h4 className="text-[20px] font-semibold text-slate-900">เปิดใช้งานการแจ้งเตือน SMS ล่วงหน้า</h4>
                         
                         <div className="space-y-3">
-                          <p className="text-xs font-semibold text-slate-400">ผู้รับ (เจ้าหน้าที่)</p>
-                          <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                            <input type="radio" checked readOnly className="h-4 w-4 border-slate-300 text-[#175beb] accent-[#175beb]" />
+                          <p className="text-[15px] font-semibold text-slate-800">ผู้รับ (เจ้าหน้าที่)</p>
+                          <label className="flex items-center gap-2 text-[14px] font-medium text-slate-700 cursor-pointer">
+                            <input type="checkbox" checked={staffRecipientEnabled} onChange={event => setStaffRecipientEnabled(event.target.checked)} className="h-5 w-5 rounded border-slate-300 text-[#175beb] accent-[#175beb]" />
                             ตามบทบาท (Role)
                           </label>
 
                           <div className="flex flex-wrap gap-3 pl-6">
                             {[
                               { key: 'orStaff', label: 'OR Staff' },
-                              { key: 'physician', label: 'Physician' },
                               { key: 'ipdNurse', label: 'IPD Nurse' },
                               { key: 'opdNurse', label: 'OPD Nurse' },
                               { key: 'admin', label: 'Admin' }
                             ].map((role) => (
-                              <label key={role.key} className="flex items-center gap-1.5 text-xs font-medium text-slate-600 cursor-pointer">
+                              <label key={role.key} className="flex items-center gap-2 text-[14px] font-medium text-slate-600 cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={staffRoles[role.key]}
                                   onChange={(e) => setStaffRoles({ ...staffRoles, [role.key]: e.target.checked })}
-                                  className="h-3.5 w-3.5 rounded text-[#175beb] accent-[#175beb]"
+                                  className="h-5 w-5 rounded text-[#175beb] accent-[#175beb]"
                                 />
                                 {role.label}
                               </label>
@@ -833,9 +724,9 @@ HN: {{hn}}
                         </div>
 
                         <div className="space-y-2 border-t border-slate-50 pt-3">
-                          <p className="text-xs font-semibold text-slate-400">ช่องทาง</p>
+                          <p className="text-[15px] font-semibold text-slate-800">ช่องทาง</p>
                           <div className="flex gap-4">
-                            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                            <label className="flex items-center gap-2 text-[14px] font-medium text-slate-700 cursor-pointer">
                               <input
                                 type="checkbox"
                                 checked={staffChannels.sms}
@@ -844,7 +735,7 @@ HN: {{hn}}
                               />
                               SMS
                             </label>
-                            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                            <label className="flex items-center gap-2 text-[14px] font-medium text-slate-700 cursor-pointer">
                               <input
                                 type="checkbox"
                                 checked={staffChannels.dashboard}
@@ -857,9 +748,9 @@ HN: {{hn}}
                         </div>
 
                         <div className="space-y-2 border-t border-slate-50 pt-3">
-                          <p className="text-xs font-semibold text-slate-400">เงื่อนไขการส่ง</p>
+                          <p className="text-[15px] font-semibold text-slate-800">เงื่อนไขการส่ง</p>
                           <div className="space-y-2">
-                            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                            <label className="flex items-center gap-2 text-[14px] font-medium text-slate-700 cursor-pointer">
                               <input
                                 type="checkbox"
                                 checked={staffConditions.hasPhone}
@@ -868,7 +759,7 @@ HN: {{hn}}
                               />
                               ส่งเฉพาะผู้ที่มีเบอร์โทร
                             </label>
-                            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                            <label className="flex items-center gap-2 text-[14px] font-medium text-slate-700 cursor-pointer">
                               <input
                                 type="checkbox"
                                 checked={staffConditions.noResponseOnly}
@@ -882,20 +773,20 @@ HN: {{hn}}
                       </div>
 
                       {/* Patient Card */}
-                      <div className="rounded-xl border border-slate-100 p-5 space-y-4 h-fit">
-                        <h4 className="font-bold text-[#002d73] text-[14px]">เปิดใช้งานการแจ้งเตือน SMS ล่วงหน้า (ผู้รับ (คนไข้))</h4>
+                      <div className="min-h-[420px] rounded-2xl border border-black/10 bg-white p-7 shadow-sm space-y-6">
+                        <h4 className="text-[20px] font-semibold text-slate-900">เปิดใช้งานการแจ้งเตือน SMS ล่วงหน้า</h4>
                         
                         <div className="space-y-3">
-                          <p className="text-xs font-semibold text-slate-400">ผู้รับ (คนไข้)</p>
-                          <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                            <input type="radio" checked readOnly className="h-4 w-4 border-slate-300 text-[#175beb] accent-[#175beb]" />
+                          <p className="text-[15px] font-semibold text-slate-800">ผู้รับ (คนไข้)</p>
+                          <label className="flex items-center gap-2 text-[14px] font-medium text-slate-700 cursor-pointer">
+                            <input type="checkbox" checked={patientRecipientEnabled} onChange={event => setPatientRecipientEnabled(event.target.checked)} className="h-5 w-5 rounded border-slate-300 text-[#175beb] accent-[#175beb]" />
                             ผู้ป่วย (เบอร์โทรหลัก)
                           </label>
                         </div>
 
                         <div className="space-y-2 border-t border-slate-50 pt-3">
-                          <p className="text-xs font-semibold text-slate-400">ช่องทาง</p>
-                          <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                          <p className="text-[15px] font-semibold text-slate-800">ช่องทาง</p>
+                          <label className="flex items-center gap-2 text-[14px] font-medium text-slate-700 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={patientChannels.sms}
@@ -907,8 +798,8 @@ HN: {{hn}}
                         </div>
 
                         <div className="space-y-2 border-t border-slate-50 pt-3">
-                          <p className="text-xs font-semibold text-slate-400">เงื่อนไขการส่ง</p>
-                          <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                          <p className="text-[15px] font-semibold text-slate-800">เงื่อนไขการส่ง</p>
+                          <label className="flex items-center gap-2 text-[14px] font-medium text-slate-700 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={patientConditions.hasPhone}
@@ -922,15 +813,16 @@ HN: {{hn}}
                     </div>
 
                     {/* Pre-alert Times Table */}
-                    <div className="space-y-3 border-t border-slate-100 pt-4">
-                      <div className="border border-slate-100 rounded-xl overflow-hidden">
-                        <table className="w-full text-left border-collapse text-[13px]">
+                    <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-[14px]">
                           <thead>
                             <tr className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
                               <th className="px-4 py-3">ประเภทการแจ้งเตือน</th>
                               <th className="px-4 py-3">คำอธิบาย</th>
                               <th className="px-4 py-3">ช่วงเวลาล่วงหน้า (ก่อนถึงกำหนด)</th>
                               <th className="px-4 py-3 text-center">เปิดใช้งาน</th>
+                              <th className="px-4 py-3 text-right">ดำเนินการ</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
@@ -945,10 +837,7 @@ HN: {{hn}}
                                     </select>
                                   ) : (
                                     <div className="flex flex-wrap gap-2">
-                                      {row.val1 && <span className="inline-block rounded border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">{row.val1}</span>}
-                                      {row.val2 && <span className="inline-block rounded border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">{row.val2}</span>}
-                                      {row.val3 && <span className="inline-block rounded border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">{row.val3}</span>}
-                                      {row.val4 && <span className="inline-block rounded border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">{row.val4}</span>}
+                                      {['val1', 'val2', 'val3', 'val4'].map(key => row[key] ? <select key={key} value={row[key]} onChange={event => updateIntervalValue(row.id, key, event.target.value)} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700"><option>{row[key]}</option><option>1 ชั่วโมง</option><option>4 ชั่วโมง</option><option>1 วัน</option><option>2 วัน</option><option>3 วัน</option><option>7 วัน</option></select> : null)}
                                     </div>
                                   )}
                                 </td>
@@ -967,6 +856,7 @@ HN: {{hn}}
                                     />
                                   </button>
                                 </td>
+                                <td className="px-4 py-3.5"><div className="flex justify-end gap-3"><button onClick={() => editInterval(row.id)} aria-label="แก้ไข"><Edit2 size={15} className="text-blue-600" /></button><button onClick={() => setIntervals(items => items.filter(item => item.id !== row.id))} aria-label="ลบ"><Trash2 size={15} className="text-red-500" /></button></div></td>
                               </tr>
                             ))}
                           </tbody>
@@ -976,11 +866,34 @@ HN: {{hn}}
                       {/* Add pre-alert button */}
                       <button
                         onClick={addInterval}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 py-3 text-[14px] font-semibold text-slate-500 hover:bg-slate-50 transition"
+                        className="flex w-full items-center justify-center gap-2 border-t border-slate-200 bg-slate-50/60 py-4 text-[14px] font-semibold text-blue-600 hover:bg-blue-50 transition"
                       >
                         <Plus size={16} /> เพิ่มช่วงเวลาล่วงหน้า
                       </button>
                     </div>
+
+                    <section className="rounded-2xl border border-black/10 bg-white p-7 shadow-sm">
+                      <div className="flex flex-col gap-5">
+                        <div>
+                          <h3 className="text-[20px] font-semibold text-slate-900">ประกาศท้ายหน้า</h3>
+                          <p className="mt-2 text-[14px] text-slate-500">กำหนดประกาศที่แสดงบริเวณ Footer ของทุกหน้าในระบบ</p>
+                        </div>
+                        <label className="flex items-center gap-3 text-[14px] font-medium text-slate-700">
+                          <input type="checkbox" checked={footerAnnouncement.enabled} onChange={event => setFooterAnnouncement(current => ({ ...current, enabled: event.target.checked }))} className="h-5 w-5 rounded border-slate-300 accent-[#175beb]" />
+                          เปิดใช้งานประกาศ
+                        </label>
+                        <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
+                          <label className="text-[15px] font-semibold text-slate-800">
+                            วันที่ประกาศ
+                            <input type="date" value={footerAnnouncement.date} onChange={event => setFooterAnnouncement(current => ({ ...current, date: event.target.value }))} className="mt-2 h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-[14px] font-medium text-slate-700 outline-none focus:border-[#175beb]" />
+                          </label>
+                          <label className="text-[15px] font-semibold text-slate-800">
+                            ข้อความประกาศ
+                            <textarea rows={3} value={footerAnnouncement.message} onChange={event => setFooterAnnouncement(current => ({ ...current, message: event.target.value }))} placeholder="ระบุข้อความประกาศ..." className="mt-2 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[14px] font-medium text-slate-700 outline-none focus:border-[#175beb]" />
+                          </label>
+                        </div>
+                      </div>
+                    </section>
                   </div>
                 )}
 
@@ -1001,6 +914,7 @@ HN: {{hn}}
                           onChange={(e) => setSelectedTemplate(e.target.value)}
                           className="field mt-2 font-semibold"
                         >
+                          <option value="">เลือก Template</option>
                           <option value="Follow-up">ถึงกำหนดติดตาม (Follow-up)</option>
                           <option value="Reminder">แจ้งเตือนก่อนวันนัดหมาย</option>
                           <option value="Warning">แจ้งเตือนแผลอักเสบ/สงสัย SSI</option>
@@ -1049,15 +963,26 @@ HN: {{hn}}
             </button>
           </div>
 
-          {/* Warning Notification Banner */}
-          <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/50 p-4 text-xs text-slate-600">
-            <span className="text-[14px]">📅 15 มิ.ย. 2569</span>
-            <div className="flex-1 font-medium leading-5">
-              ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.
-            </div>
-          </div>
         </section>
       </div>
+
+      {editor && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 p-4" onMouseDown={() => setEditor(null)}>
+        <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl" onMouseDown={event => event.stopPropagation()}>
+          <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+            <h3 className="text-lg font-semibold text-slate-900">{editor.title}</h3>
+            <button type="button" onClick={() => setEditor(null)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100" aria-label="ปิด"><X size={20} /></button>
+          </div>
+          <div className="space-y-4 px-6 py-5">
+            {editor.type === 'symptom' && <label className="block text-sm font-medium text-slate-700">อาการ/อาการแสดง <span className="text-red-500">*</span><input autoFocus className="field mt-2" value={editor.values.name} onChange={event => updateEditor('name', event.target.value)} placeholder="กรอกชื่ออาการ" /></label>}
+            {editor.type === 'schedule' && <><label className="block text-sm font-medium text-slate-700">วันที่ติดตาม <span className="text-red-500">*</span><input autoFocus className="field mt-2" value={editor.values.day} onChange={event => updateEditor('day', event.target.value)} placeholder="เช่น Day 45" /></label><label className="block text-sm font-medium text-slate-700">คำอธิบาย <span className="text-red-500">*</span><textarea className="field mt-2 min-h-24" value={editor.values.desc} onChange={event => updateEditor('desc', event.target.value)} placeholder="รายละเอียดการติดตาม" /></label></>}
+            {editor.type === 'method' && <label className="block text-sm font-medium text-slate-700">วิธีติดตาม <span className="text-red-500">*</span><input autoFocus className="field mt-2" value={editor.values.name} onChange={event => updateEditor('name', event.target.value)} placeholder="เช่น โทรศัพท์ + ส่งรูปแผล" /></label>}
+            {editor.type === 'interval' && <><label className="block text-sm font-medium text-slate-700">ประเภทการแจ้งเตือน <span className="text-red-500">*</span><input autoFocus className="field mt-2" value={editor.values.type} onChange={event => updateEditor('type', event.target.value)} /></label><label className="block text-sm font-medium text-slate-700">คำอธิบาย <span className="text-red-500">*</span><input className="field mt-2" value={editor.values.desc} onChange={event => updateEditor('desc', event.target.value)} /></label><label className="block text-sm font-medium text-slate-700">ช่วงเวลาล่วงหน้า <span className="text-red-500">*</span><input className="field mt-2" value={editor.values.val1} onChange={event => updateEditor('val1', event.target.value)} placeholder="เช่น 1 วัน หรือ 4 ชั่วโมง" /></label></>}
+          </div>
+          <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4"><button type="button" className="btn-secondary" onClick={() => setEditor(null)}>ยกเลิก</button><button type="button" className="btn-primary" onClick={saveEditor}><Save size={16} />บันทึก</button></div>
+        </div>
+      </div>}
+
+      {notice && <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/35 p-4" onMouseDown={() => setNotice(null)}><div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl" onMouseDown={event => event.stopPropagation()}>{notice.type === 'success' ? <CheckCircle2 className="mx-auto text-emerald-500" size={48} /> : <Info className="mx-auto text-red-500" size={48} />}<h3 className="mt-4 text-lg font-semibold text-slate-900">{notice.type === 'success' ? 'สำเร็จ' : 'เกิดข้อผิดพลาด'}</h3><p className="mt-2 text-sm text-slate-600">{notice.text}</p><button type="button" className="btn-primary mt-5 w-full" onClick={() => setNotice(null)}>ตกลง</button></div></div>}
     </div>
   )
 }

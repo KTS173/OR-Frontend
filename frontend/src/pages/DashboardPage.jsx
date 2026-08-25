@@ -6,6 +6,7 @@ import MetricCard from '../components/ui/MetricCard.jsx'
 import PatientTable from '../components/ui/PatientTable.jsx'
 import { useApiQuery } from '../hooks/useApiQuery.js'
 import { api } from '../services/api.js'
+import { AnalyticsChartPair, AnalyticsDonutPair } from '../components/AnalyticsOverview.jsx'
 
 const followUpSummary = [
   { name: 'กำลังติดตาม', value: 0, color: '#3b82f6' },
@@ -68,7 +69,7 @@ export default function DashboardPage() {
       </section>
 
       {/* ── Charts Row ── */}
-      <section className="dashboard-charts">
+      <section className="hidden">
 
         {/* SSI Trend Line Chart */}
         <article className="or-card flex h-[326px] flex-col gap-3 rounded-2xl p-[21px]">
@@ -118,12 +119,15 @@ export default function DashboardPage() {
         </article>
       </section>
 
+      <AnalyticsChartPair patients={patients} />
+      <AnalyticsDonutPair patients={patients} />
+
       {/* ── Bottom Row ── */}
       <section className="dashboard-lower">
         <div className="grid gap-4">
 
           {/* Follow-up Summary Donut */}
-          <article className="or-card overflow-hidden">
+          <article className="hidden">
             <div className="border-b border-slate-100 px-5 py-4 text-base font-bold text-[#10386f]">สรุปการติดตามประจำวัน</div>
             <div className="flex min-h-[205px] flex-col items-stretch gap-2 px-4 py-3 sm:flex-row sm:items-center">
               <div className="relative h-36 min-w-36 flex-1">
@@ -152,7 +156,7 @@ export default function DashboardPage() {
 
           {/* My Tasks */}
           <article className="or-card overflow-hidden">
-            <div className="border-b border-slate-100 px-5 py-4 text-base font-bold text-[#10386f]">งานของฉันวันนี้</div>
+            <h2 className="block-section-title border-b border-slate-100 px-5 py-4">งานของฉันวันนี้</h2>
             <div className="divide-y divide-slate-100 px-5">
               {followUpTasks.map((task, i) => {
                 const Icon = taskIcons[i]

@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS ris_operations (
     ward_name VARCHAR(100),
     bed_no VARCHAR(50),
     patient_type VARCHAR(10),
+    receiving_department VARCHAR(255),
 
     operation_no VARCHAR(100) NOT NULL UNIQUE,
     surgeon VARCHAR(255),

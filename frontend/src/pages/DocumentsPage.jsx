@@ -1,15 +1,15 @@
 import { AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, BookOpen, Calendar, CalendarDays, CheckCircle2, ChevronRight, Download, Edit2, Eye, FileText, Info, LayoutGrid, Link as LinkIcon, Megaphone, MoreVertical, Plus, Search, Sparkles, Trash2, User, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import PageHeader from '../components/ui/PageHeader.jsx'
 import { api } from '../services/api.js'
 
 export default function DocumentsPage() {
   const [isCreating, setIsCreating] = useState(false)
   const [wizardStep, setWizardStep] = useState(1)
   const [selectedDocId, setSelectedDocId] = useState(null)
+  const [readIds, setReadIds] = useState(() => new Set())
 
   // Document List Filters State
-  const [dateRange, setDateRange] = useState('12 พ.ค. 2569 - 18 พ.ค. 2569')
+  const [dateRange, setDateRange] = useState('')
   const [category, setCategory] = useState('ทั้งหมด')
   const [importanceFilter, setImportanceFilter] = useState('ทั้งหมด')
   const [deptFilter, setDeptFilter] = useState('ทั้งหมด')
@@ -18,29 +18,18 @@ export default function DocumentsPage() {
 
   // New Document Form State
   const [contentType, setContentType] = useState('news') // 'news', 'announcement', 'document'
-  const [docTitle, setDocTitle] = useState('แนวทางการป้องกันการติดเชื้อหลังผ่าตัดฉบับอัปเดต')
-  const [shortDesc, setShortDesc] = useState('เป็นแนวทางการปฏิบัติสำหรับบุคลากรในการป้องกันการติดเชื้อหลังผ่าตัดครอบคลุมตั้งแต่การประเมินความเสี่ยง การเตรียมผู้ป่วย การดูแลแผลผ่าตัด ไปจนถึงการติดตามภาวะแทรกซ้อน เพื่อให้เกิดความปลอดภัยและลดอัตราการติดเชื้อในผู้ป่วยผ่าตัด')
-  const [contentDetail, setContentDetail] = useState(`1. วัตถุประสงค์
-เพื่อกำหนดแนวทางในการปฏิบัติเพื่อป้องกันการติดเชื้อหลังผ่าตัด ลดอัตราการติดเชื้อแผลผ่าตัด (Surgical Site Infection, SSI) และเพิ่มความปลอดภัยให้แก่ผู้ป่วย
-
-2. ขอบเขต
-แนวทางนี้ครอบคลุมผู้ป่วยที่เข้ารับการผ่าตัดทุกประเภทในโรงพยาบาล ทั้งแบบผู้ป่วยในและผู้ป่วยนอก รวมถึงบุคลากรที่เกี่ยวข้องในขั้นตอนของการดูแล
-
-3. แนวทางการปฏิบัติ
-3.1 ก่อนการผ่าตัด
-• ประเมินความเสี่ยงของผู้ป่วย (เช่น โรคร่วม ภาวะโภชนาการ ภาวะน้ำหนักเกิน)
-• อาบน้ำ/ทำความสะอาดร่างกายด้วย Chlorhexidine ตามแนวทาง
-• ให้ยาปฏิชีวนะป้องกันก่อนผ่าตัด 30-60 นาที ตามข้อบ่งชี้
-• เตรียมเครื่องมือและอุปกรณ์ให้สะอาด ปลอดเชื้อ และตรวจสอบการทำงาน`)
+  const [docTitle, setDocTitle] = useState('')
+  const [shortDesc, setShortDesc] = useState('')
+  const [contentDetail, setContentDetail] = useState('')
   const [importance, setImportance] = useState('must-read') // 'normal', 'must-read', 'urgent'
   const [targetGroup, setTargetGroup] = useState('all') // 'all', 'or', 'opd', 'ipd', 'doctor'
-  const [publishDate, setPublishDate] = useState('15 มิ.ย. 2569')
-  const [refLink, setRefLink] = useState('https://intranet.bangkokhospital.com/or/infection-control/post-op')
+  const [publishDate, setPublishDate] = useState('')
+  const [refLink, setRefLink] = useState('')
   
   // Publisher department info
-  const [pubDept1, setPubDept1] = useState('เจ้าหน้าที่ OPD')
-  const [pubDept2, setPubDept2] = useState('OPD ทั่วไป')
-  const [pubPerson, setPubPerson] = useState('น.ส มัลลิกา ศุภอรุณกุล')
+  const [pubDept1, setPubDept1] = useState('')
+  const [pubDept2, setPubDept2] = useState('')
+  const [pubPerson, setPubPerson] = useState('')
 
   // Document Table List State
   const [docsList, setDocsList] = useState([])
@@ -51,11 +40,11 @@ export default function DocumentsPage() {
       type: doc.content_type === 'news' ? 'ข่าวสาร' : doc.content_type === 'announcement' ? 'ประกาศทั่วไป' : 'คู่มือ',
       owner: doc.publisher_name || doc.publisher_department || '-',
       importance: doc.importance === 'urgent' ? 'ด่วน' : doc.importance === 'must-read' ? 'ต้องอ่าน' : 'ปกติ',
-      target: doc.target_group === 'all' ? 'ทุกหน่วยงาน' : doc.target_group.toUpperCase(), isNew: false
+      target: doc.target_group === 'all' ? 'ทุกหน่วยงาน' : doc.target_group.toUpperCase(),
+      isNew: Date.now() - new Date(doc.created_at).getTime() <= 7 * 86400000
     })))).catch((error) => alert(error.message))
   }, [])
 
-  // Mock Uploaded Files State
   const [uploadedFiles, setUploadedFiles] = useState([])
 
   const handleDeleteFile = (id) => {
@@ -125,8 +114,23 @@ export default function DocumentsPage() {
     const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase()) || doc.owner.toLowerCase().includes(searchQuery.toLowerCase())
     if (category !== 'ทั้งหมด' && doc.type !== category) return false
     if (importanceFilter !== 'ทั้งหมด' && doc.importance !== importanceFilter) return false
+    if (deptFilter !== 'ทั้งหมด' && doc.owner !== deptFilter) return false
+    if (dateRange && String(doc.updated_at || doc.created_at).slice(0, 10) !== dateRange) return false
+    if (readStatus === 'อ่านแล้ว' && !readIds.has(doc.id)) return false
+    if (readStatus === 'ยังไม่ได้อ่าน' && readIds.has(doc.id)) return false
     return matchesSearch
   })
+  const weekAgo = Date.now() - 7 * 86400000
+  const metrics = [
+    { label: 'ประกาศทั้งหมด', count: docsList.length, color: 'text-blue-600', bg: 'bg-blue-50', icon: Megaphone },
+    { label: 'เอกสารใหม่', count: docsList.filter(doc => doc.isNew).length, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: Sparkles },
+    { label: 'ด่วน', count: docsList.filter(doc => doc.importance === 'ด่วน').length, color: 'text-red-500', bg: 'bg-red-50', icon: AlertCircle },
+    { label: 'ต้องอ่าน', count: docsList.filter(doc => doc.importance === 'ต้องอ่าน').length, color: 'text-orange-500', bg: 'bg-orange-50', icon: BookOpen },
+    { label: 'อัปเดตสัปดาห์นี้', count: docsList.filter(doc => new Date(doc.updated_at || doc.created_at).getTime() >= weekAgo).length, color: 'text-purple-600', bg: 'bg-purple-50', icon: Sparkles }
+  ]
+  const pinnedDocs = docsList.filter(doc => ['ด่วน', 'ต้องอ่าน'].includes(doc.importance)).slice(0, 2)
+  const departments = [...new Set(docsList.map(doc => doc.owner).filter(owner => owner && owner !== '-'))]
+  const openDocument = (id) => { setReadIds(current => new Set([...current, id])); setSelectedDocId(id) }
 
   // ── DETAIL VIEW ──
   if (selectedDocId !== null) {
@@ -305,13 +309,6 @@ export default function DocumentsPage() {
           </div>
         </div>
 
-        {/* Notice Banner */}
-        <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
-          <CalendarDays size={16} className="text-blue-500" />
-          <span className="font-bold shrink-0">15 มิ.ย. 2569</span>
-          <span className="text-slate-400">|</span>
-          <span>ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
-        </div>
       </div>
     )
   }
@@ -486,7 +483,7 @@ export default function DocumentsPage() {
               {/* Importance Row selection */}
               <div className="space-y-2 text-left">
                 <p className="text-[13px] font-semibold text-[#002d73]">ระดับความสำคัญ <span className="text-red-500 font-bold">*</span></p>
-                <div className="grid grid-cols-3 gap-4 w-full">
+                <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
                   {/* normal option */}
                   <button
                     onClick={() => setImportance('normal')}
@@ -531,7 +528,7 @@ export default function DocumentsPage() {
               {/* Target Targets targets */}
               <div className="space-y-2 text-left">
                 <p className="text-[13px] font-semibold text-[#002d73]">กลุ่มเป้าหมาย <span className="text-red-500 font-bold">*</span></p>
-                <div className="grid grid-cols-5 gap-3 w-full">
+                <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-5">
                   {[
                     { id: 'all', label: 'ทุกหน่วยงาน', icon: LayoutGrid },
                     { id: 'or', label: 'OR', icon: User },
@@ -898,13 +895,6 @@ export default function DocumentsPage() {
 
         </section>
 
-        {/* Notice Banner */}
-        <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
-          <CalendarDays size={16} className="text-blue-500" />
-          <span className="font-bold shrink-0">15 มิ.ย. 2569</span>
-          <span className="text-slate-400">|</span>
-          <span>ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
-        </div>
       </div>
     )
   }
@@ -912,71 +902,25 @@ export default function DocumentsPage() {
   // ── LIST VIEW ──
   return (
     <div className="space-y-6 font-sans">
-      <PageHeader
-        title="เอกสารข่าวสารกลาง"
-        description="ประกาศ เอกสาร และข่าวสารที่เจ้าหน้าที่ทุกหน่วยงานสามารถเปิดดูร่วมกันได้"
-      />
+      <p className="text-[13px] text-slate-500">ประกาศ เอกสาร และข่าวสารที่เจ้าหน้าที่ทุกหน่วยงานสามารถเปิดดูร่วมกันได้</p>
 
       {/* Top metrics sum row */}
       <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
-        {[
-          { label: 'ประกาศทั้งหมด', count: 128, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'เอกสารใหม่', count: 1248, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'ด่วน', count: 1248, color: 'text-red-500', bg: 'bg-red-50' },
-          { label: 'ต้องอ่าน', count: 1248, color: 'text-amber-500', bg: 'bg-amber-50' },
-          { label: 'อัปเดตสัปดาห์นี้', count: 36, color: 'text-purple-600', bg: 'bg-purple-50' }
-        ].map((item, idx) => (
-          <div key={idx} className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+        {metrics.map((item) => {
+          const Icon = item.icon
+          return <div key={item.label} className="flex min-h-[138px] items-start justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div>
-              <p className={`text-xs font-semibold uppercase ${item.color}`}>{item.label}</p>
-              <p className={`mt-2 text-2xl font-bold ${item.color}`}>{item.count.toLocaleString()} <span className="text-xs font-medium text-slate-400">รายการ</span></p>
+              <p className={`text-[14px] font-semibold ${item.color}`}>{item.label}</p>
+              <p className={`mt-8 text-[30px] font-bold leading-none ${item.color}`}>{item.count.toLocaleString()}</p>
+              <p className="mt-2 text-[12px] font-medium text-slate-500">รายการ</p>
             </div>
+            <span className={`grid size-10 place-items-center rounded-lg ${item.bg} ${item.color}`}><Icon size={21}/></span>
           </div>
-        ))}
+        })}
       </section>
 
       {/* Two Pinned cards banners side-by-side */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Urgent Banner */}
-        <div className="rounded-xl border border-red-200 bg-red-50/10 p-5 shadow-sm relative flex flex-col justify-between">
-          <span className="absolute top-4 right-4 text-red-500 bg-red-50 h-7 w-7 rounded-full grid place-items-center">
-            📌
-          </span>
-          <div>
-            <span className="inline-block rounded bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-500 uppercase tracking-wider mb-2">
-              ด่วน
-            </span>
-            <h3 className="text-[15px] font-bold text-slate-800 leading-6">แจ้งปิดปรับปรุงระบบชั่วคราว วันที่ 15 มิ.ย. 2569</h3>
-            <p className="mt-1 text-slate-500 text-xs leading-relaxed font-semibold">
-              ระบบ OR Surveillance จะปิดให้บริการเพื่อปรับปรุงระบบตั้งเเต่เวลา 22:00 - 02:00 น.
-            </p>
-          </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-bold">
-            <span>ฝ่ายเทคโนโลยีสารสนเทศ 14 มิ.ย. 2569 16:30</span>
-            <span className="text-slate-600">ทุกหน่วยงาน</span>
-          </div>
-        </div>
-
-        {/* Must-read Banner */}
-        <div className="rounded-xl border border-amber-200 bg-amber-50/10 p-5 shadow-sm relative flex flex-col justify-between">
-          <span className="absolute top-4 right-4 text-amber-500 bg-amber-50 h-7 w-7 rounded-full grid place-items-center">
-            📌
-          </span>
-          <div>
-            <span className="inline-block rounded bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-2">
-              ต้องอ่าน
-            </span>
-            <h3 className="text-[15px] font-bold text-slate-800 leading-6">แนวทางการป้องกันการติดเชื้อหลังผ่าตัด ฉบับอัปเดต</h3>
-            <p className="mt-1 text-slate-500 text-xs leading-relaxed font-semibold">
-              แนวทางการเฝ้าระวังเเละป้องกันภาวะแผลติดเชื้อหลังผ่าตัด โดยความร่วมมือระหว่างทีมแพทย์เเละ IC Nurse
-            </p>
-          </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-bold">
-            <span>ฝ่ายเทคโนโลยีสารสนเทศ 14 มิ.ย. 2569 16:30</span>
-            <span className="text-slate-600">ทุกหน่วยงาน</span>
-          </div>
-        </div>
-      </div>
+      {pinnedDocs.length > 0 && <section><h2 className="mb-4 text-[18px] font-bold text-slate-800">ประกาศปักหมุด 📌</h2><div className="grid gap-4 md:grid-cols-2">{pinnedDocs.map(doc => <button key={doc.id} onClick={() => openDocument(doc.id)} className={`relative flex min-h-[150px] flex-col justify-between rounded-xl border p-5 text-left shadow-sm ${doc.importance === 'ด่วน' ? 'border-red-200 bg-red-50/30' : 'border-amber-200 bg-amber-50/30'}`}><span className="absolute right-4 top-4">📌</span><div><span className={`rounded px-2 py-1 text-[10px] font-bold ${doc.importance === 'ด่วน' ? 'bg-red-50 text-red-500' : 'bg-amber-50 text-amber-600'}`}>{doc.importance}</span><h3 className="mt-3 text-[15px] font-bold text-slate-800">{doc.title}</h3><p className="mt-1 line-clamp-2 text-xs text-slate-500">{doc.short_description || '-'}</p></div><div className="mt-3 flex justify-between border-t border-slate-200 pt-3 text-[11px] text-slate-500"><span>{doc.owner} · {doc.date}</span><span>{doc.target}</span></div></button>)}</div></section>}
 
       {/* Database Search Filter panel */}
       <section className="rounded-xl border border-black/10 bg-white p-6 shadow-sm">
@@ -989,7 +933,7 @@ export default function DocumentsPage() {
             <label className="text-[13px] font-medium text-slate-600">เลือกช่วงวันที่</label>
             <div className="relative mt-1">
               <input
-                type="text"
+                type="date"
                 value={dateRange}
                 onChange={e => setDateRange(e.target.value)}
                 className="h-[38px] w-full rounded-lg border border-slate-200 pl-10 pr-4 text-xs font-semibold text-slate-600"
@@ -1034,8 +978,7 @@ export default function DocumentsPage() {
               className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-600 font-semibold"
             >
               <option>ทั้งหมด</option>
-              <option>เทคโนโลยีสารสนเทศ</option>
-              <option>คณะกรรมการ</option>
+              {departments.map(department => <option key={department}>{department}</option>)}
             </select>
           </div>
 
@@ -1068,7 +1011,7 @@ export default function DocumentsPage() {
             ค้นหา
           </button>
           <button
-            onClick={() => { setSearchQuery(''); setCategory('ทั้งหมด'); setImportanceFilter('ทั้งหมด'); }}
+            onClick={() => { setSearchQuery(''); setDateRange(''); setCategory('ทั้งหมด'); setImportanceFilter('ทั้งหมด'); setDeptFilter('ทั้งหมด'); setReadStatus('ทั้งหมด') }}
             className="inline-flex h-[38px] items-center justify-center gap-2 rounded-lg border border-slate-200 px-5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
           >
             ล้างตัวกรอง
@@ -1111,7 +1054,7 @@ export default function DocumentsPage() {
                   <td className="px-4">
                     <div className="flex items-center gap-2">
                       <span
-                        onClick={() => setSelectedDocId(row.id)}
+                        onClick={() => openDocument(row.id)}
                         className="font-bold text-[#175beb] hover:underline cursor-pointer"
                       >
                         {row.title}
@@ -1154,11 +1097,6 @@ export default function DocumentsPage() {
         </footer>
       </section>
 
-      {/* Notice Banner */}
-      <div className="rounded-xl bg-blue-50/50 border border-blue-100 p-3.5 text-left text-[12.5px] text-blue-700 flex items-center gap-2">
-        <CalendarDays size={16} className="text-blue-500" />
-        <span>15 มิ.ย. 2569: ระบบจะปิดปรับปรุงชั่วคราวในวันเสาร์ที่ 15 มิถุนายน 2569 เวลา 22:00 - 02:00 น.</span>
-      </div>
     </div>
   )
 }
