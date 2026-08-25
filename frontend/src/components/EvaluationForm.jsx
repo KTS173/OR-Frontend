@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Clock
 } from 'lucide-react'
+import { api } from '../services/api.js'
 
 export default function EvaluationForm({ selectedPatient, setSelectedPatient }) {
   // Evaluation Form States
@@ -539,13 +540,11 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient }) 
           <button
             type="button"
             className="btn-filled-primary"
-            onClick={() => {
-              // Update status of selected patient locally to simulate a save!
-              if (selectedPatient) {
-                selectedPatient.status = evalResult === 'not_infected' ? 'ไม่ติดเชื้อ SSI' : 'สงสัย SSI';
-                selectedPatient.isCompleted = true; // Mark as completed
-              }
-              setIsSaveModalOpen(true);
+            onClick={async () => {
+              try {
+                await api.createEvaluation(selectedPatient.operationNo, { evaluationType: 'SSI', result: evalResult, data: { followUpDate, followUpTime, followUpMethod, followerName, contactPhone, contactStatus, contactLocation, remarks, symptoms, otherSymptom, otherCheckboxes, otherCheckboxesText, dischargeTreatment, dischargeTreatmentText, evalRemarks, nextAppointment }, evaluatedBy: followerName })
+                setIsSaveModalOpen(true)
+              } catch (error) { alert(error.message) }
             }}
           >
             <span>บันทึกการประเมิน</span>

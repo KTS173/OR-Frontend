@@ -1,8 +1,19 @@
 import { LogIn, ShieldCheck } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { api } from '../services/api.js'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const handleSubmit = async (event) => {
+    event.preventDefault(); setSubmitting(true); setError('')
+    const form = new FormData(event.currentTarget)
+    try { const user = await api.login(form.get('username'), form.get('password')); sessionStorage.setItem('or-smart-auth', 'true'); sessionStorage.setItem('or-smart-user', JSON.stringify(user)); navigate('/dashboard') }
+    catch (reason) { setError(reason.message) }
+    finally { setSubmitting(false) }
+  }
 
   return (
     <main className="login-shell min-h-screen bg-white">
@@ -43,7 +54,7 @@ export default function LoginPage() {
       {/* ── Right Card ── */}
       <section className="login-panel relative flex min-h-screen items-center justify-center px-6 py-10">
         <form
-          onSubmit={(e) => { e.preventDefault(); sessionStorage.setItem('or-smart-auth', 'true'); navigate('/dashboard') }}
+          onSubmit={handleSubmit}
           className="login-card"
         >
           {/* Logo + heading */}
@@ -89,7 +100,8 @@ export default function LoginPage() {
           </div>
 
           {/* Submit */}
-          <button className="login-btn"><LogIn size={21} />เข้าสู่ระบบ</button>
+          {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
+          <button disabled={submitting} className="login-btn"><LogIn size={21} />{submitting ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}</button>
 
           {/* Authorized strip */}
           <div className="login-secure">

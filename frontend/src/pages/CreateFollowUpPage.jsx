@@ -15,6 +15,16 @@ export default function CreateFollowUpPage() {
   const [autoCalculate, setAutoCalculate] = useState(true)
   const [step, setStep] = useState(1)
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  const saveFollowUp = async () => {
+    setSaving(true)
+    try {
+      await api.createFollowUp(patient.operationNo, { templateDays: Number(selectedTemplate), autoCalculate, schedule: [] })
+      setSaved(true)
+    } catch (error) { alert(error.message) }
+    finally { setSaving(false) }
+  }
 
   useEffect(() => {
     let active = true
@@ -232,8 +242,8 @@ export default function CreateFollowUpPage() {
         <button onClick={() => step === 1 ? navigate(-1) : setStep(step - 1)} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-6 text-[14px] font-medium text-slate-700 hover:bg-slate-50">
           <ArrowLeft size={15} />ย้อนกลับ
         </button>
-        <button onClick={() => step < 3 ? setStep(step + 1) : setSaved(true)} className="h-10 rounded-xl bg-[#175beb] px-8 text-[14px] font-medium text-white hover:bg-blue-700 shadow-sm">
-          <span className="inline-flex items-center gap-2">{step === 3 ? 'ส่งข้อมูล/บันทึก' : 'ถัดไป'} <ArrowRight size={15} /></span>
+        <button disabled={saving} onClick={() => step < 3 ? setStep(step + 1) : saveFollowUp()} className="h-10 rounded-xl bg-[#175beb] px-8 text-[14px] font-medium text-white hover:bg-blue-700 shadow-sm disabled:opacity-60">
+          <span className="inline-flex items-center gap-2">{saving ? 'กำลังบันทึก...' : step === 3 ? 'ส่งข้อมูล/บันทึก' : 'ถัดไป'} <ArrowRight size={15} /></span>
         </button>
       </div>
       {saved && <FollowUpSuccessModal onClose={() => navigate(`/cases/${patient.id}`)} onView={() => navigate('/my-follow-ups')} />}

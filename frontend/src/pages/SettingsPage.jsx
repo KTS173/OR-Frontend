@@ -1,6 +1,7 @@
 import { Bell, Calendar, CheckCircle2, Database, Edit2, Info, Plus, RefreshCw, Save, Settings, SlidersHorizontal, Trash2, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import PageHeader from '../components/ui/PageHeader.jsx'
+import { api } from '../services/api.js'
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState(0)
@@ -101,6 +102,23 @@ HN: {{hn}}
 
 กรุณาดำเนินการติดตามและบันทึกผลในระบบ`)
 
+  useEffect(() => {
+    api.getSettings().then((saved) => {
+      if (saved.ssiCriteria) setSsiCriteria(saved.ssiCriteria)
+      if (saved.schedules) setSchedules(saved.schedules)
+      if (saved.methods) setMethods(saved.methods)
+      if (saved.sync) { setSyncFreq(saved.sync.freq); setSyncStart(saved.sync.start); setSyncEnd(saved.sync.end); setSyncEnabled(saved.sync.enabled) }
+      if (saved.alertTypes) setAlertTypes(saved.alertTypes)
+      if (saved.staffRoles) setStaffRoles(saved.staffRoles)
+      if (saved.staffChannels) setStaffChannels(saved.staffChannels)
+      if (saved.staffConditions) setStaffConditions(saved.staffConditions)
+      if (saved.patientChannels) setPatientChannels(saved.patientChannels)
+      if (saved.patientConditions) setPatientConditions(saved.patientConditions)
+      if (saved.intervals) setIntervals(saved.intervals)
+      if (saved.notificationTemplate) { setSelectedTemplate(saved.notificationTemplate.name); setTemplateText(saved.notificationTemplate.text) }
+    }).catch((error) => alert(error.message))
+  }, [])
+
   const handleToggleSsi = (id) => {
     setSsiCriteria(prev =>
       prev.map(item => item.id === id ? { ...item, enabled: !item.enabled } : item)
@@ -196,8 +214,11 @@ HN: {{hn}}
     }
   ]
 
-  const handleSave = () => {
-    alert('บันทึกการตั้งค่าเรียบร้อยแล้ว!')
+  const handleSave = async () => {
+    try {
+      await api.saveSettings({ ssiCriteria, schedules, methods, sync: { freq: syncFreq, start: syncStart, end: syncEnd, enabled: syncEnabled }, alertTypes, staffRoles, staffChannels, staffConditions, patientChannels, patientConditions, intervals, notificationTemplate: { name: selectedTemplate, text: templateText } })
+      alert('บันทึกการตั้งค่าเรียบร้อยแล้ว!')
+    } catch (error) { alert(error.message) }
   }
 
   return (

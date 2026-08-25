@@ -1,6 +1,7 @@
 import { AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, BookOpen, Calendar, CalendarDays, CheckCircle2, ChevronRight, Download, Edit2, Eye, FileText, Info, LayoutGrid, Link as LinkIcon, Megaphone, MoreVertical, Plus, Search, Sparkles, Trash2, User, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import PageHeader from '../components/ui/PageHeader.jsx'
+import { api } from '../services/api.js'
 
 export default function DocumentsPage() {
   const [isCreating, setIsCreating] = useState(false)
@@ -44,6 +45,16 @@ export default function DocumentsPage() {
   // Document Table List State
   const [docsList, setDocsList] = useState([])
 
+  useEffect(() => {
+    api.getDocuments().then((rows) => setDocsList(rows.map((doc) => ({
+      ...doc, date: new Date(doc.updated_at || doc.created_at).toLocaleString('th-TH'),
+      type: doc.content_type === 'news' ? 'ข่าวสาร' : doc.content_type === 'announcement' ? 'ประกาศทั่วไป' : 'คู่มือ',
+      owner: doc.publisher_name || doc.publisher_department || '-',
+      importance: doc.importance === 'urgent' ? 'ด่วน' : doc.importance === 'must-read' ? 'ต้องอ่าน' : 'ปกติ',
+      target: doc.target_group === 'all' ? 'ทุกหน่วยงาน' : doc.target_group.toUpperCase(), isNew: false
+    })))).catch((error) => alert(error.message))
+  }, [])
+
   // Mock Uploaded Files State
   const [uploadedFiles, setUploadedFiles] = useState([])
 
@@ -51,26 +62,16 @@ export default function DocumentsPage() {
     setUploadedFiles(prev => prev.filter(f => f.id !== id))
   }
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (wizardStep < 3) {
       setWizardStep(prev => prev + 1)
     } else {
       // Form Submit
-      const newDoc = {
-        id: Date.now(),
-        date: '15 มิ.ย. 2569 10:20',
-        title: docTitle || 'เอกสารใหม่ที่เพิ่มเข้ามา',
-        isNew: true,
-        type: contentType === 'news' ? 'ข่าวสาร' : contentType === 'announcement' ? 'ประกาศทั่วไป' : 'คู่มือ',
-        owner: pubPerson || 'System Admin',
-        importance: importance === 'normal' ? 'ปกติ' : importance === 'must-read' ? 'ต้องอ่าน' : 'ด่วน',
-        target: targetGroup === 'all' ? 'ทุกหน่วยงาน' : targetGroup.toUpperCase(),
-        color: importance === 'normal' ? 'green' : importance === 'must-read' ? 'orange' : 'red'
-      }
-      setDocsList([newDoc, ...docsList])
-      alert('บันทึกและเผยแพร่เอกสารข่าวสารเรียบร้อยแล้ว!')
-      setIsCreating(false)
-      setWizardStep(1)
+      try {
+        const saved = await api.createDocument({ contentType, title: docTitle, shortDescription: shortDesc, contentDetail, importance, targetGroup, publishDate: null, referenceLink: refLink, publisherDepartment: pubDept1, publisherSubdepartment: pubDept2, publisherName: pubPerson })
+        const newDoc = { ...saved, date: new Date(saved.created_at).toLocaleString('th-TH'), title: saved.title, isNew: true, type: contentType === 'news' ? 'ข่าวสาร' : contentType === 'announcement' ? 'ประกาศทั่วไป' : 'คู่มือ', owner: pubPerson || 'System Admin', importance: importance === 'normal' ? 'ปกติ' : importance === 'must-read' ? 'ต้องอ่าน' : 'ด่วน', target: targetGroup === 'all' ? 'ทุกหน่วยงาน' : targetGroup.toUpperCase() }
+        setDocsList([newDoc, ...docsList]); alert('บันทึกและเผยแพร่เอกสารข่าวสารเรียบร้อยแล้ว!'); setIsCreating(false); setWizardStep(1)
+      } catch (error) { alert(error.message) }
     }
   }
 
@@ -157,7 +158,7 @@ export default function DocumentsPage() {
               </span>
               <div className="space-y-1.5">
                 <h1 className="text-lg font-bold text-slate-800 leading-snug">
-                  แนวทางการป้องกันการติดเชื้อหลังผ่าตัดฉบับอัปเดต
+                  {doc?.title || 'เอกสารข่าวสาร'}
                 </h1>
                 <div className="flex gap-2">
                   <span className="inline-flex items-center gap-1 rounded bg-[#fffbeb] border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-600">
@@ -173,14 +174,14 @@ export default function DocumentsPage() {
 
             {/* description block */}
             <div className="text-xs text-slate-500 leading-relaxed font-semibold bg-[#f8fafc] p-4 rounded-xl">
-              เป็นแนวทางการปฏิบัติสำหรับบุคลากรในการป้องกันการติดเชื้อหลังผ่าตัดครอบคลุมตั้งแต่การประเมินความเสี่ยง การเตรียมผู้ป่วย การดูแลแผลผ่าตัด ไปจนถึงการติดตามภาวะแทรกซ้อน เพื่อให้เกิดความปลอดภัยและลดอัตราการติดเชื้อในผู้ป่วยผ่าตัด
+              {doc?.short_description || '-'}
             </div>
 
             {/* details markdown preview */}
             <div className="space-y-3 pt-4 border-t border-slate-100">
               <p className="text-[13px] font-semibold text-[#002d73]">รายละเอียดเนื้อหา <span className="text-red-500 font-bold">*</span></p>
               <div className="space-y-2">
-                {renderContentDetail(contentDetail)}
+                {renderContentDetail(doc?.content_detail || contentDetail)}
               </div>
             </div>
 

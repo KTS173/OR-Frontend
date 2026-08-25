@@ -57,6 +57,7 @@ const operationToPatient = (operation) => ({
 })
 
 export const api = {
+  login: (username, password) => request('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) }),
   getPatients: async () => (await request('/api/operations')).map(operationToPatient),
   getPatient: async (id) => {
     const operations = await request('/api/operations')
@@ -70,4 +71,17 @@ export const api = {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ patientType }),
   }),
+  getUsers: () => request('/api/users'),
+  createUser: (data) => request('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+  updateUser: (id, data) => request(`/api/users/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+  getDocuments: () => request('/api/documents'),
+  createDocument: (data) => request('/api/documents', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+  getSettings: () => request('/api/settings'),
+  saveSettings: (data) => request('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+  getFollowUps: (operationNo) => request(`/api/operations/${encodeURIComponent(operationNo)}/follow-ups`),
+  createFollowUp: (operationNo, data) => request(`/api/operations/${encodeURIComponent(operationNo)}/follow-ups`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+  getActivities: (operationNo) => request(`/api/operations/${encodeURIComponent(operationNo)}/activities`),
+  createActivity: (operationNo, data) => request(`/api/operations/${encodeURIComponent(operationNo)}/activities`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+  getEvaluations: (operationNo) => request(`/api/operations/${encodeURIComponent(operationNo)}/evaluations`),
+  createEvaluation: (operationNo, data) => request(`/api/operations/${encodeURIComponent(operationNo)}/evaluations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
 }

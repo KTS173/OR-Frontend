@@ -1,6 +1,7 @@
 import { CalendarDays, Edit2, LogIn, Search, UserCheck, UserMinus, UserPlus, Users } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import PageHeader from '../components/ui/PageHeader.jsx'
+import { api } from '../services/api.js'
 
 export default function UserManagementPage() {
   const [roleFilter, setRoleFilter] = useState('ทั้งหมด')
@@ -11,6 +12,14 @@ export default function UserManagementPage() {
 
   // User table rows
   const [usersList, setUsersList] = useState([])
+
+  useEffect(() => {
+    api.getUsers().then((rows) => setUsersList(rows.map((user, index) => ({
+      ...user, order: index + 1, dept: user.department || '-',
+      status: user.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ปิดใช้งาน',
+      lastLogin: user.last_login_at ? new Date(user.last_login_at).toLocaleString('th-TH') : '-'
+    })))).catch((error) => alert(error.message))
+  }, [])
 
   const filteredUsers = usersList.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) || user.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -71,7 +80,7 @@ export default function UserManagementPage() {
     }
   }
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     const name = prompt('กรอกชื่อผู้ใช้งาน:')
     if (!name) return
     const email = prompt('กรอกอีเมล:')
@@ -81,17 +90,10 @@ export default function UserManagementPage() {
     const dept = prompt('กรอกแผนก:', 'ผู้ป่วยนอก')
     if (!dept) return
 
-    const newUser = {
-      id: Date.now(),
-      order: usersList.length + 1,
-      name,
-      email,
-      role,
-      dept,
-      status: 'ใช้งานอยู่',
-      lastLogin: '15/06/2569 09:30'
-    }
-    setUsersList([...usersList, newUser])
+    try {
+      const user = await api.createUser({ name, email, role, department: dept })
+      setUsersList([...usersList, { ...user, order: usersList.length + 1, dept: user.department || '-', status: 'ใช้งานอยู่', lastLogin: '-' }])
+    } catch (error) { alert(error.message) }
   }
 
   return (
@@ -107,7 +109,7 @@ export default function UserManagementPage() {
         <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-[#175beb] uppercase">ผู้ใช้งานทั้งหมด</p>
-            <p className="mt-2 text-2xl font-bold text-[#175beb]">156 <span className="text-xs font-medium text-slate-400">คน</span></p>
+            <p className="mt-2 text-2xl font-bold text-[#175beb]">{usersList.length} <span className="text-xs font-medium text-slate-400">คน</span></p>
             <p className="mt-1 text-slate-400 text-xs font-bold">ทั้งหมดในระบบ</p>
           </div>
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-[#175beb]">
@@ -119,7 +121,7 @@ export default function UserManagementPage() {
         <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-[#10b981] uppercase">ใช้งานอยู่</p>
-            <p className="mt-2 text-2xl font-bold text-[#10b981]">142 <span className="text-xs font-medium text-slate-400">คน</span></p>
+            <p className="mt-2 text-2xl font-bold text-[#10b981]">{usersList.filter(user => user.status === 'ใช้งานอยู่').length} <span className="text-xs font-medium text-slate-400">คน</span></p>
             <p className="mt-1 text-emerald-500 text-xs font-bold">คิดเป็น 91.0%</p>
           </div>
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-[#10b981]">
@@ -131,7 +133,7 @@ export default function UserManagementPage() {
         <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-[#f59e0b] uppercase">ถูกปิดใช้งาน</p>
-            <p className="mt-2 text-2xl font-bold text-[#f59e0b]">14 <span className="text-xs font-medium text-slate-400">คน</span></p>
+            <p className="mt-2 text-2xl font-bold text-[#f59e0b]">{usersList.filter(user => user.status !== 'ใช้งานอยู่').length} <span className="text-xs font-medium text-slate-400">คน</span></p>
             <p className="mt-1 text-orange-500 text-xs font-bold">คิดเป็น 9.0%</p>
           </div>
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-[#f59e0b]">
@@ -143,7 +145,7 @@ export default function UserManagementPage() {
         <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-purple-600 uppercase">เข้าใช้งานวันนี้</p>
-            <p className="mt-2 text-2xl font-bold text-purple-600">87 <span className="text-xs font-medium text-slate-400">คน</span></p>
+            <p className="mt-2 text-2xl font-bold text-purple-600">{usersList.filter(user => user.lastLogin !== '-').length} <span className="text-xs font-medium text-slate-400">คน</span></p>
             <p className="mt-1 text-slate-400 text-xs font-bold">อัปเดต ณ 09:30 น.</p>
           </div>
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-purple-50 text-purple-600">
@@ -258,7 +260,7 @@ export default function UserManagementPage() {
               <span>{pill.label}</span>
               <span className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
                 isSelected ? 'bg-white/20 text-white' : 'bg-white/60 text-current'
-              }`}>{pill.count}</span>
+              }`}>{usersList.filter(user => user.role.toUpperCase() === pill.label.toUpperCase()).length}</span>
             </button>
           );
         })}
@@ -320,7 +322,7 @@ export default function UserManagementPage() {
         </div>
 
         <footer className="flex h-[46px] items-center justify-between border-t border-slate-200 px-6 text-[13px] text-slate-500 font-sans">
-          <span>แสดง 0 รายการ</span>
+          <span>แสดง {filteredUsers.length} รายการ</span>
           <div className="flex gap-2">
             <button className="page-button w-auto px-3">Previous</button>
             <button className="page-button bg-[#175beb] text-white">1</button>

@@ -147,10 +147,11 @@ function FollowUpCaseDetail({ patient }) {
       {isActivityModalOpen && (
         <AddActivityModal
           onClose={() => setIsActivityModalOpen(false)}
-          onSave={() => {
-            setIsActivityAdded(true);
-            setIsActivityModalOpen(false);
-            setActiveDetailTab('timeline');
+          onSave={async (activity) => {
+            try {
+              await api.createActivity(patient.operationNo, activity)
+              setIsActivityAdded(true); setIsActivityModalOpen(false); setActiveDetailTab('timeline')
+            } catch (error) { alert(error.message) }
           }}
         />
       )}
@@ -639,7 +640,7 @@ function AddActivityModal({ onClose, onSave }) {
           <button onClick={onClose} className="rounded-xl border border-slate-200 bg-[#f8fafc] px-6 py-2.5 text-[14px] font-medium text-slate-700 hover:bg-slate-100">
             ยกเลิก
           </button>
-          <button onClick={onSave} className="rounded-xl bg-[#175beb] px-6 py-2.5 text-[14px] font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
+          <button onClick={() => onSave({ activityType: type, purpose, location, staff, contactPrimary: contact1, contactSecondary: contact2, detail, notifyPeriod })} className="rounded-xl bg-[#175beb] px-6 py-2.5 text-[14px] font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
             <Save size={16} />
             บันทึกกิจกรรม
           </button>
