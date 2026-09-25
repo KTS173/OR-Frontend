@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-export function useApiQuery(query) {
+export function useApiQuery(query, { refreshInterval = 0, refreshOnFocus = true } = {}) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -8,18 +8,54 @@ export function useApiQuery(query) {
 
   useEffect(() => {
     let active = true
-    setLoading(true)
-    query()
-      .then((result) => active && (setData(result), setError(null)))
-      .catch((reason) => {
+    let inFlight = false
+
+    const load = async (showLoading = false) => {
+      if (inFlight) return
+      inFlight = true
+      if (showLoading) setLoading(true)
+      try {
+        const result = await query()
         if (active) {
-          setData([])
-          setError(reason)
+          setData(result)
+          setError(null)
         }
-      })
-      .finally(() => active && setLoading(false))
-    return () => { active = false }
-  }, [query, refreshKey])
+      } catch (reason) {
+        if (active) setError(reason)
+      } finally {
+        inFlight = false
+        if (active && showLoading) setLoading(false)
+      }
+    }
+
+    load(true)
+    const intervalId = refreshInterval > 0
+      ? window.setInterval(() => {
+          if (document.visibilityState === 'visible') load()
+        }, refreshInterval)
+      : null
+    const refreshVisiblePage = () => {
+      if (document.visibilityState === 'visible') load()
+    }
+    const refreshAfterRisUpdate = (event) => {
+      if (!event.key || event.key === 'or-smart-ris-operation-updated') load()
+    }
+    if (refreshOnFocus) {
+      window.addEventListener('focus', refreshVisiblePage)
+      document.addEventListener('visibilitychange', refreshVisiblePage)
+    }
+    window.addEventListener('storage', refreshAfterRisUpdate)
+    window.addEventListener('or-smart-ris-operation-updated', refreshAfterRisUpdate)
+
+    return () => {
+      active = false
+      if (intervalId) window.clearInterval(intervalId)
+      window.removeEventListener('focus', refreshVisiblePage)
+      document.removeEventListener('visibilitychange', refreshVisiblePage)
+      window.removeEventListener('storage', refreshAfterRisUpdate)
+      window.removeEventListener('or-smart-ris-operation-updated', refreshAfterRisUpdate)
+    }
+  }, [query, refreshInterval, refreshKey, refreshOnFocus])
 
   return { data, loading, error, refetch: () => setRefreshKey((value) => value + 1) }
 }

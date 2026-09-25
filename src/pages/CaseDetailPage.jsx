@@ -251,12 +251,12 @@ export function PatientInfoCard({ patient }) {
     <div className="grid size-[98px] shrink-0 place-items-center rounded-full border border-blue-100 bg-blue-50/40 text-[#175beb]"><UserRound size={60} strokeWidth={1.4} /></div>
     <div className="min-w-0 flex-1">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><p className="text-[14px] font-medium leading-7 text-[#424752]">HN <span className="ml-1">{patient.id}</span></p><h2 className="text-[24px] font-semibold leading-8 text-[#191c1e]">{patient.name}</h2></div>
+        <div><p className="text-[14px] font-medium leading-7 text-[#191c1e]">HN <span className="ml-1">{patient.id}</span></p><h2 className="text-[24px] font-semibold leading-8 text-[#191c1e]">{patient.name}</h2></div>
       </div>
       <div className="mt-[11px] grid grid-cols-[177px_161px_1fr]">
         <div className="space-y-2"><DetailRow label="เพศ" value={patient.sex ?? 'ชาย'} /><DetailRow label="อายุ" value={`${patient.age ?? 68} ปี`} /><DetailRow label="เบอร์โทร" value="081-234-5678" /><DetailRow label="วันเกิด" value="17 ม.ค. 2501" /></div>
         <div className="ml-2 space-y-2 border-l border-black/10 px-3"><DetailRow label="เชื้อชาติ" value="ไทย" /><DetailRow label="สัญชาติ" value="ไทย" /><DetailRow label="สิทธิการรักษา" value="-" /></div>
-        <div className="ml-2 border-l border-black/10 pl-3 text-[14px] text-[#424752]"><p>ที่อยู่</p><strong className="mt-2 block font-medium">99/9 หมู่ 4 จ.เชียงใหม่ 5100</strong></div>
+        <div className="ml-2 border-l border-black/10 pl-3 text-[14px] text-[#191c1e]"><p>ที่อยู่</p><strong className="mt-2 block font-medium">99/9 หมู่ 4 จ.เชียงใหม่ 5100</strong></div>
       </div>
     </div>
   </article>

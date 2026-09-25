@@ -2,6 +2,7 @@ import { ArrowLeft, Check, ChevronLeft, ChevronRight, Info, Plus, Trash2 } from 
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../services/api.js'
+import { normalizeFollowUpMethod } from '../utils/followUpMethods.js'
 import { PatientInfoCard } from './CaseDetailPage.jsx'
 
 const DAY_TEMPLATES = {
@@ -86,7 +87,7 @@ export default function CreateFollowUpPage() {
   useEffect(() => {
     api.getSettings().then(settings => {
       setConfiguredSchedules((settings.schedules || []).filter(item => item.enabled !== false))
-      setConfiguredMethods((settings.methods || []).filter(item => item.name))
+      setConfiguredMethods((settings.methods || []).map(normalizeFollowUpMethod).filter(item => item.name && item.enabled !== false))
     }).catch(() => { setConfiguredSchedules([]); setConfiguredMethods([]) })
   }, [])
 
@@ -117,7 +118,7 @@ export default function CreateFollowUpPage() {
   if (error && !patient) return <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">{error}</div>
 
   return <div className="space-y-4">
-    <header className="flex items-center justify-between"><div><h1 className="text-2xl font-semibold text-[#175beb]">สร้างบันทึกการเฝ้าระวัง (Create Follow-up)</h1><p className="mt-1 text-sm text-slate-500">วันติดตามคำนวณจากวันที่ออกจากห้องผ่าตัด {new Date(baseDate).toLocaleDateString('th-TH')}</p></div><button onClick={() => navigate(-1)} className="btn-secondary"><ArrowLeft size={15} />กลับ</button></header>
+    <button type="button" onClick={() => navigate(-1)} className="inline-flex h-9 items-center gap-2 rounded-lg px-1 text-[14px] font-medium text-[#175beb] hover:text-blue-700"><ArrowLeft size={15} />กลับไปหน้ารายการ</button>
     <PatientInfoCard patient={patient} />
 
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -137,7 +138,7 @@ export default function CreateFollowUpPage() {
 
       <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between"><h2 className="text-[15px] font-semibold">3. กำหนดรอบติดตาม</h2><label className="flex items-center gap-2 text-sm"><span>คำนวณวันอัตโนมัติ</span><input type="checkbox" checked={autoCalculate} onChange={(event) => { const enabled = event.target.checked; setAutoCalculate(enabled); setSchedule(enabled ? makeSchedule(baseDate, templateDays, configuredSchedules, configuredMethods[0]?.name) : []) }} className="size-4 accent-blue-600" /></label></div>
-        <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200"><table className="w-full min-w-[800px] text-[13px]"><thead className="h-11 bg-slate-50"><tr><th className="px-3 text-left">รอบ</th><th className="px-3 text-left">วันที่ติดตาม</th><th className="px-3 text-left">เวลา</th><th className="px-3 text-left">วิธีติดตาม</th><th className="px-3 text-left">หมายเหตุ</th><th /></tr></thead><tbody>{schedule.map((row) => <tr key={row.id} className="h-14 border-t border-slate-100"><td className="px-3"><input value={row.day} onChange={(e) => updateRow(row.id, 'day', e.target.value)} className="field h-9 w-32" /></td><td className="px-3"><input type="date" value={row.date} onChange={(e) => updateRow(row.id, 'date', e.target.value)} className="field h-9" /></td><td className="px-3"><input type="time" value={row.time} onChange={(e) => updateRow(row.id, 'time', e.target.value)} className="field h-9" /></td><td className="px-3"><select value={row.method} onChange={(e) => updateRow(row.id, 'method', e.target.value)} className="field h-9"><option>โทรศัพท์ + ส่งรูปแผล</option><option>โทรศัพท์</option><option>LINE</option><option>พบแพทย์</option></select></td><td className="px-3"><input value={row.note} onChange={(e) => updateRow(row.id, 'note', e.target.value)} className="field h-9 w-full" placeholder="หมายเหตุ" /></td><td className="px-3"><button onClick={() => setSchedule((rows) => rows.filter((item) => item.id !== row.id))} className="text-red-500"><Trash2 size={16} /></button></td></tr>)}</tbody></table><button onClick={addRound} className="flex w-full items-center justify-center gap-2 border-t border-dashed py-3 text-sm font-medium text-blue-600"><Plus size={16} />เพิ่มรอบติดตามเอง</button></div>
+        <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200"><table className="w-full min-w-[800px] text-[13px]"><thead className="h-11 bg-slate-50"><tr><th className="px-3 text-left">รอบ</th><th className="px-3 text-left">วันที่ติดตาม</th><th className="px-3 text-left">เวลา</th><th className="px-3 text-left">วิธีติดตาม</th><th className="px-3 text-left">หมายเหตุ</th><th /></tr></thead><tbody>{schedule.map((row) => <tr key={row.id} className="h-14 border-t border-slate-100"><td className="px-3"><input value={row.day} onChange={(e) => updateRow(row.id, 'day', e.target.value)} className="field h-9 w-32" /></td><td className="px-3"><input type="date" value={row.date} onChange={(e) => updateRow(row.id, 'date', e.target.value)} className="field h-9" /></td><td className="px-3"><input type="time" value={row.time} onChange={(e) => updateRow(row.id, 'time', e.target.value)} className="field h-9" /></td><td className="px-3"><select value={row.method} onChange={(e) => updateRow(row.id, 'method', e.target.value)} className="field h-9">{configuredMethods.map(method => <option key={method.id} value={method.name}>{method.name}</option>)}</select></td><td className="px-3"><input value={row.note} onChange={(e) => updateRow(row.id, 'note', e.target.value)} className="field h-9 w-full" placeholder="หมายเหตุ" /></td><td className="px-3"><button onClick={() => setSchedule((rows) => rows.filter((item) => item.id !== row.id))} className="text-red-500"><Trash2 size={16} /></button></td></tr>)}</tbody></table><button onClick={addRound} className="flex w-full items-center justify-center gap-2 border-t border-dashed py-3 text-sm font-medium text-blue-600"><Plus size={16} />เพิ่มรอบติดตามเอง</button></div>
         <div className="mt-4 flex items-center justify-between rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700"><span>Template {templateDays} วัน</span><strong>รวม {schedule.length} รอบติดตาม</strong></div>
       </article>
     </section>

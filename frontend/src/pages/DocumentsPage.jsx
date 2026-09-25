@@ -908,11 +908,10 @@ export default function DocumentsPage() {
       <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
         {metrics.map((item) => {
           const Icon = item.icon
-          return <div key={item.label} className="flex min-h-[138px] items-start justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          return <div key={item.label} className="flex min-h-[112px] items-start justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div>
-              <p className={`text-[14px] font-semibold ${item.color}`}>{item.label}</p>
-              <p className={`mt-8 text-[30px] font-bold leading-none ${item.color}`}>{item.count.toLocaleString()}</p>
-              <p className="mt-2 text-[12px] font-medium text-slate-500">รายการ</p>
+              <p className={`text-[15px] font-semibold leading-5 ${item.color}`}>{item.label}</p>
+              <p className={`mt-3 text-[32px] font-semibold leading-9 ${item.color}`}>{item.count.toLocaleString()} <span className="text-[14px]">รายการ</span></p>
             </div>
             <span className={`grid size-10 place-items-center rounded-lg ${item.bg} ${item.color}`}><Icon size={21}/></span>
           </div>

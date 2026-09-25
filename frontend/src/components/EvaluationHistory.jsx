@@ -13,6 +13,7 @@ export default function EvaluationHistory({
   onCardClick = () => {},
   onViewDetail = () => {},
   onEvaluate = () => {},
+  showLegend = true,
 }) {
   return (
     <div className="space-y-4">
@@ -26,6 +27,11 @@ export default function EvaluationHistory({
           const isPending = item.status === 'pending'
           const isInterrupt = item.status === 'interrupt_activity'
           const isActive = activeCardIndex === idx
+          const ssiBadge = item.ssiStatus === 'CONFIRMED_SSI'
+            ? { label: 'ยืนยัน SSI', className: 'border-red-200 bg-red-50 text-red-600' }
+            : item.ssiStatus === 'RECOVERED'
+              ? { label: 'หายจากการติดเชื้อ', className: 'border-emerald-200 bg-emerald-50 text-emerald-600' }
+              : { label: 'สงสัย SSI', className: 'border-orange-200 bg-orange-50 text-orange-500' }
 
           // Card border classes based on active state and type
           const cardBorderClass = isActive
@@ -72,9 +78,14 @@ export default function EvaluationHistory({
                   </span>
                 )}
                 {item.sspiFlag && (
-                  <span className="rounded bg-orange-50 border border-orange-200 px-2.5 py-1 text-[11px] font-semibold text-orange-500 flex items-center gap-1">
-                    <AlertTriangle size={12} className="text-orange-500" />
-                    สงสัย SSI
+                  <span className={`flex items-center gap-1 rounded border px-2.5 py-1 text-[11px] font-semibold ${ssiBadge.className}`}>
+                    <AlertTriangle size={12} />
+                    {ssiBadge.label}
+                  </span>
+                )}
+                {item.recoveryFlag && (
+                  <span className="rounded border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-600">
+                    ประเมินว่าหายจากการติดเชื้อ
                   </span>
                 )}
               </div>
@@ -166,7 +177,7 @@ export default function EvaluationHistory({
         หมายเหตุ วันที่อาจเปลี่ยนแปลงได้ตามการกำหนดของโรงพยาบาล
       </div>
 
-      <div className="mt-4 flex items-center gap-6 text-[12.5px] text-slate-600 font-medium text-left">
+      {showLegend && <div className="mt-4 flex items-center gap-6 text-[12.5px] text-slate-600 font-medium text-left">
         <span className="flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-[#10b981]" />
           ประเมินเสร็จสิ้น
@@ -179,7 +190,7 @@ export default function EvaluationHistory({
           <span className="h-2 w-2 rounded-full bg-red-500" />
           เกินกำหนด
         </span>
-      </div>
+      </div>}
     </div>
   )
 }
@@ -194,6 +205,8 @@ EvaluationHistory.propTypes = {
       nurseName: PropTypes.string.isRequired,
       status: PropTypes.oneOf(['completed', 'pending', 'interrupt_activity']).isRequired,
       sspiFlag: PropTypes.bool,
+      recoveryFlag: PropTypes.bool,
+      ssiStatus: PropTypes.string,
       woundCondition: PropTypes.string,
       riskLevel: PropTypes.string,
       otherSymptoms: PropTypes.string,
@@ -210,4 +223,5 @@ EvaluationHistory.propTypes = {
   onCardClick: PropTypes.func,
   onViewDetail: PropTypes.func,
   onEvaluate: PropTypes.func,
+  showLegend: PropTypes.bool,
 }

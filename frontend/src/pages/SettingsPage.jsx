@@ -1,6 +1,7 @@
 import { Bell, Calendar, CheckCircle2, Database, Edit2, Info, Plus, RefreshCw, Save, Settings, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { api } from '../services/api.js'
+import { normalizeFollowUpMethod } from '../utils/followUpMethods.js'
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState(0)
@@ -18,6 +19,11 @@ export default function SettingsPage() {
     { id: 'smell', name: 'กลิ่นผิดปกติจากแผล', enabled: true },
     { id: 'gap', name: 'แผลแยก', enabled: true },
   ])
+  const [dischargeTreatmentOptions, setDischargeTreatmentOptions] = useState([
+    { id: 'none', name: 'ไม่ได้ไปพบแพทย์', enabled: true },
+    { id: 'metDoctor', name: 'ไปพบแพทย์แล้ว (OPD/IPD)', enabled: true },
+    { id: 'other', name: 'อื่นๆ', enabled: true },
+  ])
 
   // 2. Follow-up Schedule State
   const [schedules, setSchedules] = useState([
@@ -32,9 +38,9 @@ export default function SettingsPage() {
   ])
 
   const [methods, setMethods] = useState([
-    { id: 1, name: 'โทรศัพท์ + Patient Portal' },
-    { id: 2, name: 'ประเมินอาการและรูปแผล' },
-    { id: 3, name: 'แพทย์เรียกพบเข้าตรวจ' },
+    { id: 1, name: 'โทรติดตามผู้ป่วย', enabled: true },
+    { id: 2, name: 'ประเมินจากรูปแผล', enabled: true },
+    { id: 3, name: 'แพทย์นัดตรวจ', enabled: true },
   ])
   const [riskLevels, setRiskLevels] = useState([
     { id: 'low', name: 'ต่ำ', min: 0, max: 24, color: '#10b981' },
@@ -51,16 +57,16 @@ export default function SettingsPage() {
 
   // 4. SMS Alerts Config State
   const [alertTypes, setAlertTypes] = useState({
-    followUpDue: false, appointmentReminder: false, noAssessmentResponse: false,
-    overdue: false, prepAlert: false, others: false
+    followUpDue: true, appointmentReminder: true, noAssessmentResponse: true,
+    overdue: true, prepAlert: true, others: true
   })
 
   const [staffRoles, setStaffRoles] = useState({
-    orStaff: false, physician: false, ipdNurse: false, opdNurse: false, admin: false
+    orStaff: true, physician: true, ipdNurse: true, opdNurse: true, admin: true
   })
 
   const [staffChannels, setStaffChannels] = useState({
-    sms: false, dashboard: false
+    sms: false, dashboard: true
   })
 
   const [staffConditions, setStaffConditions] = useState({
@@ -74,17 +80,17 @@ export default function SettingsPage() {
   const [patientConditions, setPatientConditions] = useState({
     hasPhone: false
   })
-  const [staffRecipientEnabled, setStaffRecipientEnabled] = useState(false)
+  const [staffRecipientEnabled, setStaffRecipientEnabled] = useState(true)
   const [patientRecipientEnabled, setPatientRecipientEnabled] = useState(false)
   const [footerAnnouncement, setFooterAnnouncement] = useState({ date: '', message: '', enabled: false })
 
   // SMS Pre-alert Table Interval Times State
   const [intervals, setIntervals] = useState([
-    { id: 'follow-up-due', type: 'ติดตามผู้ป่วย (Follow-up Due)', desc: 'แจ้งเตือนก่อนถึงวันติดตาม', val1: '3 วัน', val2: '1 วัน', val3: '4 ชั่วโมง', val4: '1 ชั่วโมง', enabled: false },
-    { id: 'appointment', type: 'นัดหมายติดตาม (Appointment)', desc: 'แจ้งเตือนก่อนวันนัดหมาย', val1: '3 วัน', val2: '1 วัน', val3: '4 ชั่วโมง', val4: '1 ชั่วโมง', enabled: false },
-    { id: 'no-assessment', type: 'ผู้ป่วยยังไม่ตอบแบบประเมิน', desc: 'แจ้งเตือนซ้ำเมื่อผู้ป่วยยังไม่ตอบ', val1: '2 วัน', val2: '1 วัน', val3: '', val4: '', enabled: false },
-    { id: 'overdue', type: 'ติดตามเกินกำหนด (Overdue)', desc: 'แจ้งเตือนเมื่อเกินกำหนด', val1: '1 วัน', val2: '3 วัน', val3: '7 วัน', val4: '', enabled: false },
-    { id: 'custom', type: 'อื่นๆ (กำหนดเอง)', desc: 'กำหนดช่วงเวลาเอง', val1: 'เลือกช่วงเวลา', val2: '', val3: '', val4: '', enabled: false },
+    { id: 'follow-up-due', type: 'ติดตามผู้ป่วย (Follow-up Due)', desc: 'แจ้งเตือนก่อนถึงวันติดตาม', val1: '3 วัน', val2: '1 วัน', val3: '4 ชั่วโมง', val4: '1 ชั่วโมง', enabled: true },
+    { id: 'appointment', type: 'นัดหมายติดตาม (Appointment)', desc: 'แจ้งเตือนก่อนวันนัดหมาย', val1: '3 วัน', val2: '1 วัน', val3: '4 ชั่วโมง', val4: '1 ชั่วโมง', enabled: true },
+    { id: 'no-assessment', type: 'ผู้ป่วยยังไม่ตอบแบบประเมิน', desc: 'แจ้งเตือนซ้ำเมื่อผู้ป่วยยังไม่ตอบ', val1: '2 วัน', val2: '1 วัน', val3: '', val4: '', enabled: true },
+    { id: 'overdue', type: 'ติดตามเกินกำหนด (Overdue)', desc: 'แจ้งเตือนเมื่อเกินกำหนด', val1: '1 วัน', val2: '3 วัน', val3: '7 วัน', val4: '', enabled: true },
+    { id: 'custom', type: 'อื่นๆ (กำหนดเอง)', desc: 'กำหนดช่วงเวลาเอง', val1: '1 วัน', val2: '', val3: '', val4: '', enabled: true },
   ])
 
   // Notification Template State
@@ -94,20 +100,21 @@ export default function SettingsPage() {
   useEffect(() => {
     api.getSettings().then((saved) => {
       if (saved.ssiCriteria) setSsiCriteria(saved.ssiCriteria)
+      if (saved.dischargeTreatmentOptions) setDischargeTreatmentOptions(saved.dischargeTreatmentOptions)
       if (saved.schedules) setSchedules(saved.schedules)
-      if (saved.methods) setMethods(saved.methods)
+      if (saved.methods) setMethods(saved.methods.map(normalizeFollowUpMethod))
       if (Array.isArray(saved.riskLevels) && saved.riskLevels.length) setRiskLevels(saved.riskLevels.map(level => level.id === 'moderate' && Number(level.max) === 49 ? { ...level, max: 50 } : level.id === 'high' && Number(level.min) === 50 ? { ...level, min: 51 } : level))
       if (saved.sync) { setSyncFreq(saved.sync.freq); setSyncStart(saved.sync.start); setSyncEnd(saved.sync.end); setSyncEnabled(saved.sync.enabled) }
       if (saved.notificationPreferencesConfigured === true) {
-        if (saved.alertTypes) setAlertTypes(saved.alertTypes)
-        if (saved.staffRoles) setStaffRoles({ ...saved.staffRoles, physician: false })
-        if (saved.staffChannels) setStaffChannels(saved.staffChannels)
+        setAlertTypes({ followUpDue: true, appointmentReminder: true, noAssessmentResponse: true, overdue: true, prepAlert: true, others: true })
+        setStaffRoles({ orStaff: true, physician: true, ipdNurse: true, opdNurse: true, admin: true })
+        setStaffChannels({ sms: false, dashboard: true })
         if (saved.staffConditions) setStaffConditions(saved.staffConditions)
         if (saved.patientChannels) setPatientChannels(saved.patientChannels)
         if (saved.patientConditions) setPatientConditions(saved.patientConditions)
-        if (saved.intervals) setIntervals(saved.intervals)
-        setStaffRecipientEnabled(saved.staffRecipientEnabled === true)
-        setPatientRecipientEnabled(saved.patientRecipientEnabled === true)
+        if (saved.intervals) setIntervals(saved.intervals.map(item => ({ ...item, enabled: true })))
+        setStaffRecipientEnabled(true)
+        setPatientRecipientEnabled(false)
       }
       if (saved.notificationTemplate) { setSelectedTemplate(saved.notificationTemplate.name); setTemplateText(saved.notificationTemplate.text) }
       if (saved.footerAnnouncement) setFooterAnnouncement({ date: '', message: '', enabled: false, ...saved.footerAnnouncement })
@@ -142,6 +149,15 @@ export default function SettingsPage() {
     setEditor({ type: 'symptom', id, title: 'แก้ไขอาการ/อาการแสดง', values: { name: current.name } })
   }
 
+  const addDischargeTreatment = () => {
+    setEditor({ type: 'dischargeTreatment', title: 'เพิ่มตัวเลือกการรักษาหลังจำหน่าย', values: { name: '' } })
+  }
+
+  const editDischargeTreatment = (id) => {
+    const current = dischargeTreatmentOptions.find(item => item.id === id)
+    setEditor({ type: 'dischargeTreatment', id, title: 'แก้ไขตัวเลือกการรักษาหลังจำหน่าย', values: { name: current.name } })
+  }
+
   const addScheduleDay = () => {
     setEditor({ type: 'schedule', title: 'เพิ่มวันติดตาม', values: { day: '', desc: '' } })
   }
@@ -173,10 +189,11 @@ export default function SettingsPage() {
   const saveEditor = () => {
     const { type, id, values } = editor
     if (type === 'symptom' && values.name.trim()) setSsiCriteria(items => id ? items.map(item => item.id === id ? { ...item, name: values.name.trim() } : item) : [...items, { id: `symptom-${Date.now()}`, name: values.name.trim(), enabled: true }])
+    if (type === 'dischargeTreatment' && values.name.trim()) setDischargeTreatmentOptions(items => id ? items.map(item => item.id === id ? { ...item, name: values.name.trim() } : item) : [...items, { id: `treatment-${Date.now()}`, name: values.name.trim(), enabled: true }])
     if (type === 'schedule' && values.day.trim() && values.desc.trim()) setSchedules(items => id ? items.map(item => item.id === id ? { ...item, ...values } : item) : [...items, { id: Date.now(), order: String(items.length + 1), ...values, enabled: true }])
-    if (type === 'method' && values.name.trim()) setMethods(items => id ? items.map(item => item.id === id ? { ...item, name: values.name.trim() } : item) : [...items, { id: Date.now(), name: values.name.trim() }])
+    if (type === 'method' && values.name.trim()) setMethods(items => id ? items.map(item => item.id === id ? { ...item, name: values.name.trim() } : item) : [...items, { id: Date.now(), name: values.name.trim(), enabled: true }])
     if (type === 'interval' && values.type.trim() && values.desc.trim() && values.val1.trim()) setIntervals(items => id ? items.map(item => item.id === id ? { ...item, ...values } : item) : [...items, { id: Date.now(), ...values, val2: '', val3: '', val4: '', enabled: true }])
-    else if ((type === 'symptom' && !values.name.trim()) || (type === 'schedule' && (!values.day.trim() || !values.desc.trim())) || (type === 'method' && !values.name.trim()) || (type === 'interval' && (!values.type.trim() || !values.desc.trim() || !values.val1.trim()))) return
+    else if ((type === 'symptom' && !values.name.trim()) || (type === 'dischargeTreatment' && !values.name.trim()) || (type === 'schedule' && (!values.day.trim() || !values.desc.trim())) || (type === 'method' && !values.name.trim()) || (type === 'interval' && (!values.type.trim() || !values.desc.trim() || !values.val1.trim()))) return
     setEditor(null)
   }
 
@@ -205,7 +222,7 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     try {
-      await api.saveSettings({ ssiCriteria, riskLevels, schedules, methods, sync: { freq: syncFreq, start: syncStart, end: syncEnd, enabled: syncEnabled }, notificationPreferencesConfigured: true, alertTypes, staffRoles: { ...staffRoles, physician: false }, staffChannels, staffConditions, patientChannels, patientConditions, staffRecipientEnabled, patientRecipientEnabled, intervals, notificationTemplate: { name: selectedTemplate, text: templateText }, footerAnnouncement })
+      await api.saveSettings({ ssiCriteria, dischargeTreatmentOptions, riskLevels, schedules, methods, sync: { freq: syncFreq, start: syncStart, end: syncEnd, enabled: syncEnabled }, notificationPreferencesConfigured: true, alertTypes, staffRoles, staffChannels: { sms: false, dashboard: true }, staffConditions, patientChannels: { sms: false }, patientConditions, staffRecipientEnabled: true, patientRecipientEnabled: false, intervals, notificationTemplate: { name: selectedTemplate, text: templateText }, footerAnnouncement })
       window.dispatchEvent(new Event('footer-announcement-updated'))
       setNotice({ type: 'success', text: 'บันทึกการตั้งค่าเรียบร้อยแล้ว' })
     } catch (error) { setNotice({ type: 'error', text: error.message }) }
@@ -301,6 +318,15 @@ export default function SettingsPage() {
                   >
                     <Plus size={16} /> เพิ่มอาการ/อาการแสดง
                   </button>
+                </div>
+
+                <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm text-left">
+                  <h3 className="mb-1 text-[17px] font-bold text-slate-800">การมารับการรักษาหลังจำหน่าย</h3>
+                  <p className="mb-4 text-[12px] text-slate-500">กำหนดตัวเลือกที่แสดงในแบบประเมิน SSI</p>
+                  <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200">
+                    {dischargeTreatmentOptions.map(option => <div key={option.id} className="flex items-center justify-between px-4 py-3.5 text-[14px] font-medium text-slate-700"><span>{option.name}</span><div className="flex items-center gap-3"><button type="button" onClick={() => setDischargeTreatmentOptions(items => items.map(item => item.id === option.id ? { ...item, enabled: !item.enabled } : item))} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${option.enabled ? 'bg-emerald-500' : 'bg-slate-200'}`} aria-label={`${option.enabled ? 'ปิด' : 'เปิด'} ${option.name}`}><span className={`inline-block size-4 rounded-full bg-white transition-transform ${option.enabled ? 'translate-x-6' : 'translate-x-1'}`} /></button><button type="button" onClick={() => editDischargeTreatment(option.id)} className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50" aria-label={`แก้ไข ${option.name}`}><Edit2 size={16} /></button><button type="button" onClick={() => setDischargeTreatmentOptions(items => items.filter(item => item.id !== option.id))} className="rounded-lg p-1.5 text-red-500 hover:bg-red-50" aria-label={`ลบ ${option.name}`}><Trash2 size={16} /></button></div></div>)}
+                  </div>
+                  <button type="button" onClick={addDischargeTreatment} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 py-3 text-[14px] font-semibold text-slate-500 transition hover:bg-slate-50"><Plus size={16} /> เพิ่มตัวเลือก</button>
                 </div>
 
                 {/* Risk Level Setting Section */}
@@ -413,6 +439,7 @@ export default function SettingsPage() {
                           <span className="font-semibold text-slate-800">{method.name}</span>
                         </div>
                         <div className="flex items-center gap-3 text-slate-400">
+                          <button type="button" onClick={() => setMethods(items => items.map(item => item.id === method.id ? { ...item, enabled: item.enabled === false } : item))} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${method.enabled !== false ? 'bg-emerald-500' : 'bg-slate-200'}`} aria-label={`${method.enabled !== false ? 'ปิด' : 'เปิด'} ${method.name}`}><span className={`inline-block size-4 rounded-full bg-white transition-transform ${method.enabled !== false ? 'translate-x-6' : 'translate-x-1'}`} /></button>
                           <button onClick={() => editMethod(method.id)} className="hover:text-blue-600 transition">
                             <Edit2 size={15} className="text-blue-600 hover:text-blue-800" />
                           </button>
@@ -650,7 +677,7 @@ export default function SettingsPage() {
                         notifSubTab === 'template' ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-slate-400'
                       }`}
                     >
-                      จัดการ Template แจ้งเตือน
+                      Template SMS (ปิดใช้งาน)
                     </button>
                   </div>
                 </div>
@@ -660,8 +687,8 @@ export default function SettingsPage() {
                     <section className="rounded-2xl border border-black/10 bg-white p-7 shadow-sm">
                     {/* Header Details */}
                     <div>
-                      <h3 className="text-[20px] font-semibold text-slate-900">เปิดใช้งานการแจ้งเตือน SMS ล่วงหน้า</h3>
-                      <p className="mt-2 text-[14px] text-slate-500">เปิด/ปิด การส่ง SMS ล่วงหน้าก่อนถึงกำหนดนัดติดตามหรือเหตุการณ์สำคัญ</p>
+                      <h3 className="text-[20px] font-semibold text-slate-900">การแจ้งเตือนบน Dashboard</h3>
+                      <p className="mt-2 text-[14px] text-slate-500">แจ้งเตือนเหตุการณ์สำคัญและกำหนดติดตามให้เจ้าหน้าที่ผ่านระบบ</p>
                     </div>
 
                     {/* Alert Types Checkboxes */}
@@ -694,7 +721,7 @@ export default function SettingsPage() {
                     <div className="grid gap-6 md:grid-cols-2">
                       {/* Staff Card */}
                       <div className="min-h-[420px] rounded-2xl border border-black/10 bg-white p-7 shadow-sm space-y-6">
-                        <h4 className="text-[20px] font-semibold text-slate-900">เปิดใช้งานการแจ้งเตือน SMS ล่วงหน้า</h4>
+                        <h4 className="text-[20px] font-semibold text-slate-900">ผู้รับการแจ้งเตือน</h4>
                         
                         <div className="space-y-3">
                           <p className="text-[15px] font-semibold text-slate-800">ผู้รับ (เจ้าหน้าที่)</p>
@@ -706,6 +733,7 @@ export default function SettingsPage() {
                           <div className="flex flex-wrap gap-3 pl-6">
                             {[
                               { key: 'orStaff', label: 'OR Staff' },
+                              { key: 'physician', label: 'แพทย์' },
                               { key: 'ipdNurse', label: 'IPD Nurse' },
                               { key: 'opdNurse', label: 'OPD Nurse' },
                               { key: 'admin', label: 'Admin' }
@@ -726,14 +754,14 @@ export default function SettingsPage() {
                         <div className="space-y-2 border-t border-slate-50 pt-3">
                           <p className="text-[15px] font-semibold text-slate-800">ช่องทาง</p>
                           <div className="flex gap-4">
-                            <label className="flex items-center gap-2 text-[14px] font-medium text-slate-700 cursor-pointer">
+                            <label className="flex items-center gap-2 text-[14px] font-medium text-slate-400">
                               <input
                                 type="checkbox"
-                                checked={staffChannels.sms}
-                                onChange={(e) => setStaffChannels({ ...staffChannels, sms: e.target.checked })}
+                                checked={false}
+                                disabled
                                 className="h-4 w-4 rounded text-[#175beb] accent-[#175beb]"
                               />
-                              SMS
+                              SMS (ปิดใช้งาน)
                             </label>
                             <label className="flex items-center gap-2 text-[14px] font-medium text-slate-700 cursor-pointer">
                               <input
@@ -773,13 +801,13 @@ export default function SettingsPage() {
                       </div>
 
                       {/* Patient Card */}
-                      <div className="min-h-[420px] rounded-2xl border border-black/10 bg-white p-7 shadow-sm space-y-6">
-                        <h4 className="text-[20px] font-semibold text-slate-900">เปิดใช้งานการแจ้งเตือน SMS ล่วงหน้า</h4>
+                      <div className="min-h-[420px] rounded-2xl border border-black/10 bg-slate-50 p-7 opacity-70 shadow-sm space-y-6">
+                        <h4 className="text-[20px] font-semibold text-slate-700">การแจ้งเตือน SMS <span className="ml-2 rounded-md bg-slate-200 px-2 py-1 text-[11px] text-slate-500">ปิดใช้งาน</span></h4>
                         
                         <div className="space-y-3">
                           <p className="text-[15px] font-semibold text-slate-800">ผู้รับ (คนไข้)</p>
                           <label className="flex items-center gap-2 text-[14px] font-medium text-slate-700 cursor-pointer">
-                            <input type="checkbox" checked={patientRecipientEnabled} onChange={event => setPatientRecipientEnabled(event.target.checked)} className="h-5 w-5 rounded border-slate-300 text-[#175beb] accent-[#175beb]" />
+                            <input type="checkbox" checked={false} disabled className="h-5 w-5 rounded border-slate-300" />
                             ผู้ป่วย (เบอร์โทรหลัก)
                           </label>
                         </div>
@@ -789,8 +817,8 @@ export default function SettingsPage() {
                           <label className="flex items-center gap-2 text-[14px] font-medium text-slate-700 cursor-pointer">
                             <input
                               type="checkbox"
-                              checked={patientChannels.sms}
-                              onChange={(e) => setPatientChannels({ ...patientChannels, sms: e.target.checked })}
+                              checked={false}
+                              disabled
                               className="h-4 w-4 rounded text-[#175beb] accent-[#175beb]"
                             />
                             SMS
@@ -802,8 +830,8 @@ export default function SettingsPage() {
                           <label className="flex items-center gap-2 text-[14px] font-medium text-slate-700 cursor-pointer">
                             <input
                               type="checkbox"
-                              checked={patientConditions.hasPhone}
-                              onChange={(e) => setPatientConditions({ ...patientConditions, hasPhone: e.target.checked })}
+                              checked={false}
+                              disabled
                               className="h-4 w-4 rounded text-[#175beb] accent-[#175beb]"
                             />
                             ส่งเฉพาะผู้ที่มีเบอร์โทร
@@ -911,8 +939,9 @@ export default function SettingsPage() {
                         เลือก Template
                         <select
                           value={selectedTemplate}
+                          disabled
                           onChange={(e) => setSelectedTemplate(e.target.value)}
-                          className="field mt-2 font-semibold"
+                          className="field mt-2 cursor-not-allowed bg-slate-100 font-semibold opacity-70"
                         >
                           <option value="">เลือก Template</option>
                           <option value="Follow-up">ถึงกำหนดติดตาม (Follow-up)</option>
@@ -927,8 +956,9 @@ export default function SettingsPage() {
                         <textarea
                           rows={11}
                           value={templateText}
+                          disabled
                           onChange={(e) => setTemplateText(e.target.value)}
-                          className="w-full mt-2 rounded-xl border border-slate-200 p-4 text-[13px] text-slate-600 font-semibold leading-6 focus:border-[#175beb] outline-none"
+                          className="mt-2 w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 p-4 text-[13px] font-semibold leading-6 text-slate-500 opacity-70 outline-none"
                         />
                       </label>
 
@@ -974,6 +1004,7 @@ export default function SettingsPage() {
           </div>
           <div className="space-y-4 px-6 py-5">
             {editor.type === 'symptom' && <label className="block text-sm font-medium text-slate-700">อาการ/อาการแสดง <span className="text-red-500">*</span><input autoFocus className="field mt-2" value={editor.values.name} onChange={event => updateEditor('name', event.target.value)} placeholder="กรอกชื่ออาการ" /></label>}
+            {editor.type === 'dischargeTreatment' && <label className="block text-sm font-medium text-slate-700">ตัวเลือกการรักษาหลังจำหน่าย <span className="text-red-500">*</span><input autoFocus className="field mt-2" value={editor.values.name} onChange={event => updateEditor('name', event.target.value)} placeholder="กรอกชื่อตัวเลือก" /></label>}
             {editor.type === 'schedule' && <><label className="block text-sm font-medium text-slate-700">วันที่ติดตาม <span className="text-red-500">*</span><input autoFocus className="field mt-2" value={editor.values.day} onChange={event => updateEditor('day', event.target.value)} placeholder="เช่น Day 45" /></label><label className="block text-sm font-medium text-slate-700">คำอธิบาย <span className="text-red-500">*</span><textarea className="field mt-2 min-h-24" value={editor.values.desc} onChange={event => updateEditor('desc', event.target.value)} placeholder="รายละเอียดการติดตาม" /></label></>}
             {editor.type === 'method' && <label className="block text-sm font-medium text-slate-700">วิธีติดตาม <span className="text-red-500">*</span><input autoFocus className="field mt-2" value={editor.values.name} onChange={event => updateEditor('name', event.target.value)} placeholder="เช่น โทรศัพท์ + ส่งรูปแผล" /></label>}
             {editor.type === 'interval' && <><label className="block text-sm font-medium text-slate-700">ประเภทการแจ้งเตือน <span className="text-red-500">*</span><input autoFocus className="field mt-2" value={editor.values.type} onChange={event => updateEditor('type', event.target.value)} /></label><label className="block text-sm font-medium text-slate-700">คำอธิบาย <span className="text-red-500">*</span><input className="field mt-2" value={editor.values.desc} onChange={event => updateEditor('desc', event.target.value)} /></label><label className="block text-sm font-medium text-slate-700">ช่วงเวลาล่วงหน้า <span className="text-red-500">*</span><input className="field mt-2" value={editor.values.val1} onChange={event => updateEditor('val1', event.target.value)} placeholder="เช่น 1 วัน หรือ 4 ชั่วโมง" /></label></>}

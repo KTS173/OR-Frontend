@@ -32,9 +32,9 @@ export default function SettingsPage() {
   ])
 
   const [methods, setMethods] = useState([
-    { id: 1, name: 'โทรศัพท์ + Patient Portal' },
-    { id: 2, name: 'ประเมินอาการและรูปแผล' },
-    { id: 3, name: 'แพทย์เรียกพบเข้าตรวจ' },
+    { id: 1, name: 'โทรติดตามผู้ป่วย' },
+    { id: 2, name: 'ประเมินจากรูปแผล' },
+    { id: 3, name: 'แพทย์นัดตรวจ' },
   ])
 
   // 3. HIS Sync Settings State

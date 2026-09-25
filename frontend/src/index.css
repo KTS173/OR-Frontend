@@ -8,11 +8,11 @@
 @layer base {
   :root {
     --or-sidebar: 280px;
-    --or-page-gap: 24px;
+    --or-page-gap: 20px;
     --or-content-gap: 16px;
     --or-header-height: 64px;
-    --or-header-padding: 32px;
-    --or-card-radius: 14px;
+    --or-header-padding: 24px;
+    --or-card-radius: 12px;
     --or-border: #dfe4ea;
     --or-navy: #022552;
     --or-blue: #175beb;
@@ -58,6 +58,13 @@
     min-width: 320px;
     min-height: 100vh;
     margin: 0;
+  }
+
+  body {
+    color: var(--or-text);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
   }
 
   button,
@@ -375,7 +382,7 @@ table :is(thead, tbody, tfoot, tr)[class*="border-slate-100"] {
 
 @layer components {
   .card {
-    @apply rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/30;
+    @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/30;
   }
 
   .card-title {
@@ -383,35 +390,35 @@ table :is(thead, tbody, tfoot, tr)[class*="border-slate-100"] {
   }
 
   .card-title h2 {
-    @apply text-sm font-semibold text-slate-800;
+    @apply text-base font-semibold text-slate-800;
   }
 
   .card-title p {
-    @apply mt-0.5 text-[10px] text-slate-400;
+    @apply mt-1 text-xs text-slate-500;
   }
 
   .field {
-    @apply h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600 outline-none transition placeholder:text-slate-100 focus:border-blue-400 focus:ring-2 focus:ring-blue-100;
+    @apply h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100;
   }
 
   .form-label {
-    @apply block text-xs font-medium text-slate-600;
+    @apply block text-[13px] font-medium text-slate-600;
   }
 
   .btn-primary {
-    @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700;
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700;
   }
 
   .btn-secondary {
-    @apply inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50;
+    @apply inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-50;
   }
 
   .table-cell {
-    @apply px-3.5 py-2;
+    @apply px-4 py-3;
   }
 
   .page-button {
-    @apply grid h-7 min-w-7 place-items-center rounded-md border border-slate-200 px-1 text-slate-500 hover:bg-slate-50;
+    @apply grid h-8 min-w-8 place-items-center rounded-lg border border-slate-200 px-1 text-sm text-slate-500 hover:bg-slate-50;
   }
 }
 
@@ -978,6 +985,23 @@ table :is(thead, tbody, tfoot, tr)[class*="border-slate-100"] {
   cursor: pointer;
 }
 
+/* Follow-up detail color hierarchy. Semantic status colors stay on their
+   explicit badges and indicators; headings and supporting copy use one scale. */
+.follow-up-case-page :is(section, article, .sub-info-card) > :is(h2, h3, h4):first-child,
+.follow-up-case-page :is(section, article, .sub-info-card) > header :is(h2, h3, h4),
+.follow-up-case-page .sub-info-card-title,
+.follow-up-case-page .block-section-title {
+  color: #002d73 !important;
+}
+
+.follow-up-case-page :is(label, thead th) {
+  color: #475569;
+}
+
+.follow-up-case-page tbody td {
+  color: #64748b;
+}
+
 .info-table {
   width: 100%;
   border-collapse: collapse;
@@ -1119,6 +1143,42 @@ table :is(thead, tbody, tfoot, tr)[class*="border-slate-100"] {
   grid-template-columns: 1fr 1fr;
   gap: 24px;
   margin-bottom: 24px;
+}
+
+.evaluation-left-column,
+.evaluation-right-column {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (min-width: 768px) {
+  .evaluation-form-grid {
+    grid-template-rows: auto auto auto;
+    align-items: stretch;
+    column-gap: 20px;
+    row-gap: 20px;
+  }
+
+  .evaluation-left-column,
+  .evaluation-right-column {
+    display: contents;
+  }
+
+  .evaluation-followup-card { grid-column: 1; grid-row: 1; }
+  .evaluation-symptoms-card { grid-column: 2; grid-row: 1; }
+  .evaluation-documents-card { grid-column: 1; grid-row: 2; }
+  .evaluation-treatment-card { grid-column: 2; grid-row: 2; }
+  .evaluation-images-card { grid-column: 1; grid-row: 3; }
+  .evaluation-result-card { grid-column: 2; grid-row: 3; }
+}
+
+@media (max-width: 767px) {
+  .evaluation-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
 }
 
 .radio-group-horizontal {
@@ -1383,6 +1443,33 @@ table :is(thead, tbody, tfoot, tr)[class*="border-slate-100"] {
 .action-bar-right {
   display: flex;
   gap: 12px;
+}
+
+.out-of-round-modal .evaluation-form-grid,
+.out-of-round-modal .evaluation-form-grid > div {
+  min-width: 0;
+}
+
+.out-of-round-modal .form-action-bar {
+  position: sticky;
+  bottom: -20px;
+  z-index: 10;
+  margin: 8px -20px -20px;
+  border-radius: 0;
+  padding: 14px 20px;
+  box-shadow: 0 -6px 18px rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 767px) {
+  .out-of-round-modal .evaluation-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .out-of-round-modal .form-action-bar,
+  .out-of-round-modal .action-bar-right {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 .btn-outlined-primary {
@@ -2436,5 +2523,156 @@ table :is(thead, tbody, tfoot, tr)[class*="border-slate-100"] {
   50% {
     transform: scale(1.1);
     box-shadow: 0 0 0 4px rgba(239, 68, 68, 0);
+  }
+}
+
+/* Shared visual rhythm for application pages and dialogs */
+.or-page {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.or-page :is(h1, h2, h3, h4, p) {
+  letter-spacing: 0;
+}
+
+.or-page h1 {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+}
+
+.or-page h2 {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.or-page h3 {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.or-page h4 {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.or-page strong {
+  font-weight: 500;
+}
+
+.or-page :is(input:not([type="checkbox"]):not([type="radio"]), select) {
+  min-height: 40px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.or-page textarea {
+  min-height: 88px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.or-page :is(th, [role="columnheader"]) {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.or-page :is(td, [role="cell"]) {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.or-page :is(section, article).rounded-xl {
+  border-radius: 12px;
+}
+
+.or-page [role="dialog"],
+.or-page .fixed.inset-0 > section,
+.or-page .fixed.inset-0 > div {
+  max-height: calc(100dvh - 32px);
+  border-radius: 12px;
+}
+
+.or-page [role="dialog"] > :is(header, footer),
+.or-page .fixed.inset-0 > section > :is(header, footer) {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.success-modal,
+.submit-doctor-modal {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.btn-outlined-primary,
+.btn-filled-primary,
+.btn-filled-secondary {
+  min-height: 40px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  justify-content: center;
+}
+
+.form-input,
+.form-select {
+  min-height: 40px;
+  padding: 9px 12px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.data-table th {
+  padding: 12px 16px;
+  font-size: 13px;
+}
+
+.data-table td {
+  padding: 14px 16px;
+  font-size: 14px;
+}
+
+@media (max-width: 700px) {
+  .or-page h1 {
+    font-size: 21px;
+    line-height: 28px;
+  }
+
+  .or-page h2 {
+    font-size: 17px;
+    line-height: 26px;
+  }
+
+  .or-page .fixed.inset-0 {
+    padding: 12px;
+  }
+
+  .or-page [role="dialog"],
+  .or-page .fixed.inset-0 > section,
+  .or-page .fixed.inset-0 > div {
+    max-height: calc(100dvh - 24px);
+  }
+
+  .or-page [role="dialog"] > :is(header, footer),
+  .or-page .fixed.inset-0 > section > :is(header, footer) {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .success-modal,
+  .submit-doctor-modal {
+    width: calc(100vw - 24px);
+    padding: 20px;
   }
 }

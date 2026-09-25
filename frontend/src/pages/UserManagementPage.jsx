@@ -118,11 +118,10 @@ export default function UserManagementPage() {
       {/* Top 4 summaries cards */}
       <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {/* Total Users */}
-        <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+        <div className="flex min-h-[112px] items-start justify-between rounded-xl border border-black/10 bg-white p-4 shadow-sm">
           <div>
-            <p className="text-xs font-semibold text-[#175beb] uppercase">ผู้ใช้งานทั้งหมด</p>
-            <p className="mt-2 text-2xl font-bold text-[#175beb]">{usersList.length} <span className="text-xs font-medium text-slate-400">คน</span></p>
-            <p className="mt-1 text-slate-400 text-xs font-bold">ทั้งหมดในระบบ</p>
+            <p className="text-[15px] font-semibold leading-5 text-[#175beb]">ผู้ใช้งานทั้งหมด</p>
+            <p className="mt-3 text-[32px] font-semibold leading-9 text-[#175beb]">{usersList.length} <span className="text-[14px]">คน</span></p>
           </div>
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-[#175beb]">
             <Users size={20} />
@@ -130,11 +129,10 @@ export default function UserManagementPage() {
         </div>
 
         {/* Active Users */}
-        <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+        <div className="flex min-h-[112px] items-start justify-between rounded-xl border border-black/10 bg-white p-4 shadow-sm">
           <div>
-            <p className="text-xs font-semibold text-[#10b981] uppercase">ใช้งานอยู่</p>
-            <p className="mt-2 text-2xl font-bold text-[#10b981]">{usersList.filter(user => user.status === 'ใช้งานอยู่').length} <span className="text-xs font-medium text-slate-400">คน</span></p>
-            <p className="mt-1 text-emerald-500 text-xs font-bold">คิดเป็น {usersList.length ? ((usersList.filter(user => user.status === 'ใช้งานอยู่').length / usersList.length) * 100).toFixed(1) : '0.0'}%</p>
+            <p className="text-[15px] font-semibold leading-5 text-[#10b981]">ใช้งานอยู่</p>
+            <p className="mt-3 text-[32px] font-semibold leading-9 text-[#10b981]">{usersList.filter(user => user.status === 'ใช้งานอยู่').length} <span className="text-[14px]">คน</span></p>
           </div>
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-[#10b981]">
             <UserCheck size={20} />
@@ -142,11 +140,10 @@ export default function UserManagementPage() {
         </div>
 
         {/* Inactive Users */}
-        <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+        <div className="flex min-h-[112px] items-start justify-between rounded-xl border border-black/10 bg-white p-4 shadow-sm">
           <div>
-            <p className="text-xs font-semibold text-[#f59e0b] uppercase">ถูกปิดใช้งาน</p>
-            <p className="mt-2 text-2xl font-bold text-[#f59e0b]">{usersList.filter(user => user.status !== 'ใช้งานอยู่').length} <span className="text-xs font-medium text-slate-400">คน</span></p>
-            <p className="mt-1 text-orange-500 text-xs font-bold">คิดเป็น {usersList.length ? ((usersList.filter(user => user.status !== 'ใช้งานอยู่').length / usersList.length) * 100).toFixed(1) : '0.0'}%</p>
+            <p className="text-[15px] font-semibold leading-5 text-[#f59e0b]">ถูกปิดใช้งาน</p>
+            <p className="mt-3 text-[32px] font-semibold leading-9 text-[#f59e0b]">{usersList.filter(user => user.status !== 'ใช้งานอยู่').length} <span className="text-[14px]">คน</span></p>
           </div>
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-[#f59e0b]">
             <UserMinus size={20} />
@@ -154,11 +151,10 @@ export default function UserManagementPage() {
         </div>
 
         {/* Logged in today */}
-        <div className="rounded-xl border border-black/10 bg-white p-5 shadow-sm flex items-center justify-between">
+        <div className="flex min-h-[112px] items-start justify-between rounded-xl border border-black/10 bg-white p-4 shadow-sm">
           <div>
-            <p className="text-xs font-semibold text-purple-600 uppercase">เข้าใช้งานวันนี้</p>
-            <p className="mt-2 text-2xl font-bold text-purple-600">{loggedInToday} <span className="text-xs font-medium text-slate-400">คน</span></p>
-            <p className="mt-1 text-slate-400 text-xs font-bold">อ้างอิงจากประวัติเข้าสู่ระบบจริง</p>
+            <p className="text-[15px] font-semibold leading-5 text-purple-600">เข้าใช้งานวันนี้</p>
+            <p className="mt-3 text-[32px] font-semibold leading-9 text-purple-600">{loggedInToday} <span className="text-[14px]">คน</span></p>
           </div>
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-purple-50 text-purple-600">
             <LogIn size={20} />

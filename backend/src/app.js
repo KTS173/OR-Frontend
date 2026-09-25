@@ -4,16 +4,17 @@ const { query, pool } = require('./db');
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '7mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 const columns = [
   'request_id', 'event_type', 'source_system', 'hn', 'first_name', 'last_name',
   'date_of_birth', 'age', 'sex', 'height_cm', 'weight_kg', 'bmi', 'episode_no',
-  'episode_date', 'ward_name', 'bed_no', 'operation_no', 'surgeon', 'second_surgeon',
+  'episode_date', 'ward_name', 'bed_no', 'operation_no', 'surgeon', 'second_surgeon', 'third_surgeon',
+  'anesthesiologist', 'anesthesia_type', 'special_equipment', 'scrub_nurse', 'circulating_nurse', 'anesthesia_nurse',
   'operation_department', 'operation_location', 'operating_room', 'urgency',
   'operation_type', 'preoperative_diagnosis', 'procedure_name', 'procedure_free_text',
   'primary_body_site', 'laterality', 'secondary_operation', 'start_at', 'end_at',
-  'duration_minutes', 'outcome', 'report_template', 'status', 'patient_type'
+  'duration_minutes', 'outcome', 'report_template', 'status', 'patient_type', 'implant_present', 'implant'
 ];
 
 const emptyToNull = (value) => value === '' || value === undefined ? null : value;
@@ -69,6 +70,13 @@ const valuesFrom = (body) => {
     operation.operationNo,
     operation.surgeon,
     operation.secondSurgeon,
+    operation.thirdSurgeon,
+    operation.anesthesiologist,
+    operation.anesthesiaType,
+    operation.specialEquipment,
+    operation.scrubNurse,
+    operation.circulatingNurse,
+    operation.anesthesiaNurse,
     operation.department,
     operation.location,
     operation.operatingRoom,
@@ -86,9 +94,11 @@ const valuesFrom = (body) => {
     operation.outcome,
     operation.reportTemplate,
     operation.status,
-    visit.patientType
+    visit.patientType,
+    operation.implantPresent,
+    operation.implant
   ].map((value, index) => {
-    const textColumns = new Set([3, 12, 16, 25]);
+    const textColumns = new Set([3, 12, 16, 32]);
     return textColumns.has(index) && (value === '' || value === undefined) ? '' : emptyToNull(value);
   });
 };
@@ -159,6 +169,69 @@ app.post('/api/operations', async (req, res, next) => {
   }
 });
 
+app.post('/api/operations/bulk', async (req, res, next) => {
+  const items = Array.isArray(req.body?.operations) ? req.body.operations : [];
+  if (!items.length || items.length > 3) {
+    return res.status(400).json({ success: false, message: 'Operations must contain between 1 and 3 items' });
+  }
+
+  const requiredFields = (body) => [
+    ['patient.hn', body.patient?.hn],
+    ['visit.episodeNo', body.visit?.episodeNo],
+    ['operation.operationNo', body.operation?.operationNo],
+    ['operation.procedureName', body.operation?.procedureName]
+  ].filter(([, value]) => typeof value !== 'string' || value.trim() === '').map(([field]) => field);
+  const invalidItem = items.map(requiredFields).findIndex((fields) => fields.length > 0);
+  if (invalidItem >= 0) {
+    return res.status(400).json({ success: false, message: `Operation ${invalidItem + 1} is missing required fields`, fields: requiredFields(items[invalidItem]) });
+  }
+
+  const operationNumbers = items.map((item) => item.operation.operationNo.trim());
+  if (new Set(operationNumbers).size !== operationNumbers.length) {
+    return res.status(409).json({ success: false, message: 'Operation Number 1, 2 and 3 must be different' });
+  }
+
+  const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
+  const updates = columns.filter((column) => !['operation_no', 'patient_type'].includes(column))
+    .map((column) => `${column} = EXCLUDED.${column}`).join(', ');
+  const sql = `INSERT INTO ris_operations (${columns.join(', ')}) VALUES (${placeholders})
+    ON CONFLICT (operation_no) DO UPDATE SET ${updates}, updated_at = NOW()
+    RETURNING id, operation_no, (xmax = 0) AS inserted`;
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    const saved = [];
+    for (const item of items) {
+      const operationNo = item.operation.operationNo.trim();
+      const hn = item.patient.hn.trim();
+      const existing = await client.query('SELECT hn FROM ris_operations WHERE operation_no = $1', [operationNo]);
+      if (existing.rows[0] && existing.rows[0].hn !== hn) {
+        const error = new Error(`Operation Number ${operationNo} ถูกใช้กับ HN ${existing.rows[0].hn} แล้ว`);
+        error.status = 409;
+        throw error;
+      }
+      const result = await client.query(sql, valuesFrom(item));
+      saved.push(result.rows[0]);
+    }
+    await client.query('COMMIT');
+    res.status(saved.every((item) => item.inserted) ? 201 : 200).json({
+      success: true,
+      message: 'Operation data saved successfully',
+      data: { operationNos: saved.map((item) => item.operation_no), count: saved.length }
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+    if (['22P02', '22007', '22008', '22003'].includes(error.code)) {
+      return res.status(400).json({ success: false, message: 'Invalid field format' });
+    }
+    next(error);
+  } finally {
+    client.release();
+  }
+});
+
 app.get('/api/operations', async (_req, res, next) => {
   try {
     const result = await query(`SELECT o.*,f.id AS follow_up_id,f.follow_up_no,f.template_days,f.auto_calculate,
@@ -166,11 +239,22 @@ app.get('/api/operations', async (_req, res, next) => {
       f.status AS follow_up_status,f.assigned_to AS follow_up_assigned_to,f.current_round_index,
       f.completed_at,f.viewed_at AS follow_up_viewed_at,f.created_at AS follow_up_created_at,
       e.id AS evaluation_id,e.result AS evaluation_result,e.score AS evaluation_score,
-      e.data AS evaluation_data,e.evaluated_at
+      e.data AS evaluation_data,e.evaluated_at,
+      EXISTS (
+        SELECT 1 FROM evaluations history
+        WHERE history.operation_no=o.operation_no
+          AND (history.doctor_decision='CONFIRMED_SSI' OR history.result ~* '(confirmed|positive)')
+      ) AS ever_confirmed_ssi,
+      (
+        SELECT MIN(COALESCE(history.doctor_reviewed_at,history.evaluated_at))
+        FROM evaluations history
+        WHERE history.operation_no=o.operation_no
+          AND (history.doctor_decision='CONFIRMED_SSI' OR history.result ~* '(confirmed|positive)')
+      ) AS confirmed_ssi_at
       FROM ris_operations o LEFT JOIN LATERAL (
         SELECT * FROM follow_ups x WHERE x.operation_no=o.operation_no ORDER BY x.created_at DESC LIMIT 1
       ) f ON TRUE LEFT JOIN LATERAL (
-        SELECT * FROM evaluations x WHERE x.operation_no=o.operation_no ORDER BY x.evaluated_at DESC LIMIT 1
+        SELECT * FROM evaluations x WHERE x.operation_no=o.operation_no AND COALESCE(x.round_key,'') NOT LIKE 'ACTIVITY:%' ORDER BY x.evaluated_at DESC LIMIT 1
       ) e ON TRUE ORDER BY o.created_at DESC`);
     res.json({ success: true, data: result.rows });
   } catch (error) {
@@ -191,14 +275,17 @@ app.get('/api/operations/:operationNo', async (req, res, next) => {
 app.patch('/api/operations/:operationNo', async (req, res, next) => {
   const fieldMap = {
     hn: 'hn', firstName: 'first_name', lastName: 'last_name', dateOfBirth: 'date_of_birth', age: 'age', sex: 'sex',
-    heightCm: 'height_cm', weightKg: 'weight_kg', bmi: 'bmi', phonePrimary: 'phone_primary', phoneSecondary: 'phone_secondary',
+    heightCm: 'height_cm', weightKg: 'weight_kg', bmi: 'bmi', patientPhoto: 'patient_photo', phonePrimary: 'phone_primary', phoneSecondary: 'phone_secondary',
     lineId: 'line_id', email: 'email', ethnicity: 'ethnicity', nationality: 'nationality', insurance: 'insurance', address: 'address',
     episodeNo: 'episode_no', episodeDate: 'episode_date', wardName: 'ward_name', bedNo: 'bed_no', patientType: 'patient_type',
-    surgeon: 'surgeon', secondSurgeon: 'second_surgeon', operationDepartment: 'operation_department', operationLocation: 'operation_location',
+    surgeon: 'surgeon', secondSurgeon: 'second_surgeon', thirdSurgeon: 'third_surgeon', operationDepartment: 'operation_department', operationLocation: 'operation_location',
     operatingRoom: 'operating_room', urgency: 'urgency', operationType: 'operation_type', preoperativeDiagnosis: 'preoperative_diagnosis',
     procedureName: 'procedure_name', procedureFreeText: 'procedure_free_text', primaryBodySite: 'primary_body_site', laterality: 'laterality',
     secondaryOperation: 'secondary_operation', startAt: 'start_at', endAt: 'end_at', durationMinutes: 'duration_minutes', outcome: 'outcome',
-    reportTemplate: 'report_template', status: 'status', dischargeDate: 'discharge_date', woundClass: 'wound_class', asaClass: 'asa_class', implant: 'implant'
+    reportTemplate: 'report_template', status: 'status', dischargeDate: 'discharge_date', woundClass: 'wound_class', asaClass: 'asa_class', implant: 'implant',
+    implantPresent: 'implant_present', anesthesiologist: 'anesthesiologist', anesthesiaType: 'anesthesia_type', specialEquipment: 'special_equipment',
+    scrubNurse: 'scrub_nurse', circulatingNurse: 'circulating_nurse', anesthesiaNurse: 'anesthesia_nurse', comorbidities: 'comorbidities',
+    smokingStatus: 'smoking_status', woundAtDischarge: 'wound_at_discharge', woundDischargeNotes: 'wound_discharge_notes'
   };
   const entries = Object.entries(req.body || {}).filter(([key]) => fieldMap[key]);
   if (!entries.length) return res.status(400).json({ success: false, message: 'ไม่มีข้อมูลสำหรับแก้ไข' });
@@ -222,8 +309,8 @@ app.patch('/api/operations/:operationNo', async (req, res, next) => {
 app.patch('/api/operations/:operationNo', async (req, res, next) => {
   const editable = {
     hn: 'hn', firstName: 'first_name', lastName: 'last_name', dateOfBirth: 'date_of_birth', age: 'age', sex: 'sex',
-    heightCm: 'height_cm', weightKg: 'weight_kg', bmi: 'bmi', episodeNo: 'episode_no', episodeDate: 'episode_date',
-    wardName: 'ward_name', bedNo: 'bed_no', patientType: 'patient_type', surgeon: 'surgeon', secondSurgeon: 'second_surgeon',
+    heightCm: 'height_cm', weightKg: 'weight_kg', bmi: 'bmi', patientPhoto: 'patient_photo', episodeNo: 'episode_no', episodeDate: 'episode_date',
+    wardName: 'ward_name', bedNo: 'bed_no', patientType: 'patient_type', surgeon: 'surgeon', secondSurgeon: 'second_surgeon', thirdSurgeon: 'third_surgeon',
     department: 'operation_department', location: 'operation_location', operatingRoom: 'operating_room', urgency: 'urgency',
     operationType: 'operation_type', diagnosis: 'preoperative_diagnosis', procedureName: 'procedure_name',
     procedureFreeText: 'procedure_free_text', bodySite: 'primary_body_site', laterality: 'laterality',
@@ -231,7 +318,9 @@ app.patch('/api/operations/:operationNo', async (req, res, next) => {
     outcome: 'outcome', reportTemplate: 'report_template', status: 'status', phonePrimary: 'phone_primary',
     phoneSecondary: 'phone_secondary', lineId: 'line_id', email: 'email', ethnicity: 'ethnicity', nationality: 'nationality',
     insurance: 'insurance', address: 'address', dischargeDate: 'discharge_date', woundClass: 'wound_class',
-    asaClass: 'asa_class', implant: 'implant'
+    asaClass: 'asa_class', implant: 'implant', implantPresent: 'implant_present', anesthesiologist: 'anesthesiologist', anesthesiaType: 'anesthesia_type',
+    specialEquipment: 'special_equipment', scrubNurse: 'scrub_nurse', circulatingNurse: 'circulating_nurse', anesthesiaNurse: 'anesthesia_nurse',
+    comorbidities: 'comorbidities', smokingStatus: 'smoking_status', woundAtDischarge: 'wound_at_discharge', woundDischargeNotes: 'wound_discharge_notes'
   };
   const entries = Object.entries(req.body || {}).filter(([key]) => editable[key]);
   if (!entries.length) return res.status(400).json({ success: false, message: 'ไม่มีข้อมูลที่แก้ไข' });
@@ -254,16 +343,17 @@ app.patch('/api/operations/:operationNo', async (req, res, next) => {
 app.patch('/api/operations/:operationNo/patient-type', async (req, res, next) => {
   const patientType = String(req.body?.patientType || '').trim().toUpperCase();
   const department = String(req.body?.department || '').trim();
+  const note = String(req.body?.note || '').trim();
   if (!['OPD', 'IPD'].includes(patientType)) {
     return res.status(400).json({ success: false, message: 'patientType must be OPD or IPD' });
   }
 
   try {
     const result = await query(
-      `UPDATE ris_operations SET patient_type = $1, receiving_department = $2, workflow_status = 'QUEUED',
+      `UPDATE ris_operations SET patient_type = $1, receiving_department = $2, or_handover_note = $3, workflow_status = 'QUEUED',
        assigned_user_id = NULL, assigned_to = NULL, queued_at = NOW(), accepted_at = NULL, updated_at = NOW()
-       WHERE operation_no = $3 RETURNING operation_no, patient_type, receiving_department, workflow_status`,
-      [patientType, department || null, req.params.operationNo]
+       WHERE operation_no = $4 RETURNING operation_no, patient_type, receiving_department, or_handover_note, workflow_status`,
+      [patientType, department || null, note || null, req.params.operationNo]
     );
     if (!result.rows[0]) return res.status(404).json({ success: false, message: 'Operation not found' });
     res.json({ success: true, data: result.rows[0] });
@@ -364,6 +454,7 @@ app.post('/api/operations/:operationNo/documents', async(req,res,next)=>{try{con
 app.get('/api/case-documents/:id/download', async(req,res,next)=>{try{const r=await query('SELECT file_name,mime_type,file_data FROM case_documents WHERE id=$1',[req.params.id]);if(!r.rows[0])return res.status(404).json({success:false,message:'ไม่พบเอกสาร'});res.json({success:true,data:r.rows[0]});}catch(e){next(e);}});
 app.get('/api/operations/:operationNo/activities', async(req,res,next)=>{try{const r=await query('SELECT * FROM case_activities WHERE operation_no=$1 ORDER BY created_at DESC',[req.params.operationNo]);res.json({success:true,data:r.rows});}catch(e){next(e);}});
 app.post('/api/operations/:operationNo/activities', async(req,res,next)=>{try{const b=req.body||{};if(!b.activityType||!b.activityAt||!b.purpose||!b.staff||!b.contactPrimary||!b.detail)return res.status(400).json({success:false,message:'กรุณากรอกข้อมูลกิจกรรมที่จำเป็นให้ครบ'});const r=await query(`INSERT INTO case_activities(operation_no,activity_type,activity_at,purpose,location,staff,contact_primary,contact_secondary,detail,notify_period) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,[req.params.operationNo,b.activityType,b.activityAt,b.purpose,b.location||null,b.staff,b.contactPrimary,b.contactSecondary||null,b.detail,b.notifyPeriod||null]);res.status(201).json({success:true,data:r.rows[0]});}catch(e){next(e);}});
+app.post('/api/operations/:operationNo/activity-evaluations', async(req,res,next)=>{try{const b=req.body||{};if(!b.activityId||!b.result)return res.status(400).json({success:false,message:'กรุณาระบุกิจกรรมและผลการประเมิน'});const activity=(await query('SELECT id FROM case_activities WHERE id=$1 AND operation_no=$2',[b.activityId,req.params.operationNo])).rows[0];if(!activity)return res.status(404).json({success:false,message:'ไม่พบกิจกรรมของเคสนี้'});const followUp=(await query('SELECT * FROM follow_ups WHERE operation_no=$1 ORDER BY created_at DESC LIMIT 1',[req.params.operationNo])).rows[0];if(!followUp)return res.status(409).json({success:false,message:'ยังไม่มี Follow-up สำหรับบันทึกผลประเมิน'});const roundKey=`ACTIVITY:${activity.id}`;const r=await query(`INSERT INTO evaluations(operation_no,evaluation_type,result,score,data,evaluated_by,evaluated_at,follow_up_id,round_key) VALUES($1,'SSI_ACTIVITY',$2,$3,$4::jsonb,$5,COALESCE($6,NOW()),$7,$8) RETURNING *`,[req.params.operationNo,b.result,b.score||null,JSON.stringify(b.data||{}),b.evaluatedBy||null,b.evaluatedAt||null,followUp.id,roundKey]);if(/confirmed|positive/i.test(b.result))await query(`UPDATE ris_operations SET ssi_status='CONFIRMED_SSI',workflow_status='CONFIRMED_SSI',updated_at=NOW() WHERE operation_no=$1`,[req.params.operationNo]);else if(/suspect/i.test(b.result))await query(`UPDATE ris_operations SET ssi_status='SUSPECTED_SSI',workflow_status='SUSPECTED_SSI',updated_at=NOW() WHERE operation_no=$1`,[req.params.operationNo]);res.status(201).json({success:true,data:r.rows[0]});}catch(e){if(e.code==='23505')return res.status(409).json({success:false,message:'กิจกรรมนี้มีผลประเมินแล้ว'});next(e);}});
 app.get('/api/operations/:operationNo/evaluations', async(req,res,next)=>{try{const r=await query('SELECT * FROM evaluations WHERE operation_no=$1 ORDER BY evaluated_at DESC',[req.params.operationNo]);res.json({success:true,data:r.rows});}catch(e){next(e);}});
 app.patch('/api/evaluations/:id', async(req,res,next)=>{try{const b=req.body||{};if(!b.result)return res.status(400).json({success:false,message:'กรุณาระบุผลการประเมิน'});const r=await query(`UPDATE evaluations SET result=$1,data=$2::jsonb,evaluated_by=COALESCE($3,evaluated_by),evaluated_at=NOW() WHERE id=$4 RETURNING *`,[b.result,JSON.stringify(b.data||{}),b.evaluatedBy||null,req.params.id]);if(!r.rows[0])return res.status(404).json({success:false,message:'ไม่พบผลการประเมิน'});await query(`UPDATE follow_ups SET schedule=(SELECT jsonb_agg(CASE WHEN COALESCE(x->>'id',x->>'day')=$1 THEN x||jsonb_build_object('result',$2,'completedAt',NOW()) ELSE x END ORDER BY ord) FROM follow_ups f2,jsonb_array_elements(f2.schedule) WITH ORDINALITY a(x,ord) WHERE f2.id=follow_ups.id),updated_at=NOW() WHERE id=$3`,[r.rows[0].round_key,b.result,r.rows[0].follow_up_id]);const ssi=/suspect/i.test(b.result)?'SUSPECTED_SSI':/confirmed|positive/i.test(b.result)?'CONFIRMED_SSI':'NOT_SSI';const workflow=ssi==='SUSPECTED_SSI'?'SUSPECTED_SSI':ssi==='CONFIRMED_SSI'?'CONFIRMED_SSI':'FOLLOW_UP_ACTIVE';await query('UPDATE ris_operations SET ssi_status=$1,workflow_status=$2,updated_at=NOW() WHERE operation_no=$3',[ssi,workflow,r.rows[0].operation_no]);res.json({success:true,data:r.rows[0]});}catch(e){next(e);}});
 app.get('/api/evaluations', async(req,res,next)=>{try{const userId=Number(req.query.assignedUserId)||null;const params=[];let where='TRUE';if(userId){params.push(userId);where=`o.assigned_user_id=$1`;}const r=await query(`SELECT o.*,e.id AS evaluation_id,e.round_key AS evaluation_round,e.result AS evaluation_result,e.evaluated_by,e.evaluated_at,e.data AS evaluation_data FROM evaluations e JOIN ris_operations o ON o.operation_no=e.operation_no WHERE ${where} ORDER BY e.evaluated_at DESC`,params);res.json({success:true,data:r.rows});}catch(e){next(e);}});
@@ -373,7 +464,7 @@ app.patch('/api/evaluations/:id/doctor-decision', async(req,res,next)=>{try{cons
 
 app.patch('/api/operations/:operationNo/doctor-decision', async(req,res,next)=>{try{const decision=String(req.body?.decision||'').toUpperCase();if(!['NOT_SSI','CONFIRMED_SSI'].includes(decision))return res.status(400).json({success:false,message:'ผลวินิจฉัยไม่ถูกต้อง'});const evaluation=await query(`UPDATE evaluations SET doctor_decision=$1,doctor_note=$2,doctor_reviewed_by=$3,doctor_reviewed_at=NOW() WHERE id=(SELECT id FROM evaluations WHERE operation_no=$4 AND result ILIKE '%suspect%' ORDER BY evaluated_at DESC LIMIT 1) RETURNING *`,[decision,req.body.note||null,req.body.reviewedBy||null,req.params.operationNo]);if(!evaluation.rows[0])return res.status(409).json({success:false,message:'ไม่พบผลประเมินสงสัย SSI ของเคสนี้'});const operation=await query(`UPDATE ris_operations SET ssi_status=$1,workflow_status=$2,updated_at=NOW() WHERE operation_no=$3 RETURNING *`,[decision,decision==='CONFIRMED_SSI'?'CONFIRMED_SSI':'FOLLOW_UP_ACTIVE',req.params.operationNo]);res.json({success:true,data:operation.rows[0]});}catch(e){next(e);}});
 
-app.patch('/api/operations/:operationNo/recovery', async(req,res,next)=>{try{const r=await query(`UPDATE ris_operations SET ssi_status='RECOVERED',workflow_status='RECOVERED',updated_at=NOW() WHERE operation_no=$1 AND ssi_status='CONFIRMED_SSI' RETURNING *`,[req.params.operationNo]);if(!r.rows[0])return res.status(409).json({success:false,message:'เคสนี้ยังไม่ได้รับการยืนยัน SSI'});res.json({success:true,data:r.rows[0]});}catch(e){next(e);}});
+app.patch('/api/operations/:operationNo/recovery', async(req,res,next)=>{try{const recovery=(await query(`SELECT id FROM evaluations WHERE operation_no=$1 AND result='recovery_clear' ORDER BY evaluated_at DESC LIMIT 1`,[req.params.operationNo])).rows[0];if(!recovery)return res.status(409).json({success:false,message:'กรุณาบันทึกผลประเมินการหายก่อนยืนยันสิ้นสุดการติดเชื้อ'});const r=await query(`UPDATE ris_operations SET ssi_status='RECOVERED',workflow_status='RECOVERED',updated_at=NOW() WHERE operation_no=$1 AND ssi_status='CONFIRMED_SSI' RETURNING *`,[req.params.operationNo]);if(!r.rows[0])return res.status(409).json({success:false,message:'เคสนี้ยังไม่ได้รับการยืนยัน SSI'});res.json({success:true,data:r.rows[0]});}catch(e){next(e);}});
 
 app.get('/api/notifications', async(req,res,next)=>{try{
   const userId=Number(req.query.userId)||null;
@@ -381,10 +472,10 @@ app.get('/api/notifications', async(req,res,next)=>{try{
   if(!user)return res.json({success:true,data:[]});
   const settingsRows=(await query(`SELECT key,value FROM system_settings WHERE key IN ('notificationPreferencesConfigured','alertTypes','intervals','staffRoles','staffChannels','staffRecipientEnabled')`)).rows;
   const notificationSettings=Object.fromEntries(settingsRows.map(row=>[row.key,row.value]));
-  const alertTypes=notificationSettings.alertTypes||{};
+  const alertTypes={followUpDue:true,appointmentReminder:true,noAssessmentResponse:true,overdue:true,prepAlert:true,others:true};
   const roleSettingKey={ADMIN:'admin',OR:'orStaff','OR STAFF':'orStaff',OPD:'opdNurse','OPD NURSE':'opdNurse',IPD:'ipdNurse','IPD NURSE':'ipdNurse',DOCTOR:'physician',PHYSICIAN:'physician'}[String(user.role||'').toUpperCase()];
   const webAlertsEnabled=notificationSettings.notificationPreferencesConfigured===true&&notificationSettings.staffRecipientEnabled===true&&notificationSettings.staffChannels?.dashboard===true&&Boolean(roleSettingKey&&notificationSettings.staffRoles?.[roleSettingKey]);
-  const intervalRules=(Array.isArray(notificationSettings.intervals)?notificationSettings.intervals:[]).filter(row=>row?.enabled===true);
+  const intervalRules=Array.isArray(notificationSettings.intervals)?notificationSettings.intervals:[];
   const operations=(await query(`SELECT o.operation_no,o.hn,o.first_name,o.last_name,o.workflow_status,o.ssi_status,
       o.receiving_department,o.patient_type,o.queued_at,o.accepted_at,o.updated_at,
       f.id AS follow_up_id,f.schedule,f.current_round_index,f.status AS follow_up_status,
@@ -427,8 +518,8 @@ app.get('/api/notifications', async(req,res,next)=>{try{
   const operationNos=[...operationMap.keys()];
   if(operationNos.length){
     const activities=(await query(`SELECT * FROM case_activities WHERE operation_no=ANY($1::text[])
-      AND activity_at::date BETWEEN CURRENT_DATE AND CURRENT_DATE + 1 ORDER BY activity_at`,[operationNos])).rows;
-    activities.forEach(activity=>{const op=operationMap.get(activity.operation_no);if(!op)return;notifications.push({...op,notification_key:`ACTIVITY:${activity.id}`,notification_type:'ADDITIONAL_ACTIVITY',detail:`มีกิจกรรมเพิ่มเติม: ${activity.detail||activity.purpose||activity.activity_type}`,priority:'NORMAL',event_at:activity.activity_at,due_date:String(activity.activity_at||'').slice(0,10)});});
+      AND created_at >= NOW() - INTERVAL '90 days' ORDER BY created_at DESC`,[operationNos])).rows;
+    activities.forEach(activity=>{const op=operationMap.get(activity.operation_no);if(!op)return;const appointment=activity.activity_at?new Intl.DateTimeFormat('th-TH',{dateStyle:'short',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(new Date(activity.activity_at)):'ยังไม่ระบุเวลา';notifications.push({...op,notification_key:`ACTIVITY:${activity.id}`,notification_type:'ADDITIONAL_ACTIVITY',detail:`เพิ่มกิจกรรมแทรก: ${activity.activity_type||'-'} · นัดหมาย ${appointment} · ${activity.detail||activity.purpose||'-'}`,priority:'NORMAL',event_at:activity.created_at,due_date:String(activity.activity_at||'').slice(0,10),activity_id:activity.id,activity_type:activity.activity_type,activity_at:activity.activity_at,activity_purpose:activity.purpose,activity_detail:activity.detail});});
     const evaluations=(await query(`SELECT id,operation_no,result,round_key,data,evaluated_at,doctor_decision,doctor_note,doctor_reviewed_at FROM evaluations WHERE operation_no=ANY($1::text[]) ORDER BY evaluated_at DESC`,[operationNos])).rows;
     evaluations.forEach(evaluation=>{
       const op=operationMap.get(evaluation.operation_no);if(!op)return;

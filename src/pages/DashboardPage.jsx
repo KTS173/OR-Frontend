@@ -3,7 +3,7 @@ import { CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ReferenceL
 import { Link } from 'react-router-dom'
 import MetricCard from '../components/ui/MetricCard.jsx'
 import PatientTable from '../components/ui/PatientTable.jsx'
-import { dashboardMetrics, followUpTasks, patients, ssiTrend, surgeryRates } from '../data/mockData.js'
+import { dashboardMetrics, followUpTasks, patients, ssiTrend } from '../data/mockData.js'
 
 const followUpSummary = [
   { name: 'กำลังติดตาม',    value: 126, color: '#3b82f6' },
@@ -22,8 +22,6 @@ const metaBadge = {
   gray:  'bg-slate-100 text-slate-500',
 }
 
-const barColors = ['#0b3d83', '#264cc7', '#f97316', '#fbbf24', '#94a3b8']
-
 export default function DashboardPage() {
   return (
     <div className="space-y-4">
@@ -36,7 +34,7 @@ export default function DashboardPage() {
       </section>
 
       {/* ── Charts Row ── */}
-      <section className="dashboard-charts">
+      <section className="grid grid-cols-1">
 
         {/* SSI Trend Line Chart */}
         <article className="or-card flex h-[330px] flex-col gap-2 rounded-2xl p-[18px]">
@@ -66,33 +64,6 @@ export default function DashboardPage() {
           </div>
         </article>
 
-        {/* Surgery Rates Horizontal Bar Chart */}
-        <article className="or-card h-[330px] overflow-hidden rounded-xl">
-          <CardHeading title="เคสแยกการผ่าตัด" side />
-          <div className="flex h-[273px] flex-col px-6 pb-3 pt-4">
-            <div className="flex min-h-0 flex-1 flex-col justify-between">
-              {surgeryRates.map((item, i) => (
-                <div key={item.name}>
-                  <div className="mb-1 flex items-center justify-between gap-3 text-[13px] leading-4 font-basexdg text-[#475467]">
-                    <span>{item.name}</span>
-                    <span className="shrink-0 font-semibold">{item.rate.toFixed(2)}%</span>
-                  </div>
-                  <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${Math.min(item.rate / 2 * 100, 100)}%`, backgroundColor: barColors[i] }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 grid grid-cols-5 border-t border-slate-200 pt-2 text-[12px] font-medium text-slate-500">
-              {['0%', '0.5%', '1%', '1.5%', '2%'].map((tick, i) => (
-                <span key={tick} className={i === 0 ? 'text-left' : i === 4 ? 'text-right' : 'text-center'}>{tick}</span>
-              ))}
-            </div>
-          </div>
-        </article>
       </section>
 
       {/* ── Bottom Row ── */}

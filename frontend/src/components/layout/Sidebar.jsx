@@ -68,7 +68,7 @@ function NavItems({ items, onNavigate, counts }) {
       <NavLink
         key={path}
         to={path}
-        onClick={onNavigate}
+        onClick={() => onNavigate(countKey)}
         className={
           `group flex h-[50px] items-center gap-4 rounded-[9px] px-4 text-[15px] font-medium transition ${
             isActive
@@ -96,16 +96,36 @@ export default function Sidebar({ open, onClose }) {
   const { data: followUpPatients, refetch: refetchFollowUps } = useApiQuery(api.getFollowUpPatients)
   const { data: notifications, refetch: refetchNotifications } = useApiQuery(api.getNotifications)
   const currentUser = (() => { try { return JSON.parse(sessionStorage.getItem('or-smart-user') || 'null') } catch { return null } })()
+  const seenStorageKey = `or-smart-menu-seen:${currentUser?.id || 'guest'}`
+  const [seenMenuItems, setSeenMenuItems] = useState(() => { try { return JSON.parse(localStorage.getItem(seenStorageKey) || '{}') } catch { return {} } })
   const visibleQueue = (patient, role) => patient.workflowStatus === 'QUEUED'
     && patient.patientType === role.toLowerCase()
+  const menuItems = {
+    opd: patients.filter((patient) => visibleQueue(patient, 'OPD')),
+    ipd: patients.filter((patient) => visibleQueue(patient, 'IPD')),
+    followUps: followUpPatients.filter((patient) => patient.followUpId && !patient.followUpViewedAt),
+    suspected: patients.filter((patient) => patient.ssiStatus === 'SUSPECTED_SSI'),
+    confirmed: patients.filter((patient) => patient.ssiStatus === 'CONFIRMED_SSI'),
+    doctorReview: patients.filter((patient) => patient.ssiStatus === 'SUSPECTED_SSI'),
+    notifications: notifications.filter((notification) => !notification.read_at),
+  }
+  const itemKey = (item, countKey) => countKey === 'notifications'
+    ? item.notification_key
+    : countKey === 'followUps'
+      ? item.followUpId || item.operationNo
+      : item.operationNo || item.id
+  const unseenCount = countKey => {
+    const seen = new Set(seenMenuItems[countKey] || [])
+    return menuItems[countKey].filter(item => !seen.has(String(itemKey(item, countKey)))).length
+  }
   const counts = {
-    opd: patients.filter((patient) => visibleQueue(patient, 'OPD')).length,
-    ipd: patients.filter((patient) => visibleQueue(patient, 'IPD')).length,
-    followUps: followUpPatients.filter((patient) => patient.followUpId && !patient.followUpViewedAt).length,
-    suspected: patients.filter((patient) => patient.ssiStatus === 'SUSPECTED_SSI').length,
-    confirmed: patients.filter((patient) => patient.ssiStatus === 'CONFIRMED_SSI').length,
-    doctorReview: patients.filter((patient) => patient.ssiStatus === 'SUSPECTED_SSI' && patient.evaluationData?.submittedToDoctor === true).length,
-    notifications: notifications.filter((notification) => !notification.read_at).length,
+    opd: unseenCount('opd'),
+    ipd: unseenCount('ipd'),
+    followUps: unseenCount('followUps'),
+    suspected: unseenCount('suspected'),
+    confirmed: unseenCount('confirmed'),
+    doctorReview: unseenCount('doctorReview'),
+    notifications: unseenCount('notifications'),
   }
   const role = String(currentUser?.role || '').toUpperCase()
   const isAdmin = role === 'ADMIN'
@@ -123,6 +143,23 @@ export default function Sidebar({ open, onClose }) {
     window.addEventListener('operations-updated', refresh)
     return () => { window.clearInterval(timer); window.removeEventListener('operations-updated', refresh) }
   }, [refetch, refetchFollowUps, refetchNotifications])
+
+  const handleNavigate = (countKey) => {
+    if (countKey && menuItems[countKey]) {
+      const ids = menuItems[countKey].map(item => String(itemKey(item, countKey)))
+      setSeenMenuItems(current => {
+        const next = { ...current, [countKey]: ids }
+        localStorage.setItem(seenStorageKey, JSON.stringify(next))
+        return next
+      })
+      if (countKey === 'notifications') {
+        Promise.all(menuItems.notifications.map(item => api.markNotificationRead(item.notification_key)))
+          .then(() => { refetchNotifications(); window.dispatchEvent(new Event('operations-updated')) })
+          .catch(() => {})
+      }
+    }
+    onClose()
+  }
 
   const logout = () => {
     sessionStorage.removeItem('or-smart-auth')
@@ -146,14 +183,14 @@ export default function Sidebar({ open, onClose }) {
 
         <div className="pointer-events-none -mt-[55px] mb-[35px] px-[55px] text-[14px] text-blue-100/85">post discharge surveillance</div>
         <nav className="or-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pt-4 pb-5 lg:overflow-visible">
-          <div className="space-y-1"><NavItems items={visiblePrimaryMenu} onNavigate={onClose} counts={counts} /></div>
+          <div className="space-y-1"><NavItems items={visiblePrimaryMenu} onNavigate={handleNavigate} counts={counts} /></div>
           <div className="my-2 border-t border-white/10" />
-          <div className="space-y-1"><NavItems items={visibleSsiMenu} onNavigate={onClose} counts={counts} /></div>
+          <div className="space-y-1"><NavItems items={visibleSsiMenu} onNavigate={handleNavigate} counts={counts} /></div>
           <div className="my-2 border-t border-white/10" />
-          <div className="space-y-1"><NavItems items={visibleReportMenu} onNavigate={onClose} counts={counts} /></div>
+          <div className="space-y-1"><NavItems items={visibleReportMenu} onNavigate={handleNavigate} counts={counts} /></div>
           <div className="my-2 border-t border-white/10" />
           <div className="space-y-1">
-          <NavItems items={visibleAdminMenu} onNavigate={onClose} counts={counts} />
+          <NavItems items={visibleAdminMenu} onNavigate={handleNavigate} counts={counts} />
           </div>
         </nav>
 

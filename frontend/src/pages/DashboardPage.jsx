@@ -1,5 +1,5 @@
 import { ArrowRight, ClipboardCheck, Image, Phone, Stethoscope } from 'lucide-react'
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Line, LineChart, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Cell, CartesianGrid, Legend, Line, LineChart, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Link } from 'react-router-dom'
 import { useMemo } from 'react'
 import MetricCard from '../components/ui/MetricCard.jsx'
@@ -32,8 +32,6 @@ const metaBadge = {
   gray:  'bg-slate-100 text-slate-500',
 }
 
-const barColors = ['#0b3d83', '#264cc7', '#f97316', '#fbbf24', '#94a3b8']
-
 export default function DashboardPage() {
   const { data: patients, loading } = useApiQuery(api.getPatients)
   const dashboardMetrics = useMemo(() => {
@@ -42,14 +40,9 @@ export default function DashboardPage() {
       { label: 'เคสทั้งหมด', value: String(patients.length), unit: 'คน', tone: 'blue' },
       { label: 'เคส OPD', value: String(count('patientType', 'opd')), unit: 'คน', tone: 'cyan' },
       { label: 'เคส IPD', value: String(count('patientType', 'ipd')), unit: 'คน', tone: 'amber' },
-      { label: 'ผ่าตัดเสร็จแล้ว', value: String(count('status', 'COMPLETED')), unit: 'คน', tone: 'green' },
-      { label: 'เคสฉุกเฉิน', value: String(count('urgency', 'EMERGENCY')), unit: 'คน', tone: 'red' },
+      { label: 'ส่งต่อ OPD/IPD แล้ว', value: String(patients.filter((item) => ['opd', 'ipd'].includes(String(item.patientType || '').toLowerCase())).length), unit: 'เคส', tone: 'green' },
+      { label: 'รอตรวจสอบก่อนส่งต่อ', value: String(patients.filter((item) => item.workflowStatus === 'OR_PENDING' || !item.patientType).length), unit: 'เคส', tone: 'orange' },
     ]
-  }, [patients])
-  const surgeryRates = useMemo(() => {
-    const counts = new Map()
-    patients.forEach((item) => { const name = item.department || 'ไม่ระบุแผนก'; counts.set(name, (counts.get(name) || 0) + 1) })
-    return [...counts.entries()].map(([name, rate]) => ({ name, rate })).sort((a, b) => b.rate - a.rate).slice(0, 5)
   }, [patients])
   const ssiTrend = []
   const followUpTasks = [
@@ -99,27 +92,9 @@ export default function DashboardPage() {
           </div>
         </article>
 
-        {/* Surgery Rates Horizontal Bar Chart */}
-        <article className="or-card h-[326px] overflow-hidden rounded-xl">
-          <CardHeading title="เคสแยกการผ่าตัด" side />
-          <div className="h-[268px] px-3 pb-2 pt-3">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={surgeryRates} layout="vertical" margin={{ left: 8, right: 52, top: 4 }}>
-                <CartesianGrid horizontal={false} stroke="#e9edf3" />
-                <XAxis type="number" domain={[0, 2]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 10 }} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: '#475467' }} width={130} />
-                <Tooltip formatter={(v) => `${v}%`} />
-                <Bar dataKey="rate" radius={[0, 6, 6, 0]} barSize={13}>
-                  {surgeryRates.map((item, i) => <Cell key={item.name} fill={barColors[i]} />)}
-                  <LabelList dataKey="rate" position="right" formatter={(v) => `${v}%`} style={{ fontSize: 11, fill: '#475467', fontWeight: 600 }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </article>
       </section>
 
-      <AnalyticsChartPair patients={patients} />
+      <AnalyticsChartPair patients={patients} hideProcedure />
       <AnalyticsDonutPair patients={patients} />
 
       {/* ── Bottom Row ── */}

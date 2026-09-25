@@ -1,6 +1,6 @@
 import { Activity, AlertCircle, AlertTriangle, ArrowLeftRight, ArrowRight, Bell, Calendar, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Database, Download, Eye, File, History, Layers, Mail, PhoneCall, Plus, RefreshCw, RotateCcw, Scissors, Search, Settings2, ShieldCheck, Stethoscope, TimerReset, UserCheck, UserRound, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Filters from '../components/ui/Filters.jsx'
 import MetricCard from '../components/ui/MetricCard.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
@@ -24,10 +24,35 @@ const configs = {
   sync: { title: 'ข้อมูลที่เชื่อมต่อจาก HIS / TrackCare', description: 'ตรวจสอบสถานะและความสมบูรณ์ของข้อมูลต้นทาง', metrics: [] },
 }
 
+const groupPatientsByEpisode = (patients) => {
+  const groups = new Map()
+  patients.forEach((patient) => {
+    const key = `${patient.id || ''}::${patient.episodeNo || patient.operationNo || ''}`
+    const current = groups.get(key) || []
+    current.push(patient)
+    groups.set(key, current)
+  })
+
+  return [...groups.values()].map((operations) => {
+    const first = operations[0]
+    const uniqueValues = (field) => [...new Set(operations.map((item) => item[field]).filter(Boolean))]
+    return {
+      ...first,
+      operations,
+      operationCount: operations.length,
+      procedure: uniqueValues('procedure').join(' / '),
+      surgeon: uniqueValues('surgeon').join(' / '),
+      department: uniqueValues('department').join(' / '),
+    }
+  })
+}
+
 export default function RegistryPage({ type }) {
   const [search, setSearch] = useState('')
   const query = type === 'followUp' ? api.getFollowUpPatients : type === 'history' ? api.getEvaluationHistory : api.getPatients
-  const { data, loading, refetch } = useApiQuery(query)
+  const { data, loading, refetch } = useApiQuery(query, {
+    refreshInterval: type === 'validation' ? 5000 : 0,
+  })
   const currentUser = useMemo(() => { try { return JSON.parse(sessionStorage.getItem('or-smart-user') || 'null') } catch { return null } }, [])
   const config = configs[type] ?? configs.validation
   const filtered = useMemo(() => data.filter((item) => {
@@ -42,7 +67,8 @@ export default function RegistryPage({ type }) {
       .some((value) => String(value ?? '').toLowerCase().includes(search.toLowerCase()))
     return matchesQueue && matchesWorkflow && matchesSearch
   }), [currentUser, data, search, type])
-  if (type === 'validation') return <ValidationPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
+  const validationPatients = useMemo(() => type === 'validation' ? groupPatientsByEpisode(filtered) : filtered, [filtered, type])
+  if (type === 'validation') return <ValidationPage patients={validationPatients} loading={loading} search={search} setSearch={setSearch} refetch={refetch} />
   if (type === 'opd' || type === 'ipd') return <OpdQueuePage queueType={type} patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'followUp') return <MyFollowUpsPage patients={filtered} loading={loading} search={search} setSearch={setSearch} />
   if (type === 'history') return <TrackingHistoryTable patients={filtered} loading={loading} />
@@ -72,7 +98,7 @@ function OpdQueuePage({ queueType, patients, loading, search, setSearch }) {
   const [selectedPatient, setSelectedPatient] = useState(null)
   const metricValues = [patients.length, patients.length, 0, patients.filter(p => /SUSPECT|สงสัย/i.test(p.status || '')).length, patients.filter(p => /CONFIRM.*SSI|SSI.*CONFIRM|ยืนยัน.*SSI/i.test(p.status || '')).length]
   return <div className="space-y-4">
-    <section className="grid grid-cols-5 gap-4">{opdMetrics.map(([label, , unit, Icon, color, bg, cardBg], index) => <article key={label} className="flex h-[140px] min-w-0 flex-col rounded-xl border border-black/10 p-[17px] shadow-sm" style={{ backgroundColor: cardBg }}><div className="flex items-start justify-between gap-2"><p className="whitespace-nowrap text-[14px] font-medium" style={{ color }}>{label}</p><span className="grid size-9 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: bg, color }}>{typeof Icon === 'string' ? <span className="validation-card-icon" style={{ backgroundColor: color, WebkitMaskImage: `url("${Icon}")`, maskImage: `url("${Icon}")` }} /> : <Icon size={20} />}</span></div><p className="mt-3 flex items-baseline gap-1.5 text-[28px] font-semibold leading-8" style={{ color }}><span>{metricValues[index]}</span><span className="text-[14px]">{unit}</span></p><p className={`mt-auto flex items-center whitespace-nowrap text-[12px] leading-4 ${index >= 3 ? 'text-red-500' : 'text-[#64748b]'}`}>{index >= 3 && <img src="/assets/icon/dashboard/up-red-margin.png" alt="" className="mr-1 h-[9px] w-3 object-contain" />}{index === 0 ? `ข้อมูล ${queueType.toUpperCase()} จากฐานข้อมูล` : 'ข้อมูลจากฐานข้อมูล'}</p></article>)}</section>
+    <section className="grid grid-cols-5 gap-4">{opdMetrics.map(([label, , unit, Icon, color, bg, cardBg], index) => <article key={label} className="flex min-h-[112px] min-w-0 flex-col rounded-xl border border-black/10 p-4 shadow-sm" style={{ backgroundColor: cardBg }}><div className="flex items-start justify-between gap-3"><p className="text-[15px] font-semibold leading-5" style={{ color }}>{label}</p><span className="grid size-10 shrink-0 place-items-center rounded-xl" style={{ backgroundColor: bg, color }}>{typeof Icon === 'string' ? <span className="validation-card-icon" style={{ backgroundColor: color, WebkitMaskImage: `url("${Icon}")`, maskImage: `url("${Icon}")` }} /> : <Icon size={20} />}</span></div><p className="mt-3 flex items-baseline gap-2 text-[32px] font-semibold leading-9" style={{ color }}><span>{metricValues[index]}</span><span className="text-[14px]">{unit}</span></p></article>)}</section>
     <Filters search={search} onSearch={setSearch} validation />
     <section className="flex h-[66px] items-center rounded-xl border border-black/10 bg-white px-4 shadow-sm"><div className="flex h-full items-center gap-6">{[`ทั้งหมด (${patients.length})`, `รายการคนไข้จากแผนก OR ใหม่ (${patients.length})`, 'รายการผู้ป่วยจากการย้ายผู้ป่วยจากแผนก IPD (0)'].map((label, index) => <button key={label} className={`h-full text-[13px] font-medium ${index === 0 ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}>{label}</button>)}</div></section>
     <OpdPatientTable patients={patients} loading={loading} onSelect={setSelectedPatient} />
@@ -94,15 +120,15 @@ const validationMetrics = [
   ['เกินกำหนดตรวจสอบ', '7', 'เคส', '4Symbol.png', '#64748b', '#e8eef7'],
 ]
 
-function ValidationPage({ patients, loading, search, setSearch }) {
+function ValidationPage({ patients, loading, search, setSearch, refetch }) {
   const metricValues = [patients.length, patients.filter(p => /ELIGIBLE/i.test(p.status || '')).length, patients.filter(p => !p.id || !p.operationNo || !p.procedure).length, patients.filter(p => /SENT|COMPLETED/i.test(p.status || '')).length, patients.filter(p => /REMOVED|INELIGIBLE/i.test(p.status || '')).length, 0]
   return <div className="space-y-4">
     <section className="grid grid-cols-4 gap-x-[17px] gap-y-4">{validationMetrics.map(([label, , unit, icon, color, iconBg, labelColor = color], index) => {
       const iconUrl = `/assets/icon/OR Validation List/${icon}`
-      return <article key={label} className="h-[138px] rounded-xl border border-black/10 bg-white p-[20px] shadow-sm"><div className="flex h-11 items-start justify-between"><p className="text-[18px] leading-5 font-medium" style={{ color: labelColor }}>{label}</p><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl" style={{ backgroundColor: iconBg }}><span className="validation-card-icon" style={{ backgroundColor: color, WebkitMaskImage: `url("${iconUrl}")`, maskImage: `url("${iconUrl}")` }} /></span></div><p className="pt-3 text-[32px] leading-9 font-semibold" style={{ color }}>{metricValues[index]} <span className="text-[14px]">{unit}</span></p></article>
+      return <article key={label} className="flex min-h-[112px] flex-col rounded-xl border border-black/10 bg-white p-4 shadow-sm"><div className="flex items-start justify-between gap-3"><p className="text-[15px] leading-5 font-semibold" style={{ color: labelColor }}>{label}</p><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ backgroundColor: iconBg }}><span className="validation-card-icon" style={{ backgroundColor: color, WebkitMaskImage: `url("${iconUrl}")`, maskImage: `url("${iconUrl}")` }} /></span></div><p className="mt-3 text-[32px] leading-9 font-semibold" style={{ color }}>{metricValues[index]} <span className="text-[14px]">{unit}</span></p></article>
     })}</section>
     <Filters search={search} onSearch={setSearch} validation />
-    <section className="flex h-[73px] items-center justify-between rounded-xl border border-black/10 bg-white px-[17px] shadow-sm"><div className="flex items-center gap-4">{[`ทั้งหมด (${patients.length})`, `รอตรวจสอบ (${patients.filter(p => /PENDING|WAIT|รอ/i.test(p.status || '')).length})`, `ยืนยันการตรวจสอบ (${patients.filter(p => /VERIFIED/i.test(p.status || '')).length})`, `เข้าเกณฑ์ (${patients.filter(p => /ELIGIBLE/i.test(p.status || '')).length})`, `ไม่เข้าเกณฑ์ (${patients.filter(p => /REMOVED|INELIGIBLE/i.test(p.status || '')).length})`, `ส่งเข้าแล้ว (${patients.filter(p => /SENT|COMPLETED/i.test(p.status || '')).length})`].map((item, i) => <button key={item} className={`h-9 px-3 text-[14px] ${i === 0 ? 'border-b-2 border-[#175beb] font-medium text-[#175beb]' : 'text-[#424752]'}`}>{item}</button>)}</div><button className="flex h-[38px] items-center gap-2 rounded-lg border border-[#e2e8f0] px-[13px] text-[14px]"><RefreshCw size={13} />รีเฟรช</button></section>
+    <section className="flex h-[73px] items-center justify-between rounded-xl border border-black/10 bg-white px-[17px] shadow-sm"><div className="flex items-center gap-4">{[`ทั้งหมด (${patients.length})`, `รอตรวจสอบ (${patients.filter(p => /PENDING|WAIT|รอ/i.test(p.status || '')).length})`, `ยืนยันการตรวจสอบ (${patients.filter(p => /VERIFIED/i.test(p.status || '')).length})`, `เข้าเกณฑ์ (${patients.filter(p => /ELIGIBLE/i.test(p.status || '')).length})`, `ไม่เข้าเกณฑ์ (${patients.filter(p => /REMOVED|INELIGIBLE/i.test(p.status || '')).length})`, `ส่งเข้าแล้ว (${patients.filter(p => /SENT|COMPLETED/i.test(p.status || '')).length})`].map((item, i) => <button key={item} className={`h-9 px-3 text-[14px] ${i === 0 ? 'border-b-2 border-[#175beb] font-medium text-[#175beb]' : 'text-[#424752]'}`}>{item}</button>)}</div><button onClick={refetch} disabled={loading} className="flex h-[38px] items-center gap-2 rounded-lg border border-[#e2e8f0] px-[13px] text-[14px] disabled:opacity-50"><RefreshCw size={13} className={loading ? 'animate-spin' : ''} />รีเฟรช</button></section>
     <PatientTable patients={patients} loading={loading} validation />
   </div>
 }
@@ -149,7 +175,7 @@ function MyFollowTable({ patients, loading }) {
   const openFollowUp = async (patient) => {
     try { if (patient.followUpId && !patient.followUpViewedAt) await api.markFollowUpViewed(patient.followUpId) } catch { /* เปิดเคสต่อได้แม้บันทึกการอ่านล้มเหลว */ }
     window.dispatchEvent(new Event('operations-updated'))
-    navigate(`/follow-ups/${patient.id}`)
+    navigate(`/follow-ups/${encodeURIComponent(patient.operationNo || patient.id)}`)
   }
   return <section className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm"><header className="flex h-[72px] items-center justify-between px-6"><h2 className="text-[18px] font-semibold text-[#002d73]">รายการงานติดตาม ({patients.length} ราย)</h2></header><div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-[13px]"><thead className="h-10 bg-slate-50"><tr>{['HN', 'ชื่อผู้ป่วย', 'หัตถการ', 'ศัลยแพทย์', 'ความเสี่ยง SSI', 'สถานะติดตาม', 'กำหนดติดตามครั้งแรก'].map(x => <th key={x} className="px-4 text-left">{x}</th>)}</tr></thead><tbody>{loading && <tr><td colSpan="7" className="px-4 py-10 text-center text-slate-500">กำลังโหลดข้อมูล...</td></tr>}{!loading && !rows.length && <tr><td colSpan="7" className="px-4 py-10 text-center text-slate-500">ยังไม่มีการสร้างงานติดตาม</td></tr>}{!loading && rows.map((p) => { const firstSchedule = Array.isArray(p.followUpSchedule) ? p.followUpSchedule[0] : null; return <tr key={p.followUpId || p.operationNo} onClick={() => openFollowUp(p)} className={`h-[70px] cursor-pointer border-t border-slate-100 hover:bg-blue-50/40 ${!p.followUpViewedAt ? 'bg-blue-50/30' : ''}`}><td className="px-4 font-semibold">{p.id}</td><td className="px-4">{p.name}{!p.followUpViewedAt && <span className="ml-2 inline-block size-2 rounded-full bg-blue-600" />}<small className="block text-slate-500">{p.age != null ? `${p.age} ปี` : '-'} {p.dateOfBirth ? `(${p.dateOfBirth})` : ''}</small></td><td className="px-4">{p.procedure || '-'}</td><td className="px-4">{p.surgeon || '-'}</td><td className="px-4">-</td><td className="px-4"><StatusBadge>{p.followUpStatus || '-'}</StatusBadge></td><td className="px-4">{firstSchedule?.date || firstSchedule?.scheduledAt || '-'}</td></tr>})}</tbody></table></div><footer className="flex h-[46px] items-center justify-between border-t border-slate-200 px-6 text-[13px] text-slate-500"><span>แสดง {rows.length} จาก {patients.length} รายการ</span></footer></section>
 }
@@ -165,29 +191,32 @@ function AcceptPatientModal({ patient, onClose }) {
     if (!user?.id) return setError('ไม่พบข้อมูลผู้ใช้งาน กรุณาเข้าสู่ระบบใหม่')
     setAccepting(true); setError('')
     try {
+      const followUps = await api.getFollowUps(patient.operationNo)
+      const hasActiveFollowUp = followUps.some((followUp) => followUp.status === 'ACTIVE')
       await api.acceptOperation(patient.operationNo, user.id)
       window.dispatchEvent(new Event('operations-updated'))
-      navigate(patient.followUpId ? `/follow-ups/${patient.id}` : `/cases/${patient.id}/create-follow-up`)
+      const operationId = encodeURIComponent(patient.operationNo || patient.id)
+      navigate(hasActiveFollowUp ? `/follow-ups/${operationId}` : `/cases/${operationId}/create-follow-up`)
       onClose()
     } catch (reason) { setError(reason.message) }
     finally { setAccepting(false) }
   }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
-      <section className="relative w-full max-w-[480px] rounded-2xl bg-white px-8 pb-7 pt-8 shadow-2xl">
+      <section role="dialog" aria-modal="true" className="relative w-full max-w-[480px] rounded-xl bg-white px-6 pb-6 pt-6 shadow-2xl">
         <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X size={20} /></button>
 
         {/* Orange warning icon */}
         <div className="flex justify-center">
-          <img src="/assets/icon/Alert Icon.png" alt="" className="h-20 w-20 object-contain" />
+          <img src="/assets/icon/Alert Icon.png" alt="" className="h-16 w-16 object-contain" />
         </div>
 
-        <h2 className="mt-5 text-center text-[24px] font-semibold text-[#191c1e]">คุณจะเป็นผู้ดูแลคนไข้รายนี้</h2>
-        <p className="mt-2 text-center text-[15px] leading-6 text-slate-500">คุณต้องการรับผู้ป่วยรายนี้<br />เพื่อเป็นผู้รับผิดชอบในการติดตามใช่หรือไม่?</p>
+        <h2 className="mt-4 text-center text-[20px] font-semibold text-[#191c1e]">คุณจะเป็นผู้ดูแลคนไข้รายนี้</h2>
+        <p className="mt-2 text-center text-[14px] leading-6 text-slate-500">คุณต้องการรับผู้ป่วยรายนี้<br />เพื่อเป็นผู้รับผิดชอบในการติดตามใช่หรือไม่?</p>
         <p className="mt-3 text-center text-[13px] text-blue-600">ผู้รับเคส: {currentUser?.name || '-'} ({currentUser?.role || '-'})</p>
 
         {/* Patient info card */}
-        <div className="mt-5 rounded-xl bg-blue-50/60 p-4 text-[15px]">
+        <div className="mt-5 rounded-lg bg-blue-50/60 p-4 text-[14px]">
           <p className="font-semibold text-[#191c1e]">HN {patient.id}&nbsp;&nbsp;{patient.name}</p>
           <p className="mt-1 text-slate-600">{patient.sex || '-'} • อายุ {patient.age ?? '-'} ปี {patient.dateOfBirth ? `(${patient.dateOfBirth})` : ''}</p>
           <p className="mt-0.5 text-slate-600">หัตถการ: <strong className="font-semibold">{patient.procedure || '-'}</strong></p>
@@ -197,13 +226,18 @@ function AcceptPatientModal({ patient, onClose }) {
           </div>
         </div>
 
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-left">
+          <p className="text-[12px] font-semibold text-amber-700">บันทึกส่งต่อจาก OR</p>
+          <p className="mt-1 whitespace-pre-wrap break-words text-[14px] leading-6 text-slate-700">{patient.orHandoverNote || 'ไม่มีบันทึกเพิ่มเติม'}</p>
+        </div>
+
         {error && <p className="mt-4 text-center text-sm text-red-600">{error}</p>}
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <button onClick={onClose} className="h-[50px] rounded-xl border border-slate-200 text-[15px] font-medium text-slate-700 hover:bg-slate-50">ยกเลิก</button>
+          <button onClick={onClose} className="h-10 rounded-lg border border-slate-200 text-[14px] font-medium text-slate-700 hover:bg-slate-50">ยกเลิก</button>
           <button
             disabled={accepting}
             onClick={accept}
-            className="inline-flex h-[50px] items-center justify-center gap-2 rounded-xl bg-[#002d73] text-[15px] font-medium text-white hover:bg-[#001d52]"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#002d73] text-[14px] font-medium text-white hover:bg-[#001d52]"
           >{accepting ? 'กำลังรับเคส...' : 'ใช่, รับเป็นผู้ดูแล'} <ArrowRight size={16} /></button>
         </div>
       </section>
@@ -398,6 +432,7 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch, refetch 
   useEffect(() => { api.getSettings().then(settings => { if (Array.isArray(settings.riskLevels) && settings.riskLevels.length) setRiskLevels(settings.riskLevels.map(level => level.id === 'moderate' && Number(level.max) === 49 ? { ...level, max: 50 } : level.id === 'high' && Number(level.min) === 50 ? { ...level, min: 51 } : level)) }).catch(() => {}) }, [])
   const [activeTab, setActiveTab] = useState('all')
   const [actionError, setActionError] = useState('')
+  const [recoveryPatient, setRecoveryPatient] = useState(null)
   const currentUser = useMemo(() => { try { return JSON.parse(sessionStorage.getItem('or-smart-user') || 'null') } catch { return null } }, [])
 
   const decide = async (event, row, decision) => {
@@ -409,11 +444,10 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch, refetch 
       refetch()
     } catch (error) { setActionError(error.message) }
   }
-  const recover = async (event, row) => {
+  const recover = (event, row) => {
     event.stopPropagation()
     setActionError('')
-    try { await api.markRecovered(row.operationNo); window.dispatchEvent(new Event('operations-updated')); refetch() }
-    catch (error) { setActionError(error.message) }
+    setRecoveryPatient(row)
   }
 
   const metrics = [
@@ -542,46 +576,30 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch, refetch 
           </button>
         </header>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1900px] text-[13px] text-[#434651]">
+          <table className="w-full min-w-[2350px] text-[13px] text-[#434651]">
             <thead className="h-10 bg-slate-50 font-semibold text-[#1e293b]">
               <tr>
-                <th className="px-4 py-2 text-left">HN</th>
-                <th className="px-4 py-2 text-left">ชื่อผู้ป่วย</th>
-                <th className="px-4 py-2 text-left">หัตถการ</th>
-                <th className="px-4 py-2 text-left">ศัลยแพทย์</th>
-                <th className="px-4 py-2 text-left">วันผ่าตัด</th>
-                <th className="px-4 py-2 text-left">ความเสี่ยง SSI</th>
-                <th className="px-4 py-2 text-left">สถานะประเมิน SSI</th>
-                <th className="px-4 py-2 text-left">เริ่มติดตามครั้งแรก</th>
-                <th className="px-4 py-2 text-left">รอบติดตาม</th>
-                <th className="px-4 py-2 text-left">รอบปัจจุบัน</th>
-                <th className="px-4 py-2 text-left">นัดติดตามถัดไป</th>
-                <th className="px-4 py-2 text-left">ช่องทางติดต่อ</th>
-                <th className="px-4 py-2 text-left">สถานะตรวจ SSI</th>
-                <th className="px-4 py-2 text-left">จัดการ</th>
+                {['HN', 'ชื่อผู้ป่วย', 'หัตถการ', 'ศัลยแพทย์', 'วันผ่าตัด', 'ความเสี่ยง SSI', 'สถานะประเมิน SSI', 'เริ่มติดตามครั้งแรก', 'รอบติดตาม', 'รอบปัจจุบัน', 'นัดติดตามถัดไป', 'ช่องทางติดต่อ', 'สถานะตรวจ SSI', 'จัดการ'].map((label) => <th key={label} className="whitespace-nowrap px-5 py-3 text-center first:text-left">{label}</th>)}
               </tr>
             </thead>
             <tbody>
               {ssiRows.map((row, idx) => (
                 <tr
                   key={idx}
-                  onClick={() => navigate(`/suspected-cases/${row.hn}/info${detailQuery}`)}
-                  className="h-[70px] border-t border-slate-100 hover:bg-blue-50/20 cursor-pointer"
+                  onClick={() => navigate(`/suspected-cases/${encodeURIComponent(row.operationNo)}/info${detailQuery}`)}
+                  className="h-[68px] border-t border-slate-100 hover:bg-blue-50/30 cursor-pointer"
                 >
-                  <td className="px-4 py-2 font-semibold text-slate-700">{row.hn}</td>
-                  <td className="px-4 py-2">
-                    <span className="font-semibold text-[#175beb] block">{row.name}</span>
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">{row.age} ({row.birth})</span>
-                  </td>
-                  <td className="px-4 py-2 font-medium text-slate-700">{row.procedure}</td>
-                  <td className="px-4 py-2 text-slate-600">{row.surgeon}</td>
-                  <td className="px-4 py-2 text-slate-500">{row.date}</td>
-                  <td className="px-4 py-2">
-                    <span className="inline-flex items-center gap-2 font-semibold" style={{ color: row.riskColorValue }}>
+                  <td className="whitespace-nowrap px-5 py-3 font-semibold text-slate-700">{row.hn}</td>
+                  <td className="whitespace-nowrap px-5 py-3"><span className="block font-semibold text-[#175beb]">{row.name}</span><span className="mt-1 block text-[11px] text-slate-400">{row.age} · HN {row.hn}</span></td>
+                  <td className="whitespace-nowrap px-5 py-3 font-medium text-slate-700">{row.procedure}</td>
+                  <td className="whitespace-nowrap px-5 py-3 text-slate-600">{row.surgeon}</td>
+                  <td className="whitespace-nowrap px-5 py-3 text-slate-500">{row.date}</td>
+                  <td className="whitespace-nowrap px-5 py-3 text-center">
+                    <span className="inline-flex items-center justify-center gap-2 font-semibold" style={{ color: row.riskColorValue }}>
                       <i className="size-2 rounded-full" style={{ backgroundColor: row.riskColorValue }} />{row.risk}
                     </span>
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="whitespace-nowrap px-5 py-3 text-center">
                     {row.status === 'RECOVERED' ? <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[12px] font-semibold text-emerald-600">หายจากการติดเชื้อ</span> : row.status === 'CONFIRMED_SSI' ? (
                       <span className={`rounded-lg px-2.5 py-1 text-[12px] font-semibold ${row.status === 'RECOVERED' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
                         ยืนยัน SSI
@@ -592,15 +610,15 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch, refetch 
                       </span>
                     ) : /not_infected|not_ssi/i.test(row.evaluationResult || '') ? <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[12px] font-semibold text-emerald-600">ไม่เข้าข่าย SSI</span> : <span className="text-slate-400">รอประเมิน</span>}
                   </td>
-                  <td className="px-4 py-2">{row.startedAt ? new Date(row.startedAt).toLocaleDateString('th-TH') : '-'}</td>
-                  <td className="px-4 py-2">{row.templateDays ? <>Day {row.templateDays}<small className="block text-blue-600">({row.schedule.length} รอบ)</small></> : '-'}</td>
-                  <td className="px-4 py-2">{row.currentRound ? <>{row.currentRound.day}<small className="block text-blue-600">รอบติดตาม {row.currentIndex + 1}/{row.schedule.length} รอบ</small></> : '-'}</td>
-                  <td className="px-4 py-2">{row.nextRound ? <>{row.nextRound.day}<small className="block text-slate-500">{row.nextRound.date || '-'}</small></> : 'สิ้นสุดรอบ'}</td>
-                  <td className="px-4 py-2">{row.phone || '-'}</td>
-                  <td className="px-4 py-2"><span className={`rounded-lg px-2.5 py-1 text-[12px] font-semibold ${row.status === 'CONFIRMED_SSI' ? 'bg-red-50 text-red-500' : row.status === 'RECOVERED' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-500'}`}>{row.status === 'SUSPECTED_SSI' ? 'รอแพทย์ตรวจสอบ' : row.status === 'CONFIRMED_SSI' ? 'ยืนยัน SSI' : row.status === 'RECOVERED' ? 'หายจากการติดเชื้อ' : '-'}</span></td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center gap-2 whitespace-nowrap">
-                      <button type="button" onClick={(event) => { event.stopPropagation(); navigate(`/suspected-cases/${row.hn}/info`) }} className="rounded-lg border border-slate-200 p-2 text-blue-600" aria-label="ดูข้อมูล"><Eye size={15} /></button>
+                  <td className="whitespace-nowrap px-5 py-3 text-center">{row.startedAt ? new Date(row.startedAt).toLocaleDateString('th-TH') : '-'}</td>
+                  <td className="whitespace-nowrap px-5 py-3 text-center">{row.templateDays ? `Day ${row.templateDays} (${row.schedule.length} รอบ)` : '-'}</td>
+                  <td className="whitespace-nowrap px-5 py-3 text-center font-medium text-blue-600">{row.currentRound ? `${row.currentRound.day} · รอบ ${row.currentIndex + 1}/${row.schedule.length}` : '-'}</td>
+                  <td className="whitespace-nowrap px-5 py-3 text-center">{row.nextRound ? `${row.nextRound.day} · ${row.nextRound.date || '-'}` : 'สิ้นสุดรอบ'}</td>
+                  <td className="whitespace-nowrap px-5 py-3 text-center font-medium text-slate-600">{row.phone || '-'}</td>
+                  <td className="whitespace-nowrap px-5 py-3 text-center"><span className={`inline-flex rounded-lg px-2.5 py-1 text-[12px] font-semibold ${row.status === 'CONFIRMED_SSI' ? 'bg-red-50 text-red-500' : row.status === 'RECOVERED' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-500'}`}>{row.status === 'SUSPECTED_SSI' ? 'รอแพทย์ตรวจสอบ' : row.status === 'CONFIRMED_SSI' ? 'ยืนยัน SSI' : row.status === 'RECOVERED' ? 'หายจากการติดเชื้อ' : '-'}</span></td>
+                  <td className="whitespace-nowrap px-5 py-3">
+                    <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                      <button type="button" onClick={(event) => { event.stopPropagation(); navigate(`/suspected-cases/${encodeURIComponent(row.operationNo)}/info${detailQuery}`) }} className="rounded-lg border border-slate-200 p-2 text-blue-600" aria-label="ดูข้อมูล"><Eye size={15} /></button>
                       {type === 'doctor' && <span className="text-[12px] text-slate-500">รอแจ้งผลให้เจ้าหน้าที่</span>}
                       {type === 'suspected' && <><button onClick={(event) => decide(event, row, 'NOT_SSI')} className="rounded-md border border-emerald-500 px-3 py-2 text-emerald-600">ไม่ติดเชื้อ</button><button type="button" onClick={(event) => decide(event, row, 'CONFIRMED_SSI')} className="inline-flex items-center gap-2 rounded-md bg-red-500 px-3 py-2 font-semibold text-white"><AlertCircle size={15}/>เข้าข่ายการติดเชื้อ SSI</button></>}
                       {type === 'confirmed' && (row.status === 'RECOVERED' ? <span className="text-emerald-600">สิ้นสุดการติดเชื้อแล้ว</span> : <button onClick={(event) => recover(event, row)} className="rounded-md border border-emerald-500 px-3 py-2 text-emerald-600">บันทึกว่าหายแล้ว</button>)}
@@ -623,18 +641,46 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch, refetch 
         </footer>
       </section>
 
+      {recoveryPatient && <RecoveryAssessmentModal patient={recoveryPatient} currentUser={currentUser} onClose={() => setRecoveryPatient(null)} onConfirmed={async () => { setRecoveryPatient(null); window.dispatchEvent(new Event('activities-updated')); window.dispatchEvent(new Event('operations-updated')); await refetch() }} />}
+
     </div>
   );
 }
 
+function RecoveryAssessmentModal({ patient, currentUser, onClose, onConfirmed }) {
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+  const timeNow = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date())
+  const [date, setDate] = useState(today)
+  const [time, setTime] = useState(timeNow)
+  const [temperature, setTemperature] = useState('')
+  const [woundCondition, setWoundCondition] = useState('แผลแห้งดี ไม่มีอาการอักเสบ')
+  const [remarks, setRemarks] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const save = async () => {
+    if (!date || !time || !woundCondition || !remarks.trim()) return setError('กรุณากรอกผลตรวจและหมายเหตุให้ครบ')
+    setSaving(true); setError('')
+    try {
+      const staff = currentUser?.name || 'System Admin'
+      const activity = await api.createActivity(patient.operationNo, { activityType: 'ประเมินการหายจาก SSI', activityAt: `${date}T${time}:00+07:00`, purpose: 'ประเมินก่อนยืนยันหายจากการติดเชื้อ', staff, contactPrimary: patient.phone || '-', detail: remarks.trim() })
+      await api.createActivityEvaluation(patient.operationNo, { activityId: activity.id, evaluationType: 'SSI_RECOVERY', result: 'recovery_clear', evaluatedBy: staff, evaluatedAt: `${date}T${time}:00+07:00`, data: { assessmentKind: 'SSI_RECOVERY', temperature: temperature || null, woundCondition, remarks: remarks.trim() } })
+      await api.markRecovered(patient.operationNo)
+      await onConfirmed()
+    } catch (saveError) { setError(saveError.message); setSaving(false) }
+  }
+  return <div className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/55 p-4" onMouseDown={onClose}><section className="w-full max-w-xl rounded-2xl bg-white shadow-2xl" onMouseDown={event => event.stopPropagation()}><header className="flex items-start justify-between border-b border-slate-200 px-6 py-5"><div><h2 className="text-[18px] font-semibold text-[#002d73]">ประเมินก่อนยืนยันหายจาก SSI</h2><p className="mt-1 text-[12px] text-slate-500">HN {patient.hn} · Operation Number {patient.operationNo}</p></div><button type="button" onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100" aria-label="ปิด"><X size={19}/></button></header><div className="space-y-4 px-6 py-5"><div className="grid gap-4 sm:grid-cols-2"><label className="text-[13px] font-medium text-slate-700">วันที่ประเมิน <span className="text-red-500">*</span><input type="date" value={date} onChange={event => setDate(event.target.value)} className="form-input mt-1" /></label><label className="text-[13px] font-medium text-slate-700">เวลาประเมิน <span className="text-red-500">*</span><input type="time" value={time} onChange={event => setTime(event.target.value)} className="form-input mt-1" /></label></div><div className="grid gap-4 sm:grid-cols-2"><label className="text-[13px] font-medium text-slate-700">สภาพแผล <span className="text-red-500">*</span><select value={woundCondition} onChange={event => setWoundCondition(event.target.value)} className="form-select mt-1"><option>แผลแห้งดี ไม่มีอาการอักเสบ</option><option>แผลดีขึ้น ยังต้องติดตาม</option><option>ยังพบอาการผิดปกติ</option></select></label><label className="text-[13px] font-medium text-slate-700">อุณหภูมิร่างกาย (°C)<input type="number" min="30" max="45" step="0.1" value={temperature} onChange={event => setTemperature(event.target.value)} className="form-input mt-1" placeholder="เช่น 36.8" /></label></div><label className="block text-[13px] font-medium text-slate-700">ผลตรวจและหมายเหตุ <span className="text-red-500">*</span><textarea value={remarks} onChange={event => setRemarks(event.target.value)} className="form-input mt-1 min-h-24 resize-none" placeholder="บันทึกผลตรวจที่ใช้ยืนยันว่าผู้ป่วยหายจากการติดเชื้อ" /></label>{error && <p className="rounded-lg bg-red-50 px-3 py-2 text-[12px] text-red-600">{error}</p>}</div><footer className="flex justify-end gap-3 border-t border-slate-200 px-6 py-4"><button type="button" onClick={onClose} className="btn-outlined-primary">ยกเลิก</button><button type="button" disabled={saving} onClick={save} className="btn-filled-primary disabled:opacity-50">{saving ? 'กำลังบันทึก...' : 'บันทึกผลและยืนยันหาย'}</button></footer></section></div>
+}
+
 function NotificationsCenterPage() {
   const navigate = useNavigate()
+  const { search } = useLocation()
   const [dateRange, setDateRange] = useState('');
   const [notifType, setNotifType] = useState('ทั้งหมด');
   const [status, setStatus] = useState('ทั้งหมด');
   const [importance, setImportance] = useState('ทั้งหมด');
   const [patientType, setPatientType] = useState('คนไข้ทั้งหมด');
   const [selectedNotification, setSelectedNotification] = useState(null);
+  const openedNotificationKeyRef = useRef(null)
 
   const { data: notificationData, loading, refetch } = useApiQuery(api.getNotifications)
   useEffect(() => { const timer = window.setInterval(refetch, 60000); return () => window.clearInterval(timer) }, [refetch])
@@ -670,9 +716,29 @@ function NotificationsCenterPage() {
     } catch (error) { window.alert(error.message) }
   }
 
+  useEffect(() => {
+    const notificationKey = new URLSearchParams(search).get('notification')
+    if (!notificationKey) {
+      openedNotificationKeyRef.current = null
+      return
+    }
+    if (openedNotificationKeyRef.current === notificationKey || selectedNotification?.id === notificationKey) return
+    const notification = notifications.find(item => item.id === notificationKey)
+    if (notification) {
+      openedNotificationKeyRef.current = notificationKey
+      handleOpenDetail(notification)
+    }
+  }, [notifications, search, selectedNotification?.id])
+
+  const closeNotificationDetail = () => {
+    setSelectedNotification(null)
+    if (new URLSearchParams(search).has('notification')) navigate('/notifications', { replace: true })
+  }
+
   const handleOpenCase = (notif) => {
     if (!notif?.hn) return
-    navigate(`${notif.follow_up_id ? '/follow-ups' : '/cases'}/${encodeURIComponent(notif.hn)}?from=notifications`)
+    const historyTypes = ['ADDITIONAL_ACTIVITY', 'FOLLOW_UP_RECORDED', 'SSI_RISK_FOUND', 'SSI_SENT_TO_DOCTOR', 'SSI_CONFIRMED', 'SSI_NOT_CONFIRMED']
+    navigate(`${notif.follow_up_id ? '/follow-ups' : '/cases'}/${encodeURIComponent(notif.hn)}?from=notifications${notif.follow_up_id && historyTypes.includes(notif.notification_type) ? '&tab=history' : ''}`)
   }
 
   return (
@@ -841,14 +907,14 @@ function NotificationsCenterPage() {
       </section>
 
       {selectedNotification && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/45 p-4" onMouseDown={() => setSelectedNotification(null)}>
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/45 p-4" onMouseDown={closeNotificationDetail}>
           <section className="max-h-[90dvh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
             <header className="flex items-start justify-between border-b border-slate-200 px-6 py-5">
               <div>
                 <p className="text-[12px] font-medium text-blue-600">รายละเอียดการแจ้งเตือน</p>
                 <h3 className="mt-1 text-[19px] font-semibold text-[#002d73]">{selectedNotification.type}</h3>
               </div>
-              <button type="button" onClick={() => setSelectedNotification(null)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label="ปิด">
+              <button type="button" onClick={closeNotificationDetail} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100" aria-label="ปิด">
                 <X size={20} />
               </button>
             </header>
@@ -866,11 +932,12 @@ function NotificationsCenterPage() {
                 <div><p className="text-slate-400">วันและเวลา</p><p className="mt-1 font-semibold text-slate-800">{selectedNotification.time}</p></div>
                 <div><p className="text-slate-400">ประเภทผู้ป่วย</p><p className="mt-1 font-semibold text-slate-800">{selectedNotification.patient_type || '-'}</p></div>
                 <div><p className="text-slate-400">ระดับความสำคัญ</p><p className={`mt-1 font-semibold ${selectedNotification.priority === 'HIGH' ? 'text-orange-600' : 'text-slate-800'}`}>{selectedNotification.priority === 'HIGH' ? 'สำคัญ' : 'ปกติ'}</p></div>
+                {selectedNotification.activity_type && <><div><p className="text-slate-400">ประเภทกิจกรรม</p><p className="mt-1 font-semibold text-slate-800">{selectedNotification.activity_type}</p></div><div><p className="text-slate-400">วันนัดหมายกิจกรรม</p><p className="mt-1 font-semibold text-slate-800">{selectedNotification.activity_at ? new Date(selectedNotification.activity_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : '-'}</p></div><div><p className="text-slate-400">วัตถุประสงค์</p><p className="mt-1 font-semibold text-slate-800">{selectedNotification.activity_purpose || '-'}</p></div><div><p className="text-slate-400">รายละเอียดกิจกรรม</p><p className="mt-1 font-semibold text-slate-800">{selectedNotification.activity_detail || '-'}</p></div></>}
               </div>
             </div>
 
             <footer className="flex flex-wrap justify-end gap-3 border-t border-slate-200 px-6 py-4">
-              <button type="button" className="btn-outlined-primary" onClick={() => setSelectedNotification(null)}>ปิด</button>
+              <button type="button" className="btn-outlined-primary" onClick={closeNotificationDetail}>ปิด</button>
               <button type="button" disabled={!selectedNotification.hn} className="btn-filled-primary disabled:cursor-not-allowed disabled:opacity-50" onClick={() => handleOpenCase(selectedNotification)}>
                 <Eye size={16} /> ดูรายละเอียดทั้งหมด
               </button>
@@ -976,22 +1043,20 @@ function CentralSearchPage() {
     <div className="space-y-4">
       {/* Top metrics summary */}
       <div className="grid gap-5 md:grid-cols-2">
-        <div className="flex min-h-[132px] items-start justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex min-h-[112px] items-start justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div>
             <p className="text-[15px] font-semibold text-[#175beb]">การค้นหาวันนี้</p>
-            <p className="mt-6 text-[30px] font-bold leading-none text-[#175beb]">{searchCount}</p>
-            <p className="mt-1.5 text-[13px] font-medium text-slate-500">ครั้ง</p>
+            <p className="mt-3 text-[32px] font-semibold leading-9 text-[#175beb]">{searchCount} <span className="text-[14px]">ครั้ง</span></p>
           </div>
           <span className="grid size-11 place-items-center rounded-lg bg-blue-50 text-[#3181ee]">
             <Search size={25} />
           </span>
         </div>
 
-        <div className="flex min-h-[132px] items-start justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex min-h-[112px] items-start justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div>
             <p className="text-[15px] font-semibold text-[#00966d]">ผลลัพธ์ทั้งหมด</p>
-            <p className="mt-6 text-[30px] font-bold leading-none text-[#00966d]">{hasSearched ? filteredResults.length : 0}</p>
-            <p className="mt-1.5 text-[13px] font-medium text-slate-500">รายการ</p>
+            <p className="mt-3 text-[32px] font-semibold leading-9 text-[#00966d]">{hasSearched ? filteredResults.length : 0} <span className="text-[14px]">รายการ</span></p>
           </div>
           <span className="grid size-11 place-items-center rounded-lg bg-emerald-50 text-[#10b981]">
             <Layers size={25} />
@@ -1167,30 +1232,30 @@ function HisSyncPage() {
     <div className="space-y-4">
       {/* Top sync summaries */}
       <div className="grid gap-5 md:grid-cols-3">
-        <div className="flex min-h-[160px] items-start justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex min-h-[112px] items-start justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div>
-            <p className="text-[16px] font-medium text-[#175beb]">ซิงค์ล่าสุดสำเร็จ</p>
-            <p className="mt-10 text-[34px] font-medium leading-none text-[#175beb]">-</p>
+            <p className="text-[15px] font-semibold text-[#175beb]">ซิงค์ล่าสุดสำเร็จ</p>
+            <p className="mt-3 text-[32px] font-semibold leading-9 text-[#175beb]">-</p>
           </div>
           <span className="grid size-12 place-items-center rounded-xl bg-blue-50 text-blue-600">
             <RefreshCw size={26} className={isSyncing ? 'animate-spin' : ''} />
           </span>
         </div>
 
-        <div className="flex min-h-[160px] items-start justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex min-h-[112px] items-start justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div>
-            <p className="text-[16px] font-medium text-[#00966d]">ซิงค์สำเร็จ</p>
-            <p className="mt-10 text-[34px] font-medium leading-none text-[#00966d]">0</p>
+            <p className="text-[15px] font-semibold text-[#00966d]">ซิงค์สำเร็จ</p>
+            <p className="mt-3 text-[32px] font-semibold leading-9 text-[#00966d]">0</p>
           </div>
           <span className="grid size-12 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
             <CheckCircle2 size={26} />
           </span>
         </div>
 
-        <div className="flex min-h-[160px] items-start justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex min-h-[112px] items-start justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div>
-            <p className="text-[16px] font-medium text-red-600">ซิงค์ล้มเหลว</p>
-            <p className="mt-10 text-[34px] font-medium leading-none text-red-600">0</p>
+            <p className="text-[15px] font-semibold text-red-600">ซิงค์ล้มเหลว</p>
+            <p className="mt-3 text-[32px] font-semibold leading-9 text-red-600">0</p>
           </div>
           <span className="grid size-12 place-items-center rounded-xl bg-blue-50 text-red-600">
             <AlertCircle size={26} />

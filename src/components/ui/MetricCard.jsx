@@ -26,7 +26,7 @@ const dashboardVisuals = {
   rose:   { icon: 'ice.png', arrow: 'up-red-margin.png', label: '#e9272f', value: '#ef3741', iconColor: '#e9272f', trend: '#ef3741', trendUnit: 'ราย', trendSuffix: '#ef3741', background: '#fff4f4' },
 }
 
-export default function MetricCard({ label, value, unit, trend, tone = 'blue', dashboard = false, topRow = false, subtext }) {
+export default function MetricCard({ label, value, unit, trend, tone = 'blue', dashboard = false }) {
   const positive = trend?.startsWith('+')
   if (!dashboard) {
     return (
@@ -36,23 +36,22 @@ export default function MetricCard({ label, value, unit, trend, tone = 'blue', d
           <span className={`rounded-lg p-1.5 ${tones[tone]}`}>{positive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}</span>
         </div>
         <p className="mt-2 text-2xl font-bold text-slate-800">{value} <span className="text-xs font-normal text-slate-400">{unit}</span></p>
-        <p className={`mt-2 text-[10px] ${positive ? 'text-emerald-600' : 'text-slate-400'}`}>{trend} <span className="text-slate-400">จากเมื่อวาน</span></p>
+        <p className={`mt-2 text-[10px] ${positive ? 'text-emerald-600' : 'text-slate-400'}`}>{trend}</p>
       </article>
     )
   }
 
   const visual = dashboardVisuals[tone] ?? dashboardVisuals.blue
   const iconUrl = `/assets/icon/dashboard/${visual.icon}`
-  const arrowUrl = `/assets/icon/dashboard/${visual.arrow}`
   const borderClass = visual.border ?? 'border-black/10'
 
   return (
     <article
-      className={`flex min-h-[124px] flex-col items-start gap-1 overflow-hidden rounded-xl border p-[17px] shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all hover:shadow-md ${borderClass} ${topRow ? 'sm:min-h-[138px]' : ''}`}
+      className={`flex min-h-[112px] flex-col overflow-hidden rounded-xl border p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all hover:shadow-md ${borderClass}`}
       style={{ backgroundColor: visual.background ?? '#ffffff' }}
     >
       <div className="flex w-full items-start justify-between gap-3">
-        <p className="text-[14px] leading-5 font-medium" style={{ color: visual.label }}>{label}</p>
+        <p className="text-[15px] leading-5 font-semibold" style={{ color: visual.label }}>{label}</p>
         <span
           className="metric-card-icon"
           aria-hidden="true"
@@ -63,35 +62,10 @@ export default function MetricCard({ label, value, unit, trend, tone = 'blue', d
           }}
         />
       </div>
-      <p className="flex w-full items-baseline gap-2 pt-1 text-[32px] leading-9 font-semibold" style={{ color: visual.value }}>
+      <p className="mt-3 flex w-full items-baseline gap-2 text-[32px] leading-9 font-semibold" style={{ color: visual.value }}>
         <span>{value}</span>
         {unit && <span className="whitespace-nowrap text-[14px] font-semibold">{unit}</span>}
       </p>
-      {subtext ? (
-        <p className="mt-auto text-[12px] font-medium" style={{ color: tone === 'red' ? '#ef4444' : '#6b7280' }}>
-          {subtext}
-        </p>
-      ) : (
-        <p className="flex items-center gap-0.5 text-[14px] leading-4 font-medium" style={{ color: visual.trend }}>
-          <span
-            className="h-[9px] w-3 shrink-0 bg-contain bg-center bg-no-repeat"
-            aria-hidden="true"
-            style={{
-              backgroundColor: visual.trend,
-              WebkitMaskImage: `url("${arrowUrl}")`,
-              WebkitMaskPosition: 'center',
-              WebkitMaskRepeat: 'no-repeat',
-              WebkitMaskSize: 'contain',
-              maskImage: `url("${arrowUrl}")`,
-              maskPosition: 'center',
-              maskRepeat: 'no-repeat',
-              maskSize: 'contain',
-            }}
-          />
-          {trend?.replace('+', '')}{visual.trendUnit ? ` ${visual.trendUnit}` : ''}
-          <span className="ml-1" style={{ color: visual.trendSuffix ?? '#6b7280' }}>จากเมื่อวาน</span>
-        </p>
-      )}
     </article>
   )
 }

@@ -66,6 +66,8 @@ const ensureSchema = async () => {
     );
   `);
   await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS receiving_department VARCHAR(255)');
+  await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS or_handover_note TEXT');
+  await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS third_surgeon VARCHAR(255)');
   await pool.query("ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS workflow_status VARCHAR(40) NOT NULL DEFAULT 'OR_PENDING'");
   await pool.query("ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS ssi_status VARCHAR(40) NOT NULL DEFAULT 'UNASSESSED'");
   await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS assigned_user_id INTEGER REFERENCES app_users(id) ON DELETE SET NULL');
@@ -84,6 +86,18 @@ const ensureSchema = async () => {
   await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS wound_class VARCHAR(100)');
   await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS asa_class VARCHAR(50)');
   await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS implant VARCHAR(255)');
+  await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS implant_present BOOLEAN');
+  await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS anesthesiologist VARCHAR(255)');
+  await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS anesthesia_type VARCHAR(100)');
+  await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS special_equipment TEXT');
+  await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS scrub_nurse VARCHAR(255)');
+  await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS circulating_nurse VARCHAR(255)');
+  await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS anesthesia_nurse VARCHAR(255)');
+  await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS comorbidities TEXT');
+  await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS smoking_status VARCHAR(30)');
+  await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS wound_at_discharge VARCHAR(100)');
+  await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS wound_discharge_notes TEXT');
+  await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS patient_photo TEXT');
   await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS phone_primary VARCHAR(100)');
   await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS phone_secondary VARCHAR(100)');
   await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS line_id VARCHAR(150)');

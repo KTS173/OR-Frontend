@@ -42,6 +42,7 @@ const operationToPatient = (operation) => ({
   heightCm: operation.height_cm,
   weightKg: operation.weight_kg,
   bmi: operation.bmi,
+  patientPhoto: operation.patient_photo,
   phonePrimary: operation.phone_primary,
   phoneSecondary: operation.phone_secondary,
   lineId: operation.line_id,
@@ -62,8 +63,16 @@ const operationToPatient = (operation) => ({
   diagnosis: operation.preoperative_diagnosis,
   surgeon: operation.surgeon,
   secondSurgeon: operation.second_surgeon,
+  thirdSurgeon: operation.third_surgeon,
+  anesthesiologist: operation.anesthesiologist,
+  anesthesiaType: operation.anesthesia_type,
+  specialEquipment: operation.special_equipment,
+  scrubNurse: operation.scrub_nurse,
+  circulatingNurse: operation.circulating_nurse,
+  anesthesiaNurse: operation.anesthesia_nurse,
   department: operation.operation_department,
   receivingDepartment: operation.receiving_department,
+  orHandoverNote: operation.or_handover_note,
   location: operation.operation_location,
   operatingRoom: operation.operating_room,
   urgency: operation.urgency,
@@ -78,11 +87,18 @@ const operationToPatient = (operation) => ({
   woundClass: operation.wound_class,
   asaClass: operation.asa_class,
   implant: operation.implant,
+  implantPresent: operation.implant_present,
+  comorbidities: operation.comorbidities,
+  smokingStatus: operation.smoking_status,
+  woundAtDischarge: operation.wound_at_discharge,
+  woundDischargeNotes: operation.wound_discharge_notes,
   outcome: operation.outcome,
   reportTemplate: operation.report_template,
   status: operation.status || 'รอตรวจสอบ',
   workflowStatus: operation.workflow_status || 'OR_PENDING',
   ssiStatus: operation.ssi_status || 'UNASSESSED',
+  everConfirmedSsi: operation.ever_confirmed_ssi === true,
+  confirmedSsiAt: operation.confirmed_ssi_at,
   risk: 'ยังไม่ประเมิน',
   createdAt: operation.created_at,
   followUpId: operation.follow_up_id,
@@ -112,17 +128,24 @@ export const api = {
   getFollowUpPatients: async (assignedUserId = currentUserId()) => (await request(`/api/follow-ups${assignedUserId ? `?assignedUserId=${encodeURIComponent(assignedUserId)}` : ''}`)).map(operationToPatient),
   getPatient: async (id) => {
     const operations = await request('/api/operations')
-    const operation = operations.find((item) => item.hn === id || item.operation_no === id)
+    const operation = operations.find((item) => item.operation_no === id) ?? operations.find((item) => item.hn === id)
     if (!operation) throw new Error('ไม่พบข้อมูลผู้ป่วย')
     return operationToPatient(operation)
   },
+  getPatientGroup: async (id) => {
+    const operations = await request('/api/operations')
+    const selected = operations.find((item) => item.operation_no === id) ?? operations.find((item) => item.hn === id)
+    if (!selected) throw new Error('ไม่พบข้อมูลผู้ป่วย')
+    return operations
+      .filter((item) => item.hn === selected.hn && item.episode_no === selected.episode_no)
+      .map(operationToPatient)
+  },
   getOperations: () => request('/api/operations'),
   updateOperation: (operationNo, data) => request(`/api/operations/${encodeURIComponent(operationNo)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
-  updateOperation: (operationNo, data) => request(`/api/operations/${encodeURIComponent(operationNo)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
-  assignPatientType: async (operationNo, patientType, department) => request(`/api/operations/${encodeURIComponent(operationNo)}/patient-type`, {
+  assignPatientType: async (operationNo, patientType, department, note) => request(`/api/operations/${encodeURIComponent(operationNo)}/patient-type`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ patientType, department }),
+    body: JSON.stringify({ patientType, department, note }),
   }),
   acceptOperation: (operationNo, userId) => request(`/api/operations/${encodeURIComponent(operationNo)}/accept`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) }),
   getUsers: () => request('/api/users'),
@@ -145,6 +168,7 @@ export const api = {
   getEvaluationHistory: async (assignedUserId = currentUserId()) => (await request(`/api/evaluations${assignedUserId ? `?assignedUserId=${encodeURIComponent(assignedUserId)}` : ''}`)).map(operationToPatient),
   getActivities: (operationNo) => request(`/api/operations/${encodeURIComponent(operationNo)}/activities`),
   createActivity: (operationNo, data) => request(`/api/operations/${encodeURIComponent(operationNo)}/activities`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
+  createActivityEvaluation: (operationNo, data) => request(`/api/operations/${encodeURIComponent(operationNo)}/activity-evaluations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(withAssessmentScore(data)) }),
   getEvaluations: (operationNo) => request(`/api/operations/${encodeURIComponent(operationNo)}/evaluations`),
   createEvaluation: (operationNo, data) => request(`/api/operations/${encodeURIComponent(operationNo)}/evaluations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(withAssessmentScore(data)) }),
   updateEvaluation: (id, data) => request(`/api/evaluations/${encodeURIComponent(id)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
