@@ -44,6 +44,7 @@ export function useApiQuery(query, { refreshInterval = 0, refreshOnFocus = true 
       window.addEventListener('focus', refreshVisiblePage)
       document.addEventListener('visibilitychange', refreshVisiblePage)
     }
+    window.addEventListener('operations-updated', refreshVisiblePage)
     window.addEventListener('storage', refreshAfterRisUpdate)
     window.addEventListener('or-smart-ris-operation-updated', refreshAfterRisUpdate)
 
@@ -52,6 +53,7 @@ export function useApiQuery(query, { refreshInterval = 0, refreshOnFocus = true 
       if (intervalId) window.clearInterval(intervalId)
       window.removeEventListener('focus', refreshVisiblePage)
       document.removeEventListener('visibilitychange', refreshVisiblePage)
+      window.removeEventListener('operations-updated', refreshVisiblePage)
       window.removeEventListener('storage', refreshAfterRisUpdate)
       window.removeEventListener('or-smart-ris-operation-updated', refreshAfterRisUpdate)
     }

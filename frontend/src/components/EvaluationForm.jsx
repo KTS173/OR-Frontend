@@ -23,14 +23,6 @@ const fileToDataUrl = file => new Promise((resolve, reject) => {
   reader.readAsDataURL(file)
 })
 
-const formatThaiMobile = value => {
-  const digits = String(value || '').replace(/\D/g, '').slice(0, 10)
-  if (digits.length <= 3) return digits
-  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`
-  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
-}
-
-const isValidThaiMobile = value => /^0[689]\d{8}$/.test(String(value || '').replace(/\D/g, ''))
 
 export default function EvaluationForm({ selectedPatient, setSelectedPatient, mode = 'scheduled', onCompleted }) {
   const isOutOfRound = mode === 'out-of-round'
@@ -183,7 +175,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const scheduledDay = activeRound?.date ? new Date(`${activeRound.date}T00:00:00`) : null
   const roundIsDue = activeRoundIndex === 0 || !scheduledDay || today >= scheduledDay
-  const validStaffPhone = isValidThaiMobile(contactPhone)
+  const validStaffPhone = contactPhone.trim().length > 0
   const canSave = Boolean((isOutOfRound || roundIsDue) && activeFollowUp && followUpDate && followUpTime && followUpMethod && followerName && validStaffPhone && contactStatus && evalResult && requiredSymptomsAnswered)
 
   const saveAssessment = async (submittedToDoctor = false) => {
@@ -259,9 +251,8 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
                 />
               </div>
               <div className="form-group">
-                <label>เบอร์ของเจ้าหน้าที่ที่ติดตาม <span className="text-red-500 font-bold">*</span></label>
-                <input type="tel" inputMode="numeric" maxLength={12} placeholder="0XX-XXX-XXXX" className="form-input" value={contactPhone} onChange={event => setContactPhone(formatThaiMobile(event.target.value))} />
-                {contactPhone && !isValidThaiMobile(contactPhone) && <p className="mt-1 text-[11px] leading-4 text-red-500">กรุณากรอกเบอร์มือถือไทย 10 หลัก ขึ้นต้นด้วย 06, 08 หรือ 09</p>}
+                <label>เบอร์ภายในที่ติดตาม <span className="text-red-500 font-bold">*</span></label>
+                <input type="text" required placeholder="กรอกเบอร์ภายใน" className="form-input" value={contactPhone} onChange={event => setContactPhone(event.target.value)} />
               </div>
             </div>
 

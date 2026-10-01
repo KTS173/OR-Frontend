@@ -13,7 +13,8 @@ import SetupFollowUpView from '../components/SetupFollowUpView.jsx'
 import EvaluationHistory from '../components/EvaluationHistory.jsx'
 
 
-function DetailRow({ label, value }) {
+function DetailRow({ label, value, keepLabelOnOneLine = false }) {
+  if (keepLabelOnOneLine) return <div className="flex min-h-5 min-w-0 items-start justify-between gap-3 text-[14px] leading-5"><span className="shrink-0 whitespace-nowrap text-slate-500">{label}</span><strong className="min-w-0 whitespace-normal [overflow-wrap:anywhere] text-right font-medium text-slate-700">{value}</strong></div>
   return <div className="flex min-h-5 items-start justify-between gap-4 text-[14px] leading-5"><span className="text-slate-500">{label}</span><strong className="text-right font-medium text-slate-700">{value}</strong></div>
 }
 
@@ -112,12 +113,17 @@ export default function CaseDetailPage() {
         woundAtDischarge: draft.woundAtDischarge, woundDischargeNotes: draft.woundDischargeNotes
       })
       const refreshed = await api.getPatient(patient.operationNo)
-      setPatient(refreshed); setDraft(refreshed); setSaveMessage('บันทึกข้อมูลคนไข้เรียบร้อยแล้ว')
+      setPatient(refreshed); setDraft(refreshed)
+      setPatientOperations((current) => current.map((item) => item.operationNo === refreshed.operationNo ? refreshed : item))
+      setQueueOperation((current) => current?.operationNo === refreshed.operationNo ? refreshed : current)
+      setSaveMessage('บันทึกข้อมูลคนไข้เรียบร้อยแล้ว')
       window.dispatchEvent(new Event('operations-updated'))
       return true
     } catch (error) { setSaveMessage(error.message || 'บันทึกข้อมูลไม่สำเร็จ'); return false }
     finally { setSavingPatient(false) }
   }
+
+  const pendingOperations = patientOperations.filter((operation) => operation.workflowStatus === 'OR_PENDING')
 
   if (loading) return <div className="rounded-xl border border-slate-200 bg-white p-10 text-center text-slate-500">กำลังโหลดข้อมูลผู้ป่วย...</div>
   if (loadError || !patient) return <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">{loadError || 'ไม่พบข้อมูลผู้ป่วย'}</div>
@@ -132,8 +138,8 @@ export default function CaseDetailPage() {
       <nav className="mt-3 flex h-[73px] items-center justify-between rounded-lg border border-[#e2e8f0] bg-white px-[17px]"><div className="flex h-[39px] gap-6 border-b border-[#e2e8f0]"><button onClick={() => setActivePatientTab('info')} className={`text-[16px] font-medium ${activePatientTab === 'info' ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}>ข้อมูลคนไข้</button><button onClick={() => setActivePatientTab('documents')} className={`text-[16px] font-medium ${activePatientTab === 'documents' ? 'border-b-2 border-[#175beb] text-[#175beb]' : 'text-[#424752]'}`}>เอกสารอ้างอิง</button></div><button onClick={() => window.dispatchEvent(new Event('documents-updated'))} className="inline-flex h-[38px] items-center gap-2 rounded-lg border border-[#e2e8f0] px-[13px] text-[14px]"><RefreshCw size={14} />รีเฟรช</button></nav>
       {activePatientTab === 'info' ? <>
         <SurgerySection patient={patient} />
-        <ContactAndProcedures patient={patient} operations={patientOperations} />
-        <OperationCaseBlocks operations={patientOperations} onSend={(operation) => { setQueueOperation(operation); setQueueOpen(true) }} onExclude={(operation) => { setExcludeOperation(operation); setExcludeOpen(true) }} />
+        <ContactAndProcedures patient={patient} operations={pendingOperations} />
+        <OperationCaseBlocks operations={pendingOperations} onSend={(operation) => { setQueueOperation(operation); setQueueOpen(true) }} onExclude={(operation) => { setExcludeOperation(operation); setExcludeOpen(true) }} />
         <FollowUpTimeline patient={patient} />
       </> : <DocsView key={`${patient.id}-${patient.episodeNo}`} selectedPatient={patient} operations={patientOperations} referenceMode />}
       {queueOpen && queueOperation && <QueueModal patient={queueOperation} onClose={() => setQueueOpen(false)} onSend={handleSend} />}
@@ -381,6 +387,19 @@ function EditableOrCase({ patient, onChange }) {
         <Field label="BMI (คำนวณอัตโนมัติ)" name="bmi" type="number" readOnly /><Field label="เชื้อชาติ" name="ethnicity" /><Field label="สัญชาติ" name="nationality" /><Field label="สิทธิการรักษา" name="insurance" />
         <label className="text-[13px] font-medium md:col-span-3 xl:col-span-4">ที่อยู่<textarea className={areaClass} value={patient.address || ''} onChange={event => update('address', event.target.value)} /></label>
       </div>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <label className="text-[13px] font-medium text-slate-600">การสูบบุหรี่<select className={fieldClass} value={patient.smokingStatus || ''} onChange={event => update('smokingStatus', event.target.value)}><option value="">ไม่ระบุ</option><option value="YES">สูบ</option><option value="NO">ไม่สูบ</option><option value="FORMER">เคยสูบ</option></select></label>
+        <label className="text-[13px] font-medium text-slate-600">ประเภทแผล (Wound Class)
+          <select className={fieldClass} value={patient.woundClass || ''} onChange={event => update('woundClass', event.target.value)}>
+            <option value="">ไม่ระบุ</option>
+            {patient.woundClass && !['No wound', 'Clean wound', 'Clean contaminated wound', 'Contaminated wound', 'Dirty wound'].includes(patient.woundClass) && <option value={patient.woundClass}>{patient.woundClass} (ข้อมูลเดิม)</option>}
+            {['No wound', 'Clean wound', 'Clean contaminated wound', 'Contaminated wound', 'Dirty wound'].map(woundClass => <option key={woundClass} value={woundClass}>{woundClass}</option>)}
+          </select>
+        </label>
+        <label className="text-[13px] font-medium text-slate-600 md:col-span-2">โรคร่วม/ปัจจัยเสี่ยง<textarea className={areaClass} value={patient.comorbidities || ''} onChange={event => update('comorbidities', event.target.value)} placeholder="เช่น DM, HT หรืออื่นๆ" /></label>
+        <label className="text-[13px] font-medium text-slate-600 md:col-span-2">รายละเอียดสภาพแผล<textarea className={areaClass} value={patient.woundDischargeNotes || ''} onChange={event => update('woundDischargeNotes', event.target.value)} /></label>
+      </div>
+      <p className="mt-4 text-[12px] text-slate-500">รูปแผลสามารถเพิ่มในแท็บเอกสารอ้างอิง โดยเลือกประเภท Image และ Operation Number ที่เกี่ยวข้อง</p>
     </section>
     <section className="grid gap-3 xl:grid-cols-2">
       <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -411,13 +430,8 @@ function EditableOrCase({ patient, onChange }) {
       <h3 className="border-b border-slate-100 pb-3 text-[16px] font-semibold text-[#002d73]">ข้อมูลติดตามหลังจำหน่าย</h3>
       <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Field label="วันที่จำหน่าย" name="dischargeDate" type="date" />
-        <label className="text-[13px] font-medium text-slate-600">การสูบบุหรี่<select className={fieldClass} value={patient.smokingStatus || ''} onChange={event => update('smokingStatus', event.target.value)}><option value="">ไม่ระบุ</option><option value="YES">สูบ</option><option value="NO">ไม่สูบ</option><option value="FORMER">เคยสูบ</option></select></label>
         <label className="text-[13px] font-medium text-slate-600">สภาพแผลตอนจำหน่าย<select className={fieldClass} value={patient.woundAtDischarge || ''} onChange={event => update('woundAtDischarge', event.target.value)}><option value="">ไม่ระบุ</option><option value="NORMAL">ปกติ</option><option value="SWELLING">บวม</option><option value="REDNESS">แดง</option><option value="DISCHARGE">มีน้ำซึม/สิ่งคัดหลั่ง</option><option value="OTHER">อื่นๆ</option></select></label>
-        <Field label="ประเภทแผล (Wound Class)" name="woundClass" />
-        <label className="text-[13px] font-medium text-slate-600 md:col-span-2">โรคร่วม/ปัจจัยเสี่ยง<textarea className={areaClass} value={patient.comorbidities || ''} onChange={event => update('comorbidities', event.target.value)} placeholder="เช่น DM, HT หรืออื่นๆ" /></label>
-        <label className="text-[13px] font-medium text-slate-600 md:col-span-2">รายละเอียดสภาพแผล<textarea className={areaClass} value={patient.woundDischargeNotes || ''} onChange={event => update('woundDischargeNotes', event.target.value)} /></label>
       </div>
-      <p className="mt-4 text-[12px] text-slate-500">รูปแผลสามารถเพิ่มในแท็บเอกสารอ้างอิง โดยเลือกประเภท Image และ Operation Number ที่เกี่ยวข้อง</p>
     </section>
   </div></EditPatientFieldContext.Provider>
 }
@@ -444,16 +458,17 @@ function EditPatientModal({ patient, onChange, onClose, onSave, saving, error })
 function OperationCaseBlocks({ operations, onSend, onExclude }) {
   return <section className="mt-5 space-y-3">
     <div className="flex items-center justify-between px-1"><h3 className="text-[16px] font-medium text-[#002d73]">รายการ Operation Number</h3><span className="text-[13px] text-slate-500">{operations.length} รายการ</span></div>
+    {operations.length === 0 && <p className="rounded-lg bg-slate-50 px-6 py-5 text-[14px] text-slate-500">ไม่มี Operation Number ที่รอส่งจาก OR</p>}
     {operations.map((operation, index) => <article key={operation.operationNo} className="overflow-hidden rounded-xl border border-[#dbe4f0] bg-white shadow-sm">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/70 px-6 py-4">
         <div className="flex items-center gap-3"><span className="grid size-8 place-items-center rounded-full bg-[#175beb] text-sm font-semibold text-white">{index + 1}</span><div><p className="text-[11px] font-medium text-slate-400">OPERATION NUMBER</p><h4 className="text-lg font-semibold text-[#002d73]">{operation.operationNo || '-'}</h4></div></div>
-        <div className="flex flex-wrap items-center gap-2"><StatusBadge>{operation.workflowStatus === 'QUEUED' ? 'ส่ง Case แล้ว' : operation.status}</StatusBadge><button onClick={() => onExclude(operation)} className="inline-flex h-8 items-center gap-2 rounded-lg border border-red-300 bg-white px-3 text-sm font-medium text-red-500 hover:bg-red-50"><MinusCircle size={15} />ตัดเคสออก</button><button onClick={() => onSend(operation)} className="inline-flex h-8 items-center gap-2 rounded-lg bg-[#175beb] px-3 text-sm font-medium text-white shadow-sm hover:bg-blue-700"><Send size={15} />ส่ง Case</button></div>
+        <div className="flex flex-wrap items-center gap-2"><StatusBadge>รอตรวจสอบ</StatusBadge><button onClick={() => onExclude(operation)} className="inline-flex h-8 items-center gap-2 rounded-lg border border-red-300 bg-white px-3 text-sm font-medium text-red-500 hover:bg-red-50"><MinusCircle size={15} />ตัดเคสออก</button><button onClick={() => onSend(operation)} className="inline-flex h-8 items-center gap-2 rounded-lg bg-[#175beb] px-3 text-sm font-medium text-white shadow-sm hover:bg-blue-700"><Send size={15} />ส่ง Case</button></div>
       </header>
       <div className="grid gap-6 px-6 py-5 md:grid-cols-2 xl:grid-cols-4">
-        <div className="space-y-2"><DetailRow label="หัตถการ" value={operation.procedure || '-'} /><DetailRow label="Diagnosis" value={operation.diagnosis || '-'} /><DetailRow label="ตำแหน่งผ่าตัด" value={operation.bodySite || '-'} /></div>
-        <div className="space-y-2"><DetailRow label="ศัลยแพทย์" value={operation.surgeon || '-'} /><DetailRow label="ศัลยแพทย์คนที่ 2" value={operation.secondSurgeon || '-'} /><DetailRow label="ศัลยแพทย์คนที่ 3" value={operation.thirdSurgeon || '-'} /></div>
-        <div className="space-y-2"><DetailRow label="แผนกต้นทาง" value={operation.department || '-'} /><DetailRow label="ห้องผ่าตัด" value={operation.operatingRoom || '-'} /><DetailRow label="วันที่ผ่าตัด" value={operation.surgeryDate || '-'} /><DetailRow label="แผนกปลายทาง" value={operation.receivingDepartment || '-'} /></div>
-        <div className="space-y-2"><DetailRow label="วิสัญญีแพทย์" value={operation.anesthesiologist || '-'} /><DetailRow label="ประเภทวิสัญญี" value={operation.anesthesiaType || '-'} /><DetailRow label="ทีม OR" value={[operation.scrubNurse, operation.circulatingNurse, operation.anesthesiaNurse].filter(Boolean).join(' / ') || '-'} /><DetailRow label="Implant" value={operation.implantPresent === false ? 'ไม่มี' : operation.implant || (operation.implantPresent ? 'มี' : '-')} /></div>
+        <div className="min-w-0 space-y-2"><DetailRow keepLabelOnOneLine label="หัตถการ" value={operation.procedure || '-'} /><DetailRow keepLabelOnOneLine label="Diagnosis" value={operation.diagnosis || '-'} /><DetailRow keepLabelOnOneLine label="ตำแหน่งผ่าตัด" value={operation.bodySite || '-'} /></div>
+        <div className="min-w-0 space-y-2"><DetailRow keepLabelOnOneLine label="ศัลยแพทย์" value={operation.surgeon || '-'} /><DetailRow keepLabelOnOneLine label="ศัลยแพทย์คนที่ 2" value={operation.secondSurgeon || '-'} /><DetailRow keepLabelOnOneLine label="ศัลยแพทย์คนที่ 3" value={operation.thirdSurgeon || '-'} /></div>
+        <div className="min-w-0 space-y-2"><DetailRow keepLabelOnOneLine label="แผนกต้นทาง" value={operation.department || '-'} /><DetailRow keepLabelOnOneLine label="ห้องผ่าตัด" value={operation.operatingRoom || '-'} /><DetailRow keepLabelOnOneLine label="วันที่ผ่าตัด" value={operation.surgeryDate || '-'} /><DetailRow keepLabelOnOneLine label="แผนกปลายทาง" value={operation.receivingDepartment || '-'} /></div>
+        <div className="min-w-0 space-y-2"><DetailRow keepLabelOnOneLine label="วิสัญญีแพทย์" value={operation.anesthesiologist || '-'} /><DetailRow keepLabelOnOneLine label="ประเภทวิสัญญี" value={operation.anesthesiaType || '-'} /><DetailRow keepLabelOnOneLine label="ทีม OR" value={[operation.scrubNurse, operation.circulatingNurse, operation.anesthesiaNurse].filter(Boolean).join(' / ') || '-'} /><DetailRow keepLabelOnOneLine label="Implant" value={operation.implantPresent === false ? 'ไม่มี' : operation.implant || (operation.implantPresent ? 'มี' : '-')} /></div>
       </div>
     </article>)}
   </section>
@@ -464,25 +479,43 @@ function PatientSummary({ patient }) {
 }
 
 export function PatientInfoCard({ patient }) {
-  const birthDate = patient.dateOfBirth ? new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Bangkok' }).format(new Date(patient.dateOfBirth)) : '-'
-  return <article className="rounded-xl border border-[#e2e8f0] bg-white px-5 py-5 shadow-sm sm:px-7">
-    <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+  const birthDate = patient.dateOfBirth ? new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Bangkok' }).format(new Date(patient.dateOfBirth)) : 'ไม่ระบุ'
+  const demographics = [
+    ['เพศ', ({ MALE: 'ชาย', FEMALE: 'หญิง', OTHER: 'อื่นๆ' })[patient.sex] || patient.sex],
+    ['อายุ', patient.age != null ? `${patient.age} ปี` : null],
+    ['วันเกิด', birthDate], ['เบอร์โทร', patient.phonePrimary],
+    ['เชื้อชาติ', patient.ethnicity], ['สัญชาติ', patient.nationality], ['สิทธิการรักษา', patient.insurance],
+  ]
+  const health = [
+    ['ส่วนสูง', patient.heightCm != null && patient.heightCm !== '' ? `${patient.heightCm} ซม.` : null],
+    ['น้ำหนัก', patient.weightKg != null && patient.weightKg !== '' ? `${patient.weightKg} กก.` : null],
+    ['BMI', patient.bmi],
+    ['การสูบบุหรี่', ({ YES: 'สูบ', NO: 'ไม่สูบ', FORMER: 'เคยสูบ' })[patient.smokingStatus] || patient.smokingStatus],
+    ['ประเภทแผล (Wound Class)', patient.woundClass],
+  ]
+  return <article className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <header className="flex flex-wrap items-center gap-4 px-5 py-5 sm:px-6">
       {patient.patientPhoto
-        ? <img src={patient.patientPhoto} alt={`รูปผู้ป่วย ${patient.name || ''}`} className="size-[140px] shrink-0 rounded-xl border border-slate-200 bg-white object-cover sm:size-[160px]" />
-        : <div className="grid size-[140px] shrink-0 place-items-center rounded-xl border border-blue-100 bg-blue-50/40 text-[#175beb] sm:size-[160px]"><UserRound size={80} strokeWidth={1.4} /></div>}
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div><p className="text-[13px] font-medium text-[#64748b]">HN <span className="ml-1 text-[#424752]">{patient.id}</span></p><h2 className="mt-1 text-[22px] font-semibold leading-8 text-[#191c1e]">{patient.name}</h2></div>
-          <div className="flex flex-wrap items-center gap-2 text-[13px] text-[#424752]"><span>ประเภทผู้ป่วย</span><span className="rounded-md bg-blue-50 px-2.5 py-1 font-medium text-[#175beb]">{patient.patientType?.toUpperCase() || '-'}</span><span className="ml-2">สถานะเคส</span><span className="rounded-md bg-blue-50 px-2.5 py-1 font-medium text-[#175beb]">{patient.workflowStatus === 'CASE' ? 'ส่ง case แล้ว' : 'รอตรวจสอบ'}</span></div>
-        </div>
-        <div className="mt-4 grid gap-4 border-t border-slate-100 pt-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="space-y-2"><DetailRow label="เพศ" value={patient.sex || '-'} /><DetailRow label="อายุ" value={patient.age != null ? `${patient.age} ปี` : '-'} /></div>
-          <div className="space-y-2 border-t border-slate-100 pt-4 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0"><DetailRow label="เบอร์โทร" value={patient.phonePrimary || '-'} /><DetailRow label="วันเกิด" value={birthDate} /></div>
-          <div className="space-y-2 border-t border-slate-100 pt-4 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0"><DetailRow label="เชื้อชาติ" value={patient.ethnicity || '-'} /><DetailRow label="สัญชาติ" value={patient.nationality || '-'} /><DetailRow label="สิทธิการรักษา" value={patient.insurance || '-'} /></div>
-          <div className="border-t border-slate-100 pt-4 text-[14px] text-[#424752] xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0"><p className="text-slate-500">ที่อยู่</p><strong className="mt-2 block font-medium leading-6">{patient.address || '-'}</strong></div>
-        </div>
+        ? <img src={patient.patientPhoto} alt={`รูปผู้ป่วย ${patient.name || ''}`} className="size-28 shrink-0 rounded-xl border border-slate-200 object-cover sm:size-36" />
+        : <div className="grid size-28 shrink-0 place-items-center sm:size-36 rounded-xl border border-blue-100 bg-blue-50/50 text-[#175beb]"><UserRound size={64} strokeWidth={1.4} /></div>}
+      <div className="min-w-0 flex-1"><p className="text-[13px] font-medium text-slate-500">HN <span className="ml-1 text-slate-700">{patient.id}</span></p><h2 className="mt-1 break-words text-[22px] font-semibold leading-8 text-slate-900">{patient.name}</h2></div>
+      <div className="flex flex-wrap gap-4 text-[12px] text-slate-500">
+        <div><p className="mb-1.5">ประเภทผู้ป่วย</p><span className="inline-block rounded-md bg-blue-50 px-2.5 py-1 font-medium text-[#175beb]">{patient.patientType?.toUpperCase() || 'ไม่ระบุ'}</span></div>
+        <div><p className="mb-1.5">สถานะเคส</p><span className="inline-block rounded-md bg-blue-50 px-2.5 py-1 font-medium text-[#175beb]">{patient.workflowStatus === 'CASE' ? 'ส่ง case แล้ว' : 'รอตรวจสอบ'}</span></div>
       </div>
-    </div>
+    </header>
+    <dl className="grid grid-cols-1 gap-x-8 gap-y-5 px-5 pb-5 pt-2 sm:grid-cols-2 sm:px-6 sm:pb-6 lg:grid-cols-3">
+      {[...demographics, ['ที่อยู่', patient.address], ...health, ['โรคร่วม/ปัจจัยเสี่ยง', patient.comorbidities]].map(([label, value]) => (
+        <div key={label} className="flex min-w-0 items-start justify-between gap-4">
+          <dt className="shrink-0 text-[14px] text-slate-500">{label}</dt>
+          <dd className="min-w-0 whitespace-pre-wrap break-words text-right text-[14px] font-medium text-slate-800">{value === '' || value == null ? 'ไม่ระบุ' : value}</dd>
+        </div>
+      ))}
+      <div className="col-span-full min-w-0">
+        <dt className="text-[14px] text-slate-500">รายละเอียดสภาพแผล</dt>
+        <dd className="mt-2 whitespace-pre-wrap break-words text-[14px] font-medium leading-6 text-slate-800">{patient.woundDischargeNotes || 'ไม่ระบุ'}</dd>
+      </div>
+    </dl>
   </article>
 }
 

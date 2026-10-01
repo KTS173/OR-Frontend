@@ -1,3 +1,4 @@
+import { hasConfirmedSsiHistory, getSsiReportCategory } from '../utils/ssiAnalytics.js'
 import { useMemo, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
@@ -5,7 +6,6 @@ const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.�
 const colors = ['#0b3d83', '#264cc7', '#f97316', '#fbbf24', '#94a3b8']
 
 const percent = (value, total) => total ? `${((value / total) * 100).toFixed(1)}%` : '0.0%'
-const hasConfirmedSsiHistory = (patient) => patient.everConfirmedSsi || patient.ssiStatus === 'CONFIRMED_SSI'
 
 export function AnalyticsChartPair({ patients, hideProcedure = false }) {
   const now = new Date()
@@ -56,7 +56,7 @@ export function AnalyticsChartPair({ patients, hideProcedure = false }) {
     return [...map.values()].map((row) => ({ ...row, rate: patients.length ? Number((row.total / patients.length * 100).toFixed(2)) : 0 })).sort((a, b) => b.total - a.total).slice(0, 5)
   }, [patients])
   const maxRate = Math.max(2, ...procedures.map((row) => row.rate))
-  return <section className={`grid gap-4 ${hideProcedure ? 'grid-cols-1' : 'xl:grid-cols-[3fr_2fr]'}`}>
+  return <section data-export-charts={JSON.stringify({caseTrend,procedures,period,year})} className={`grid gap-4 ${hideProcedure ? 'grid-cols-1' : 'xl:grid-cols-[3fr_2fr]'}`}>
     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-[18px] font-semibold text-[#073b7a]">เคสทั้งหมดและเคสติดเชื้อ SSI</h2><p className="mt-1 text-[12px] text-slate-500">เปรียบเทียบจำนวนเคสตามช่วงเวลา</p></div><div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">{[['year', 'รายปี'], ['month', 'รายเดือน'], ['day', 'รายวัน']].map(([value, label]) => <button key={value} type="button" onClick={() => setPeriod(value)} className={`h-8 rounded-md px-4 text-[13px] font-medium transition ${period === value ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>{label}</button>)}</div></div>
       <div className="mt-5 h-[300px]"><ResponsiveContainer><BarChart data={caseTrend} margin={{ top: 10, right: 20, left: 0, bottom: 5 }} barGap={3}><CartesianGrid vertical={false} stroke="#e9edf3"/><XAxis dataKey="label" interval={period === 'day' ? 2 : 0} tick={{ fontSize: 11, fill: '#475467' }}/><YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#475467' }}/><Tooltip formatter={(value, name) => [`${value} เคส`, name]}/><Legend verticalAlign="bottom" wrapperStyle={{ fontSize: 12, paddingTop: 16 }}/><Bar name="เคสทั้งหมด" dataKey="total" fill="#2563eb" radius={[5, 5, 0, 0]} maxBarSize={28}/><Bar name="เคสติดเชื้อ SSI" dataKey="infected" fill="#ef4444" radius={[5, 5, 0, 0]} maxBarSize={28}/></BarChart></ResponsiveContainer></div>
@@ -89,8 +89,8 @@ export function AnalyticsDonutPair({ patients }) {
     { name: 'เกินกำหนด', value: followSummary.overdue, color: '#ef4444' },
     { name: 'ยกเลิกเคส', value: followSummary.cancelled, color: '#94a3b8' },
   ]
-  const suspected = patients.filter((row) => row.ssiStatus === 'SUSPECTED_SSI').length
-  const confirmed = patients.filter((row) => row.ssiStatus === 'CONFIRMED_SSI').length
+  const suspected = patients.filter((row) => getSsiReportCategory(row) === 'SUSPECTED_SSI').length
+  const confirmed = patients.filter((row) => hasConfirmedSsiHistory(row)).length
   const typeRows = [{ name: 'เคสปกติ', value: Math.max(0, total - suspected - confirmed), color: '#3b82f6' }, { name: 'สงสัย SSI', value: suspected, color: '#22c55e' }, { name: 'ยืนยัน SSI', value: confirmed, color: '#ef4444' }]
-  return <section className="grid gap-4 xl:grid-cols-2"><DonutCard title="สรุปการติดตามประจำวัน" rows={followRows} total={followRows.reduce((sum, row) => sum + row.value, 0)}/><DonutCard title="อัตราเคสแต่ละประเภท" rows={typeRows} total={total}/></section>
+  return <section data-export-donuts={JSON.stringify({followRows,typeRows,total})} className="grid gap-4 xl:grid-cols-2"><DonutCard title="สรุปการติดตามประจำวัน" rows={followRows} total={followRows.reduce((sum, row) => sum + row.value, 0)}/><DonutCard title="อัตราเคสแต่ละประเภท" rows={typeRows} total={total}/></section>
 }
