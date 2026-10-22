@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../services/api.js'
 import { normalizeFollowUpMethod } from '../utils/followUpMethods.js'
+import { createId } from '../utils/createId.js'
 import { PatientInfoCard } from './CaseDetailPage.jsx'
 
 const DAY_TEMPLATES = {
@@ -28,7 +29,7 @@ const dayNumberOf = item => Number(String(item.day || '').match(/\d+/)?.[0])
 const makeSchedule = (baseDate, templateDays, configuredSchedules = [], defaultMethod = '') => (configuredSchedules.length
   ? configuredSchedules.filter(item => item.enabled !== false && dayNumberOf(item) <= templateDays).map(dayNumberOf)
   : DAY_TEMPLATES[templateDays]).map((day) => ({
-  id: crypto.randomUUID(),
+  id: createId(),
   day: `Day ${day}`,
   dayNumber: day,
   date: addDays(baseDate, day),
@@ -98,7 +99,7 @@ export default function CreateFollowUpPage() {
   const updateRow = (rowId, field, value) => setSchedule((rows) => rows.map((row) => row.id === rowId ? { ...row, [field]: value } : row))
 
   const addRound = () => setSchedule((rows) => [...rows, {
-    id: crypto.randomUUID(), day: 'รอบกำหนดเอง', dayNumber: null,
+    id: createId(), day: 'รอบกำหนดเอง', dayNumber: null,
     date: '', time: '09:00', method: configuredMethods[0]?.name || '', note: '', status: 'PENDING',
   }])
 

@@ -3,6 +3,7 @@ const status = document.querySelector('#status');
 const readButton = document.querySelector('#readData');
 const sendButton = document.querySelector('#sendData');
 let payload = null;
+let apiEndpoint = null;
 
 const setStatus = (message, type = 'neutral') => {
   status.textContent = message;
@@ -11,14 +12,27 @@ const setStatus = (message, type = 'neutral') => {
 
 const getActiveTab = async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id || !tab.url?.startsWith('http://localhost:9000/')) {
-    throw new Error('Open the RIS page at http://localhost:9000/ris-entry first.');
+  if (!tab?.id || !tab.url) {
+    throw new Error('The active browser tab could not be read.');
   }
-  return tab;
+
+  let pageUrl;
+  try {
+    pageUrl = new URL(tab.url);
+  } catch (_error) {
+    throw new Error('Open the RIS Entry page on the OR SMART SSI server first.');
+  }
+
+  if (!['http:', 'https:'].includes(pageUrl.protocol) || !pageUrl.pathname.startsWith('/ris-entry')) {
+    throw new Error('Open the /ris-entry page on the OR SMART SSI server first.');
+  }
+
+  return { tab, pageUrl };
 };
 
 const readDataFromPage = async () => {
-  const tab = await getActiveTab();
+  const { tab, pageUrl } = await getActiveTab();
+  apiEndpoint = `${pageUrl.origin}/api/operations`;
   let response;
   try {
     response = await chrome.tabs.sendMessage(tab.id, { type: 'READ_RIS_DATA' });
@@ -81,7 +95,7 @@ const readDataFromPage = async () => {
 
 const updatePageStatus = async (text, operationUpdated = false) => {
   try {
-    const tab = await getActiveTab();
+    const { tab } = await getActiveTab();
     await chrome.tabs.sendMessage(tab.id, { type: 'UPDATE_RIS_STATUS', text, operationUpdated });
   } catch (_error) {
     // The popup status remains authoritative if the page was closed after reading.
@@ -116,7 +130,7 @@ sendButton.addEventListener('click', async () => {
       delete requestPayload.operations;
       return requestPayload;
     });
-    const response = await fetch('http://localhost:4000/api/operations/bulk', {
+    const response = await fetch(`${apiEndpoint}/bulk`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ operations: requests })

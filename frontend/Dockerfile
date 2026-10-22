@@ -1,7 +1,9 @@
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+# Some production servers set NODE_ENV/NPM_CONFIG_PRODUCTION globally.
+# The build stage still needs Vite and the other dev dependencies.
+RUN npm ci --include=dev --no-audit --no-fund && test -x node_modules/.bin/vite
 COPY . .
 RUN npm run build
 

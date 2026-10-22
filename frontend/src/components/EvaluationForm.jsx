@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { api } from '../services/api.js'
 import { normalizeFollowUpMethod } from '../utils/followUpMethods.js'
+import { createId } from '../utils/createId.js'
 
 const fileToDataUrl = file => new Promise((resolve, reject) => {
   const reader = new FileReader()
@@ -99,7 +100,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
     if (!valid.length) return
     setReadingFiles(true)
     try {
-      const prepared = await Promise.all(valid.map(async ({ file, isImage }) => ({ id: crypto.randomUUID(), name: file.name, type: file.type || 'application/octet-stream', size: file.size, dataUrl: await fileToDataUrl(file), isImage })))
+      const prepared = await Promise.all(valid.map(async ({ file, isImage }) => ({ id: createId(), name: file.name, type: file.type || 'application/octet-stream', size: file.size, dataUrl: await fileToDataUrl(file), isImage })))
       setAttachments(items => [...items, ...prepared])
     } catch { alert('ไม่สามารถอ่านไฟล์แนบได้ กรุณาลองใหม่') }
     finally { setReadingFiles(false) }

@@ -1,4 +1,10 @@
-require('dotenv').config();
+// Docker Compose injects the runtime environment directly. Keep dotenv optional
+// so the production container can still start if it was installed without it.
+try {
+  require('dotenv').config();
+} catch (error) {
+  if (error.code !== 'MODULE_NOT_FOUND') throw error;
+}
 const app = require('./app');
 const { pool, ensureSchema } = require('./db');
 
