@@ -2676,3 +2676,22 @@ table :is(thead, tbody, tfoot, tr)[class*="border-slate-100"] {
     padding: 20px;
   }
 }
+
+.evaluation-assessment-fields {
+  display: contents;
+}
+.evaluation-assessment-fields:disabled input,
+.evaluation-assessment-fields:disabled select,
+.evaluation-assessment-fields:disabled textarea,
+.evaluation-assessment-fields:disabled button {
+  cursor: not-allowed;
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+}
+.evaluation-assessment-fields:disabled input[type="radio"],
+.evaluation-assessment-fields:disabled input[type="checkbox"] {
+  accent-color: #94a3b8;
+  opacity: .45;
+}

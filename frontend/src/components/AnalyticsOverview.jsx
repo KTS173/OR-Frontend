@@ -91,6 +91,6 @@ export function AnalyticsDonutPair({ patients }) {
   ]
   const suspected = patients.filter((row) => getSsiReportCategory(row) === 'SUSPECTED_SSI').length
   const confirmed = patients.filter((row) => hasConfirmedSsiHistory(row)).length
-  const typeRows = [{ name: 'เคสปกติ', value: Math.max(0, total - suspected - confirmed), color: '#3b82f6' }, { name: 'สงสัย SSI', value: suspected, color: '#22c55e' }, { name: 'ยืนยัน SSI', value: confirmed, color: '#ef4444' }]
+  const typeRows = [{ name: 'เคสปกติ', value: Math.max(0, total - suspected - confirmed), color: '#3b82f6' }, { name: 'สงสัย SSI', value: suspected, color: '#f97316' }, { name: 'ยืนยัน SSI', value: confirmed, color: '#ef4444' }]
   return <section data-export-donuts={JSON.stringify({followRows,typeRows,total})} className="grid gap-4 xl:grid-cols-2"><DonutCard title="สรุปการติดตามประจำวัน" rows={followRows} total={followRows.reduce((sum, row) => sum + row.value, 0)}/><DonutCard title="อัตราเคสแต่ละประเภท" rows={typeRows} total={total}/></section>
 }

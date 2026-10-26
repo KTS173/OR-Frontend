@@ -63,7 +63,8 @@ const readDataFromPage = async () => {
   const operationRecords = operationResult?.result;
   if (Array.isArray(operationRecords)) {
     payload.operations = operationRecords
-      .filter((record, index) => index === 0 || String(record.operationNo || '').trim())
+      .map((record, index) => ({ ...record, operationNo: String(index + 1) }))
+      .filter((record) => Object.entries(record).some(([key, value]) => key !== 'operationNo' && String(value ?? '').trim()))
       .map((record) => ({
         ...payload.operation,
         operationNo: record.operationNo || '',
@@ -89,7 +90,10 @@ const readDataFromPage = async () => {
       }));
     payload.operation = payload.operations[0] || payload.operation;
   }
-  preview.textContent = JSON.stringify(payload, null, 2);
+  preview.textContent = JSON.stringify(payload, (key, value) => {
+    if (key === 'operationNo') return undefined;
+    return value;
+  }, 2);
   return payload;
 };
 
@@ -119,10 +123,9 @@ sendButton.addEventListener('click', async () => {
     sendButton.disabled = true;
     setStatus('Reading and sending operation data…', 'working');
     await readDataFromPage();
-    const operations = payload.operations?.length ? payload.operations : [payload.operation];
-    const operationNumbers = operations.map((item) => item.operationNo?.trim()).filter(Boolean);
-    if (operationNumbers.length !== operations.length) throw new Error('Operation Number 1 is required.');
-    if (new Set(operationNumbers).size !== operationNumbers.length) throw new Error('Operation Number 1, 2 and 3 must be different.');
+    const operations = Array.isArray(payload.operations) ? payload.operations : [payload.operation];
+    if (!operations.length) throw new Error('กรุณากรอกข้อมูลอย่างน้อย 1 Operation');
+    if (!payload.patient?.hn?.trim() || !payload.visit?.episodeNo?.trim()) throw new Error('กรุณากรอก HN และ EN');
     if (operations.some((item) => !item.procedureName?.trim())) throw new Error('Operation / Procedure Name is required for every entered operation.');
 
     const requests = operations.map((operation) => {
@@ -137,8 +140,7 @@ sendButton.addEventListener('click', async () => {
     });
     const result = await response.json().catch(() => null);
     if (!response.ok) throw new Error(result?.message || `Backend returned HTTP ${response.status}.`);
-    const saved = result.data.operationNos;
-    const message = `${result.message}: ${result.data.count} case(s) (${saved.join(', ')})`;
+    const message = `${result.message}: ${result.data.count} operation(s)`;
     setStatus(message, 'success');
     await updatePageStatus(`Extension status: ${message}`, true);
   } catch (error) {

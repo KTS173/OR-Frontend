@@ -66,6 +66,10 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
   const [evalResult, setEvalResult] = useState(''); // not_infected, suspect_ssi, confirmed_ssi
   const [evalRemarks, setEvalRemarks] = useState('');
   const [nextAppointment, setNextAppointment] = useState('');
+  const [appointmentTime, setAppointmentTime] = useState('09:00')
+  const [appointmentReason, setAppointmentReason] = useState('')
+  const [savingAppointment, setSavingAppointment] = useState(false)
+  const [appointmentMessage, setAppointmentMessage] = useState('')
 
   // Modal Visibility State
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
@@ -81,8 +85,8 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
   const [readingFiles, setReadingFiles] = useState(false)
 
   const currentUser = (() => { try { return JSON.parse(sessionStorage.getItem('or-smart-user') || 'null') } catch { return null } })()
-  const documentAttachments = attachments.filter(item => !item.isImage)
-  const imageAttachments = attachments.filter(item => item.isImage)
+  const documentAttachments = attachments.filter(item => !item.isWoundImage)
+  const imageAttachments = attachments.filter(item => item.isWoundImage)
 
   const addAttachments = async (files, imagesOnly = false) => {
     const selected = Array.from(files || [])
@@ -92,15 +96,15 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
     for (const file of selected) {
       const isImage = file.type.startsWith('image/')
       if (imagesOnly && !isImage) { alert('ส่วนรูปภาพแผลรองรับเฉพาะไฟล์รูปภาพ'); continue }
-      if (!imagesOnly && !isImage && !allowedDocuments.includes(file.type)) { alert(`ไม่รองรับไฟล์ ${file.name}`); continue }
+      if (!imagesOnly && !isImage && !allowedDocuments.includes(file.type) && !/\.(pdf|doc|docx)$/i.test(file.name)) { alert(`ไม่รองรับไฟล์ ${file.name}`); continue }
       if (file.size > 5 * 1024 * 1024) { alert(`${file.name} มีขนาดเกิน 5 MB`); continue }
-      if (isImage && imageAttachments.length + valid.filter(item => item.isImage).length >= 5) { alert('แนบรูปภาพได้สูงสุด 5 รูปต่อการประเมิน'); break }
-      valid.push({ file, isImage })
+      if (imagesOnly && imageAttachments.length + valid.filter(item => item.isImage).length >= 5) { alert('แนบรูปภาพได้สูงสุด 5 รูปต่อการประเมิน'); break }
+      valid.push({ file, isImage, isWoundImage: imagesOnly })
     }
     if (!valid.length) return
     setReadingFiles(true)
     try {
-      const prepared = await Promise.all(valid.map(async ({ file, isImage }) => ({ id: createId(), name: file.name, type: file.type || 'application/octet-stream', size: file.size, dataUrl: await fileToDataUrl(file), isImage })))
+      const prepared = await Promise.all(valid.map(async ({ file, isImage, isWoundImage }) => ({ id: createId(), name: file.name, type: file.type || 'application/octet-stream', size: file.size, dataUrl: await fileToDataUrl(file), isImage, isWoundImage })))
       setAttachments(items => [...items, ...prepared])
     } catch { alert('ไม่สามารถอ่านไฟล์แนบได้ กรุณาลองใหม่') }
     finally { setReadingFiles(false) }
@@ -113,7 +117,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
       mimeType: item.type,
       fileSize: item.size,
       fileData: item.dataUrl,
-      documentType: item.isImage ? 'FOLLOW_UP_IMAGE' : 'FOLLOW_UP_DOCUMENT',
+      documentType: item.isWoundImage ? 'FOLLOW_UP_IMAGE' : 'FOLLOW_UP_DOCUMENT',
       followUpRound: roundLabel,
       uploadedBy: currentUser?.name || followerName || null,
       department: currentUser?.department || selectedPatient.receivingDepartment || selectedPatient.department || null,
@@ -157,14 +161,15 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
       setSymptoms(Object.fromEntries(configuredSymptoms.map(item => [String(item.id), ''])))
       setMethodConfig((settings.methods || []).map(normalizeFollowUpMethod).filter(item => item.name && item.enabled !== false))
       setDischargeTreatmentConfig((settings.dischargeTreatmentOptions || [
-        { id: 'none', name: 'ไม่ได้ไปพบแพทย์', enabled: true },
-        { id: 'metDoctor', name: 'ไปพบแพทย์แล้ว (OPD/IPD)', enabled: true },
+        { id: 'none', name: 'ไม่ได้พบแพทย์', enabled: true },
+        { id: 'metDoctor', name: 'พบแพทย์แล้ว (OPD/IPD)', enabled: true },
         { id: 'other', name: 'อื่นๆ', enabled: true },
-      ]).filter(item => item.enabled !== false))
+      ]).filter(item => item.enabled !== false).map(item => ({ ...item, name: item.name.replace('ไม่ได้ไปพบแพทย์', 'ไม่ได้พบแพทย์').replace('ไปพบแพทย์แล้ว', 'พบแพทย์แล้ว') })))
       if (Array.isArray(settings.riskLevels) && settings.riskLevels.length) setRiskLevels(settings.riskLevels.map(level => level.id === 'moderate' && Number(level.max) === 49 ? { ...level, max: 50 } : level.id === 'high' && Number(level.min) === 50 ? { ...level, min: 51 } : level))
     }).catch(() => { setSymptomConfig([]); setMethodConfig([]); setDischargeTreatmentConfig([]) })
   }, [])
 
+  const contactFailed = contactStatus === 'failed'
   const requiredSymptomsAnswered = symptomConfig.length > 0 && symptomConfig.every(item => symptoms[String(item.id)])
   const answeredSymptoms = Object.values(symptoms).filter(Boolean)
   const assessmentPoints = answeredSymptoms.reduce((sum, value) => /^(has|yes|true|มี)$/i.test(String(value)) ? sum + 1 : /^(unknown|unsure|ไม่ทราบ)$/i.test(String(value)) ? sum + 0.5 : sum, 0)
@@ -177,21 +182,23 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
   const scheduledDay = activeRound?.date ? new Date(`${activeRound.date}T00:00:00`) : null
   const roundIsDue = activeRoundIndex === 0 || !scheduledDay || today >= scheduledDay
   const validStaffPhone = contactPhone.trim().length > 0
-  const canSave = Boolean((isOutOfRound || roundIsDue) && activeFollowUp && followUpDate && followUpTime && followUpMethod && followerName && validStaffPhone && contactStatus && evalResult && requiredSymptomsAnswered)
+  const canSave = Boolean((isOutOfRound || roundIsDue) && activeFollowUp && followUpDate && followUpTime && followUpMethod && followerName && validStaffPhone && (contactFailed || (evalResult && requiredSymptomsAnswered)))
 
   const saveAssessment = async (submittedToDoctor = false) => {
-    const data = { followUpDate, followUpTime, followUpMethod, followerName, contactPhone, contactStatus, remarks, symptoms, otherSymptom, dischargeTreatment, dischargeTreatmentText, evalRemarks, nextAppointment, calculatedRisk: calculatedRisk?.id, suggestedResult, attachmentCount: attachments.length, submittedToDoctor, assessmentKind: isOutOfRound ? 'OUT_OF_ROUND' : 'SCHEDULED' }
+    const result = contactFailed ? 'contact_failed' : evalResult
+    const score = contactFailed ? null : calculatedScore
+    const data = { followUpDate, followUpTime, followUpMethod, followerName, contactPhone, contactStatus, remarks, symptoms: contactFailed ? {} : symptoms, otherSymptom: contactFailed ? '' : otherSymptom, dischargeTreatment: contactFailed ? '' : dischargeTreatment, dischargeTreatmentText: contactFailed ? '' : dischargeTreatmentText, evalRemarks, nextAppointment, calculatedRisk: contactFailed ? null : calculatedRisk?.id, suggestedResult: contactFailed ? '' : suggestedResult, attachmentCount: attachments.length, submittedToDoctor, assessmentKind: isOutOfRound ? 'OUT_OF_ROUND' : 'SCHEDULED' }
     if (isOutOfRound) {
       const activity = await api.createActivity(selectedPatient.operationNo, { activityType: 'ประเมินนอกเวลาตามรอบ', activityAt: `${followUpDate}T${followUpTime}:00+07:00`, purpose: evalResult === 'suspect_ssi' ? 'ประเมินอาการสงสัย SSI' : 'ติดตามอาการหลังผ่าตัด', location: null, staff: followerName, contactPrimary: contactPhone, detail: evalRemarks || remarks || 'บันทึกผลประเมินนอกเวลาตามรอบ' })
-      await api.createActivityEvaluation(selectedPatient.operationNo, { activityId: activity.id, evaluationType: 'SSI_ACTIVITY', result: evalResult, score: calculatedScore, evaluatedBy: followerName, evaluatedAt: `${followUpDate}T${followUpTime}:00+07:00`, data })
+      await api.createActivityEvaluation(selectedPatient.operationNo, { activityId: activity.id, evaluationType: 'SSI_ACTIVITY', result, score, evaluatedBy: followerName, evaluatedAt: `${followUpDate}T${followUpTime}:00+07:00`, data })
       const failedUploads = await uploadAttachments('กิจกรรมแทรก')
       window.dispatchEvent(new Event('activities-updated')); window.dispatchEvent(new Event('operations-updated'))
-      onCompleted?.({ result: evalResult, failedUploads })
+      onCompleted?.({ result, failedUploads })
       return { failedUploads }
     }
     const completedIndex = activeFollowUp.current_round_index || 0
     const completedRound = activeFollowUp.schedule?.[completedIndex]?.day || `รอบที่ ${completedIndex + 1}`
-    const saved = await api.createEvaluation(selectedPatient.operationNo, { evaluationType: 'SSI', result: evalResult, score: calculatedScore, roundIndex: completedIndex, data, evaluatedBy: followerName })
+    const saved = await api.createEvaluation(selectedPatient.operationNo, { evaluationType: 'SSI', result, score, roundIndex: completedIndex, data, evaluatedBy: followerName })
     const failedUploads = await uploadAttachments(completedRound)
     return { saved, failedUploads, completedIndex }
   }
@@ -243,7 +250,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div className="form-group">
-                <label>ผู้ติดตาม <span className="text-red-500 font-bold">*</span></label>
+                <label>ชื่อผู้ติดตาม <span className="text-red-500 font-bold">*</span></label>
                 <input
                   type="text"
                   className="form-input"
@@ -252,13 +259,13 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
                 />
               </div>
               <div className="form-group">
-                <label>เบอร์ภายในที่ติดตาม <span className="text-red-500 font-bold">*</span></label>
+                <label>เบอร์ติดต่อ (ภายใน) <span className="text-red-500 font-bold">*</span></label>
                 <input type="text" required placeholder="กรอกเบอร์ภายใน" className="form-input" value={contactPhone} onChange={event => setContactPhone(event.target.value)} />
               </div>
             </div>
 
             <div className="form-group" style={{ marginBottom: '16px' }}>
-              <label>ติดต่อได้หรือไม่ <span className="text-red-500 font-bold">*</span></label>
+              <label>ติดต่อผู้ป่วยได้หรือไม่ (ไม่บังคับ)</label>
               <div className="radio-group-horizontal">
                 <label className="radio-label">
                   <input
@@ -304,9 +311,9 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
             <div className="sub-info-card-header">
               <h4 className="sub-info-card-title">เอกสาร/ไฟล์แนบ (ถ้ามี)</h4>
             </div>
-            <label className="drag-drop-zone" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); addAttachments(event.dataTransfer.files, false) }}>
+            <label className="drag-drop-zone" tabIndex={0} onPaste={event => { const files = event.clipboardData.files; if (files.length) { event.preventDefault(); addAttachments(files, false) } }} onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); addAttachments(event.dataTransfer.files, false) }}>
               <Upload size={24} className="text-slate-400" />
-              <div className="drag-drop-title">คลิกหรือลากไฟล์มาวางที่นี่</div>
+              <div className="drag-drop-title">คลิก ลากไฟล์หรือรูปภาพมาวาง หรือกดวางภาพที่คัดลอก</div>
               <div className="drag-drop-subtitle">รองรับไฟล์ pdf, doc, docx, jpg, png ขนาดไม่เกิน 5 MB</div>
               <input type="file" multiple className="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" disabled={readingFiles} onChange={event => { addAttachments(event.target.files, false); event.target.value = '' }} />
             </label>
@@ -314,12 +321,16 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
           </div>
 
           {/* รูปภาพแผล */}
-          <div className="sub-info-card evaluation-images-card">
+          <div className="sub-info-card evaluation-images-card" tabIndex={0}
+            onDragOver={event => { event.preventDefault(); event.dataTransfer.dropEffect = 'copy' }}
+            onDrop={event => { event.preventDefault(); event.stopPropagation(); if (!readingFiles) addAttachments(event.dataTransfer.files, true) }}
+            onPaste={event => { if (event.clipboardData.files.length) { event.preventDefault(); if (!readingFiles) addAttachments(event.clipboardData.files, true) } }}
+          >
             <div className="sub-info-card-header">
               <h4 className="sub-info-card-title">รูปภาพแผล (ถ้ามี)</h4>
             </div>
             <div className="drag-drop-subtitle" style={{ marginBottom: '8px' }}>
-              รองรับไฟล์ .jpg .jpeg .png ขนาดไม่เกิน 5 MB (อัปโหลดได้สูงสุด 5 รูป)
+              คลิกเพิ่มรูป ลากรูปมาวาง หรือวางภาพที่คัดลอก · JPG, PNG, WebP ไม่เกิน 5 MB ต่อรูป สูงสุด 5 รูป
             </div>
             <div className="wound-images-grid">
               {imageAttachments.map(item => <div key={item.id} className="wound-image-box"><img src={item.dataUrl} alt={item.name} /><button type="button" onClick={() => setAttachments(items => items.filter(file => file.id !== item.id))} className="wound-image-remove" aria-label={`ลบ ${item.name}`}><X size={13} /></button></div>)}
@@ -331,6 +342,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
 
         {/* Right Column */}
         <div className="evaluation-right-column">
+          <fieldset disabled={contactFailed} className="evaluation-assessment-fields">
           {/* แบบประเมินอาการ CDC SSI */}
           <div className="sub-info-card evaluation-symptoms-card">
             <div className="sub-info-card-header">
@@ -437,11 +449,11 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
 
             <div className="form-group" style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <label>การจัดการ/คำแนะนำ</label>
+                <label>ให้การรักษา/คำแนะนำ</label>
                 <span className="char-counter">{evalRemarks.length}/500</span>
               </div>
               <textarea
-                placeholder="ระบุการจัดการหรือคำแนะนำที่ให้กับผู้ป่วย"
+                placeholder="ระบุการรักษาหรือคำแนะนำที่ให้กับผู้ป่วย"
                 className="form-input"
                 style={{ height: '80px', resize: 'vertical' }}
                 maxLength={500}
@@ -450,21 +462,30 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
               />
             </div>
 
-            <div className="form-group">
-              <label>นัดหมายติดตามครั้งถัดไป <span className="text-red-500 font-bold">*</span></label>
-              <div className="relative mt-1">
-                <input
-                  type="text"
-                  className="form-input w-full"
-                  style={{ paddingLeft: '36px', height: '38px', fontSize: '13px' }}
-                  value={nextAppointment}
-                  readOnly
-                  title="ระบบกำหนดให้อัตโนมัติตามรอบ Follow-up"
-                />
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <div className="form-group rounded-lg border border-orange-200 bg-orange-50/50 p-3">
+              <label className="text-orange-700">นัดหมายติดตามครั้งถัดไป (เพิ่มเติม)</label>
+              <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                <label>วันที่<input type="date" className="form-input mt-1" value={nextAppointment} onChange={event => { setNextAppointment(event.target.value); setAppointmentMessage('') }} /></label>
+                <label>เวลา<input type="time" className="form-input mt-1" value={appointmentTime} onChange={event => { setAppointmentTime(event.target.value); setAppointmentMessage('') }} /></label>
               </div>
+              <label className="mt-3 block">เหตุผล/ตรวจผลเพิ่มเติม<input className="form-input mt-1" value={appointmentReason} onChange={event => setAppointmentReason(event.target.value)} placeholder="เช่น นัดติดตามผลตรวจเพิ่มเติม" /></label>
+              <p className="mt-2 text-xs text-slate-500">บันทึกเป็นกิจกรรมแทรกสีส้ม แจ้งเตือนในระบบก่อนนัด 1 วัน โดยรอบติดตามหลักยังคงเดิม</p>
+              <button type="button" className="mt-3 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" disabled={savingAppointment || !nextAppointment || !appointmentTime || !followerName.trim() || !contactPhone.trim()} onClick={async () => {
+                const activityAt = `${nextAppointment}T${appointmentTime}:00+07:00`
+                if (!Number.isFinite(new Date(activityAt).getTime()) || new Date(activityAt) <= new Date()) { setAppointmentMessage('กรุณาเลือกวันและเวลานัดในอนาคต'); return }
+                setSavingAppointment(true); setAppointmentMessage('')
+                try {
+                  await api.createActivity(selectedPatient.operationNo, { activityType: 'นัดหมายติดตามเพิ่มเติม', activityAt, purpose: appointmentReason.trim() || 'ติดตามผลตรวจเพิ่มเติม', staff: followerName.trim(), contactPrimary: contactPhone.trim(), detail: appointmentReason.trim() || 'นัดติดตามผลตรวจเพิ่มเติม', notifyPeriod: '1 วัน' })
+                  window.dispatchEvent(new Event('activities-updated')); window.dispatchEvent(new Event('operations-updated'))
+                  setNextAppointment(''); setAppointmentReason(''); setAppointmentMessage('บันทึกนัดหมายเพิ่มเติมแล้ว')
+                } catch (error) { setAppointmentMessage(error.message || 'บันทึกนัดหมายไม่สำเร็จ') }
+                finally { setSavingAppointment(false) }
+              }}>{savingAppointment ? 'กำลังบันทึก...' : 'บันทึกนัดหมายเพิ่มเติม'}</button>
+              {(!followerName.trim() || !contactPhone.trim()) && <p className="mt-2 text-xs text-slate-500">กรอกชื่อผู้ติดตามและเบอร์ติดต่อ (ภายใน) ก่อนบันทึกนัดหมาย</p>}
+              {appointmentMessage && <p role="status" className="mt-2 text-sm text-orange-700">{appointmentMessage}</p>}
             </div>
           </div>
+          </fieldset>
         </div>
       </div>
 
@@ -487,7 +508,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
           >
             ปิด
           </button>
-          {evalResult === 'suspect_ssi' && <button
+          {!contactFailed && evalResult === 'suspect_ssi' && <button
             type="button"
             className="btn-outlined-primary"
             disabled={!canSave}
@@ -504,6 +525,12 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
                 const { saved, failedUploads, completedIndex } = await saveAssessment(false)
                 if (isOutOfRound) {
                   if (failedUploads) alert(`บันทึกผลประเมินแล้ว แต่มีไฟล์แนบ ${failedUploads} ไฟล์ที่อัปโหลดไม่สำเร็จ`)
+                  return
+                }
+                if (saved.contactFailed) {
+                  window.dispatchEvent(new Event('operations-updated'))
+                  alert('บันทึกการติดต่อไม่ได้แล้ว สามารถติดตามรอบเดิมอีกครั้งได้')
+                  resetAssessmentFields()
                   return
                 }
                 if (saved.nextRound) {

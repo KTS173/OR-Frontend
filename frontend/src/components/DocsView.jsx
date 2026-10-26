@@ -9,7 +9,7 @@ const referenceTypes = [
   ['IMPLANT', 'Implant'],
   ['IMAGE', 'Image'],
 ]
-const isImageDocument = doc => doc.mime_type?.startsWith('image/') || ['IMAGE', 'FOLLOW_UP_IMAGE'].includes(doc.document_type)
+const isImageDocument = doc => doc.document_type === 'FOLLOW_UP_DOCUMENT' || doc.document_type === 'เอกสารผู้ป่วย' ? false : doc.mime_type?.startsWith('image/') || ['IMAGE', 'FOLLOW_UP_IMAGE'].includes(doc.document_type)
 const categoryLabel = doc => ({
   INSTRUMENT_TRACKING: 'Instrument Tracking (จาก OR)',
   IMPLANT: 'Implant (จาก OR)',
@@ -73,7 +73,7 @@ export default function DocsView({ selectedPatient, operations = [selectedPatien
   }),[docs,type,round,query,activePatient,referenceMode,viewMode])
   const documentRows=useMemo(()=>visible.filter(doc=>!isImageDocument(doc)),[visible])
   const imageRows=useMemo(()=>visible.filter(isImageDocument),[visible])
-  const upload=async event=>{const file=event.target.files?.[0];event.target.value='';if(!file)return;const isImage=file.type.startsWith('image/');if((referenceMode&&uploadType==='IMAGE'||!referenceMode&&viewMode==='images')&&!isImage)return alert('ส่วนรูปภาพรองรับเฉพาะไฟล์รูปภาพ');if(!referenceMode&&viewMode==='documents'&&isImage)return alert('กรุณาเพิ่มไฟล์รูปภาพในแท็บรูปภาพ');if(file.size>5*1024*1024)return alert('ไฟล์ต้องมีขนาดไม่เกิน 5 MB');setUploading(true);try{await api.createCaseDocument(operationNo,{fileName:file.name,mimeType:file.type||'application/octet-stream',fileSize:file.size,fileData:await toDataUrl(file),documentType:referenceMode?uploadType:isImage?'FOLLOW_UP_IMAGE':'FOLLOW_UP_DOCUMENT',uploadedBy:user?.name,department:user?.department});await load()}catch(e){alert(e.message)}finally{setUploading(false)}}
+  const upload=async event=>{const file=event.target.files?.[0];event.target.value='';if(!file)return;const isImage=file.type.startsWith('image/');if((referenceMode&&uploadType==='IMAGE'||!referenceMode&&viewMode==='images')&&!isImage)return alert('ส่วนรูปภาพรองรับเฉพาะไฟล์รูปภาพ');if(file.size>5*1024*1024)return alert('ไฟล์ต้องมีขนาดไม่เกิน 5 MB');setUploading(true);try{await api.createCaseDocument(operationNo,{fileName:file.name,mimeType:file.type||'application/octet-stream',fileSize:file.size,fileData:await toDataUrl(file),documentType:referenceMode?uploadType:viewMode==='documents'?'FOLLOW_UP_DOCUMENT':isImage?'FOLLOW_UP_IMAGE':'FOLLOW_UP_DOCUMENT',uploadedBy:user?.name,department:user?.department});await load()}catch(e){alert(e.message)}finally{setUploading(false)}}
   const download=async doc=>{try{const data=await api.getCaseDocument(doc.id);const link=document.createElement('a');link.href=data.file_data;link.download=data.file_name;link.click()}catch(e){alert(e.message)}}
   const preview=async doc=>{setPreviewFile(null);setPreviewLoading(true);try{setPreviewFile(await api.getCaseDocument(doc.id))}catch(e){alert(e.message)}finally{setPreviewLoading(false)}}
   const controlClass = 'h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50'

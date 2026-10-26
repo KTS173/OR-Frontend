@@ -44,10 +44,10 @@
 .ris-extension-status{margin-top:14px;padding:11px 14px;border-left:4px solid #e8b04a;background:#fff9e9;color:#5f512d;border-radius:3px;font-size:12px}
 .ris-page>footer{padding:16px 4px;color:#718086;text-align:center;font-size:11px}
 @media(max-width:1000px){.ris-grid,.ris-patient-grid,.ris-notes-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-.ris-operation-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-.ris-op-span-3,.ris-op-span-4{grid-column:span 1}
-.ris-op-span-8{grid-column:span 2}
-.ris-op-span-6{grid-column:span 2}
+.ris-operation-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+.ris-op-span-3,.ris-op-span-4{grid-column:span 2}
+.ris-op-span-8{grid-column:span 4}
+.ris-op-span-6{grid-column:span 3}
 .ris-op-textarea{grid-column:span 2}
 .ris-span-3{grid-column:span 2}
 .ris-span-4{grid-column:span 2}

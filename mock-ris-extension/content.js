@@ -41,7 +41,7 @@ const operationFieldValue = (name, index) => {
 };
 
 const readOperationsFromFields = () => Array.from({ length: 3 }, (_, index) => ({
-  operationNo: operationFieldValue('operationNo', index),
+  operationNo: String(index + 1),
   surgeon: operationFieldValue('surgeon', index),
   secondSurgeon: operationFieldValue('secondSurgeon', index),
   thirdSurgeon: operationFieldValue('thirdSurgeon', index),
@@ -100,7 +100,7 @@ const readOperationData = () => {
   const fieldRecords = readOperationsFromFields();
   const records = fieldRecords.map((record, index) => ({ ...storedRecords[index], ...record }));
   const operations = records
-    .filter((record, index) => index === 0 || String(record.operationNo || '').trim())
+    .filter((record) => Object.entries(record).some(([key, value]) => key !== 'operationNo' && String(value ?? '').trim()))
     .map(operationFromRecord);
 
   return {

@@ -1,3 +1,6 @@
+import SsiReviewBoard from '../components/SsiReviewBoard.jsx'
+import { operatingRooms, operationTypes, operationUrgencies, operationOutcomes } from '../utils/operationOptions.js'
+import { ipdWards } from '../utils/careDestinations.js'
 import { AlertTriangle, ArrowLeft, ArrowRight, Camera, Check, ChevronDown, Edit2, Eye, Info, MinusCircle, RefreshCw, Send, UserRound, Users, X, Plus, Calendar, Clock, Save, Search, File } from 'lucide-react'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -33,8 +36,10 @@ function formatThaiPhoneNumber(value) {
 }
 
 function isValidThaiPhoneNumber(value) {
-  const digits = String(value || '').replace(/\D/g, '')
-  return value === '' || /^0\d{8,9}$/.test(digits)
+  const text = String(value ?? '').trim()
+  if (!text) return true
+  const digits = text.replace(/\D/g, '')
+  return /^0\d{8,9}$/.test(digits)
 }
 
 function Field({ label, name, type = 'text', required = false, readOnly = false }) {
@@ -45,9 +50,21 @@ function Field({ label, name, type = 'text', required = false, readOnly = false 
   return <label className="text-[13px] font-medium text-slate-600">{label}{required && <span className="text-red-500"> *</span>}<input type={isPhone ? 'tel' : type} inputMode={isPhone ? 'numeric' : undefined} maxLength={isPhone ? 12 : undefined} placeholder={isPhone ? '0XX-XXX-XXXX' : undefined} readOnly={readOnly} className={`${fieldClass} ${readOnly ? 'bg-slate-50 text-slate-500' : ''}`} value={value} onChange={event => update(name, isPhone ? formatThaiPhoneNumber(event.target.value) : event.target.value)} /></label>
 }
 
+function OperationSelectField({ label, name, options }) {
+  const { patient, update, fieldClass } = useContext(EditPatientFieldContext)
+  const value = patient[name] ?? ''
+  return <label className="text-[13px] font-medium text-slate-600">{label}
+    <select className={fieldClass} value={value} onChange={event => update(name, event.target.value)}>
+      <option value="">เลือก{label}</option>
+      {value && !options.some(([key]) => key === value) && <option value={value}>{value} (ข้อมูลเดิม)</option>}
+      {options.map(([key, text]) => <option key={key} value={key}>{text}</option>)}
+    </select>
+  </label>
+}
+
 export default function CaseDetailPage() {
   const { id } = useParams()
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const [patient, setPatient] = useState(null)
   const [patientOperations, setPatientOperations] = useState([])
   const [loading, setLoading] = useState(true)
@@ -59,7 +76,7 @@ export default function CaseDetailPage() {
   const [draft, setDraft] = useState(null)
   const [savingPatient, setSavingPatient] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
-  const [editPatientOpen, setEditPatientOpen] = useState(false)
+  const [editPatientOpen, setEditPatientOpen] = useState(() => new URLSearchParams(search).get('edit') === '1')
   const [queueOperation, setQueueOperation] = useState(null)
   const [activePatientTab, setActivePatientTab] = useState('info')
 
@@ -127,8 +144,12 @@ export default function CaseDetailPage() {
 
   if (loading) return <div className="rounded-xl border border-slate-200 bg-white p-10 text-center text-slate-500">กำลังโหลดข้อมูลผู้ป่วย...</div>
   if (loadError || !patient) return <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">{loadError || 'ไม่พบข้อมูลผู้ป่วย'}</div>
-  if (pathname.startsWith('/follow-ups/')) return <FollowUpCaseDetail patient={patient} operations={[patient]} />
-  if (pathname.startsWith('/suspected-cases/')) return <SuspectedCaseDetail patient={patient} operations={[patient]} />
+  const openPatientEditor = () => { setDraft({ ...patient }); setSaveMessage(''); setEditPatientOpen(true) }
+  const patientEditor = editPatientOpen && <EditPatientModal patient={draft} onChange={setDraft} saving={savingPatient} error={saveMessage && !saveMessage.includes('เรียบร้อย') ? saveMessage : ''} onClose={() => { setDraft(patient); setSaveMessage(''); setEditPatientOpen(false) }} onSave={async () => { if (await savePatient()) setEditPatientOpen(false) }} />
+  if (pathname.startsWith('/follow-ups/') || pathname.startsWith('/suspected-cases/')) return <>
+    {pathname.startsWith('/follow-ups/') ? <FollowUpCaseDetail patient={patient} operations={[patient]} onEditPatient={openPatientEditor} /> : <SuspectedCaseDetail patient={patient} operations={[patient]} onEditPatient={openPatientEditor} />}
+    {patientEditor}
+  </>
 
   return (
     <>
@@ -150,7 +171,7 @@ export default function CaseDetailPage() {
   )
 }
 
-function FollowUpCaseDetail({ patient, operations }) {
+function FollowUpCaseDetail({ patient, operations, onEditPatient }) {
   const { search } = useLocation()
   const [activeDetailTab, setActiveDetailTab] = useState(() => new URLSearchParams(search).get('tab') === 'history' ? 'history' : 'info')
   const [isActivityAdded, setIsActivityAdded] = useState(false)
@@ -174,6 +195,7 @@ function FollowUpCaseDetail({ patient, operations }) {
       <div className="flex min-h-6 flex-wrap items-center justify-between gap-2">
         <Link to="/my-follow-ups" className="inline-flex items-center gap-2 text-[14px] font-medium text-[#175beb]"><ArrowLeft size={12} />กลับไปหน้ารายการ</Link>
         <div className="flex flex-wrap items-center justify-end gap-2">
+          <button type="button" onClick={onEditPatient} className="inline-flex h-9 items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 text-[13px] font-medium text-blue-600 hover:bg-blue-50"><Edit2 size={15} />แก้ไขข้อมูลคนไข้</button>
           {!followUpChecked ? <span className="rounded border border-slate-200 bg-slate-50 px-2.5 py-1 text-[13px] text-slate-500">กำลังตรวจสอบ Follow-up...</span> : hasFollowUp ? <span className="rounded border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[13px] text-emerald-600">มีแผน Follow-up แล้ว</span> : <><span className="rounded border border-amber-200 bg-amber-50 px-2.5 py-1 text-[13px] text-amber-700">ยังไม่ได้กำหนด Follow-up</span><button type="button" onClick={() => setIsSetupFollowUpOpen(true)} className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#175beb] px-3 text-[13px] font-medium text-white shadow-sm hover:bg-blue-700"><Calendar size={15} />กำหนดรอบติดตาม</button></>}
           <span className={`rounded border px-2.5 py-1 text-[13px] ${patient.ssiStatus === 'SUSPECTED_SSI' ? 'border-orange-200 bg-orange-50 text-orange-600' : patient.ssiStatus === 'CONFIRMED_SSI' ? 'border-red-200 bg-red-50 text-red-600' : patient.ssiStatus === 'NOT_SSI' ? 'border-emerald-200 bg-emerald-50 text-emerald-600' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>{patient.ssiStatus === 'SUSPECTED_SSI' ? 'สงสัย SSI' : patient.ssiStatus === 'CONFIRMED_SSI' ? 'ยืนยัน SSI' : patient.ssiStatus === 'NOT_SSI' ? 'ไม่เข้าข่าย SSI' : 'ยังไม่ประเมิน SSI'}</span>
         </div>
@@ -205,7 +227,7 @@ function FollowUpCaseDetail({ patient, operations }) {
         </div>
       ) : (
         <>
-          {!['history', 'transfer', 'docs', 'images'].includes(activeDetailTab) && (
+          {!['history', 'review', 'transfer', 'docs', 'images'].includes(activeDetailTab) && (
             <FollowUpTimeline patient={patient} />
           )}
 
@@ -228,6 +250,7 @@ function FollowUpCaseDetail({ patient, operations }) {
               />
             )}
             {activeDetailTab === 'history' && <AllEvaluationHistory patient={patient} />}
+            {activeDetailTab === 'review' && <SsiReviewBoard patient={patient} />}
             {activeDetailTab === 'transfer' && (
               <TransferCareView
                 selectedPatient={patient}
@@ -310,6 +333,7 @@ function FollowUpTabs({ activeDetailTab, setActiveDetailTab, setIsActivityModalO
     { id: 'evaluation', name: 'ประเมินตามรอบ' },
     { id: 'timeline', name: 'การติดตาม / Timeline' },
     { id: 'history', name: 'ประวัติการประเมินทั้งหมด' },
+    { id: 'review', name: 'SSI Review Conference Board' },
     { id: 'transfer', name: 'ย้ายเคส / ส่งต่อการดูแล' },
     { id: 'docs', name: 'เอกสาร' },
     { id: 'images', name: 'รูปภาพ' }
@@ -384,7 +408,13 @@ function EditableOrCase({ patient, onChange }) {
         <Field label="HN" name="id" required /><Field label="ชื่อ" name="firstName" /><Field label="นามสกุล" name="lastName" />
         <label className="text-[13px] font-medium text-slate-600">เพศ<select className={fieldClass} value={patient.sex || ''} onChange={event => update('sex', event.target.value)}><option value="">ไม่ระบุ</option><option value="MALE">ชาย</option><option value="FEMALE">หญิง</option><option value="OTHER">อื่นๆ</option></select></label>
         <Field label="วันเกิด" name="dateOfBirth" type="date" /><Field label="อายุ (คำนวณอัตโนมัติ)" name="age" type="number" readOnly /><Field label="ส่วนสูง (ซม.)" name="heightCm" type="number" /><Field label="น้ำหนัก (กก.)" name="weightKg" type="number" />
-        <Field label="BMI (คำนวณอัตโนมัติ)" name="bmi" type="number" readOnly /><Field label="เชื้อชาติ" name="ethnicity" /><Field label="สัญชาติ" name="nationality" /><Field label="สิทธิการรักษา" name="insurance" />
+        <Field label="BMI (คำนวณอัตโนมัติ)" name="bmi" type="number" readOnly /><Field label="เชื้อชาติ" name="ethnicity" /><Field label="สัญชาติ" name="nationality" /><label className="text-[13px] font-medium text-slate-600">สิทธิการรักษา
+          <select className={fieldClass} value={patient.insurance || ''} onChange={event => update('insurance', event.target.value)}>
+            <option value="">เลือกสิทธิการรักษา</option>
+            {patient.insurance && !['Self Pay', 'ประกัน', 'Staff (สวัสดิการ)', 'เบิกตรง', 'ประกันสังคม'].includes(patient.insurance) && <option value={patient.insurance}>{patient.insurance} (ข้อมูลเดิม)</option>}
+            {['Self Pay', 'ประกัน', 'Staff (สวัสดิการ)', 'เบิกตรง', 'ประกันสังคม'].map(insurance => <option key={insurance} value={insurance}>{insurance}</option>)}
+          </select>
+        </label>
         <label className="text-[13px] font-medium md:col-span-3 xl:col-span-4">ที่อยู่<textarea className={areaClass} value={patient.address || ''} onChange={event => update('address', event.target.value)} /></label>
       </div>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -404,23 +434,35 @@ function EditableOrCase({ patient, onChange }) {
     <section className="grid gap-3 xl:grid-cols-2">
       <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="border-b border-slate-100 pb-3 text-[16px] font-semibold text-[#002d73]">ข้อมูลติดต่อ</h3>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="เบอร์โทรหลัก" name="phonePrimary" /><Field label="เบอร์โทร 2" name="phoneSecondary" /><Field label="Line ID" name="lineId" /><Field label="อีเมล" name="email" type="email" /></div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="เบอร์โทรหลัก" name="phonePrimary" /><Field label="เบอร์โทร 2 (ไม่บังคับ)" name="phoneSecondary" /><Field label="Line ID" name="lineId" /><Field label="อีเมล" name="email" type="email" /></div>
       </article>
       <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="border-b border-slate-100 pb-3 text-[16px] font-semibold text-[#002d73]">ข้อมูลการรับบริการ</h3>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="Episode No." name="episodeNo" required /><Field label="วันที่ Admit" name="episodeDate" type="date" /><Field label="Ward" name="wardName" /><Field label="เตียง" name="bedNo" /></div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="Episode No." name="episodeNo" required /><Field label="วันที่ Admit" name="episodeDate" type="date" /><Field label="Ward" name="wardName" /><Field label="Room" name="bedNo" /></div>
       </article>
     </section>
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <h3 className="border-b border-slate-100 pb-3 text-[16px] font-semibold text-[#002d73]">ข้อมูลการผ่าตัด</h3>
       <div className="mt-4 grid gap-4 md:grid-cols-3 xl:grid-cols-4">
         <Field label="หัตถการ" name="procedure" required /><Field label="ศัลยแพทย์" name="surgeon" /><Field label="ศัลยแพทย์คนที่ 2" name="secondSurgeon" /><Field label="ศัลยแพทย์คนที่ 3" name="thirdSurgeon" />
-        <Field label="วิสัญญีแพทย์" name="anesthesiologist" /><Field label="ประเภทการระงับความรู้สึก" name="anesthesiaType" /><Field label="แผนก" name="department" /><Field label="อุปกรณ์พิเศษ" name="specialEquipment" />
+        <Field label="วิสัญญีแพทย์" name="anesthesiologist" /><label className="text-[13px] font-medium text-slate-600">ประเภทการระงับความรู้สึก
+          <select className={fieldClass} value={patient.anesthesiaType || ''} onChange={event => update('anesthesiaType', event.target.value)}>
+            <option value="">เลือกประเภทการระงับความรู้สึก</option>
+            {patient.anesthesiaType && !['GA', 'SB', 'IV sedation'].includes(patient.anesthesiaType) && <option value={patient.anesthesiaType}>{patient.anesthesiaType} (ข้อมูลเดิม)</option>}
+            {['GA', 'SB', 'IV sedation'].map(anesthesiaType => <option key={anesthesiaType} value={anesthesiaType}>{anesthesiaType}</option>)}
+          </select>
+        </label><Field label="แผนก" name="department" /><Field label="อุปกรณ์พิเศษ" name="specialEquipment" />
         <Field label="Scrub Nurse" name="scrubNurse" /><Field label="Circulating Nurse" name="circulatingNurse" /><Field label="Anesthesia Nurse" name="anesthesiaNurse" />
-        <Field label="สถานที่ผ่าตัด" name="location" /><Field label="ห้องผ่าตัด" name="operatingRoom" /><Field label="ความเร่งด่วน" name="urgency" /><Field label="ประเภทการผ่าตัด" name="operationType" />
+        <OperationSelectField label="ห้องผ่าตัด" name="operatingRoom" options={operatingRooms} /><OperationSelectField label="ความเร่งด่วน" name="urgency" options={operationUrgencies} /><OperationSelectField label="ประเภทการผ่าตัด" name="operationType" options={operationTypes} />
         <Field label="เวลาเริ่มผ่าตัด" name="startAt" type="datetime-local" /><Field label="เวลาสิ้นสุดผ่าตัด" name="endAt" type="datetime-local" /><Field label="ระยะเวลา (นาที)" name="durationMinutes" type="number" />
-        <Field label="ตำแหน่งผ่าตัด" name="bodySite" /><Field label="ข้าง" name="laterality" /><Field label="ASA Class" name="asaClass" />
-        <label className="text-[13px] font-medium text-slate-600">มี Implant<select className={fieldClass} value={patient.implantPresent == null ? '' : String(patient.implantPresent)} onChange={event => update('implantPresent', event.target.value === '' ? null : event.target.value === 'true')}><option value="">ไม่ระบุ</option><option value="true">มี</option><option value="false">ไม่มี</option></select></label><Field label="รายละเอียด Implant" name="implant" /><Field label="ผลลัพธ์" name="outcome" />
+        <Field label="ตำแหน่งผ่าตัด" name="bodySite" /><label className="text-[13px] font-medium text-slate-600">ข้าง
+          <select className={fieldClass} value={patient.laterality || ''} onChange={event => update('laterality', event.target.value)}>
+            <option value="">เลือกข้าง</option>
+            {patient.laterality && !['Bilateral', 'Left', 'Not applicable', 'Right', 'Unknown'].includes(patient.laterality) && <option value={patient.laterality}>{patient.laterality} (ข้อมูลเดิม)</option>}
+            {['Bilateral', 'Left', 'Not applicable', 'Right', 'Unknown'].map(laterality => <option key={laterality} value={laterality}>{laterality}</option>)}
+          </select>
+        </label><Field label="ASA Class" name="asaClass" />
+        <label className="text-[13px] font-medium text-slate-600">มี Implant<select className={fieldClass} value={patient.implantPresent == null ? '' : String(patient.implantPresent)} onChange={event => update('implantPresent', event.target.value === '' ? null : event.target.value === 'true')}><option value="">ไม่ระบุ</option><option value="true">มี</option><option value="false">ไม่มี</option></select></label><Field label="รายละเอียด Implant" name="implant" /><OperationSelectField label="Operation outcome" name="outcome" options={operationOutcomes} />
         <label className="text-[13px] font-medium text-slate-600 md:col-span-3 xl:col-span-4">Diagnosis<textarea className={areaClass} value={patient.diagnosis || ''} onChange={event => update('diagnosis', event.target.value)} /></label>
         <label className="text-[13px] font-medium text-slate-600 md:col-span-3 xl:col-span-4">รายละเอียดหัตถการเพิ่มเติม<textarea className={areaClass} value={patient.procedureFreeText || ''} onChange={event => update('procedureFreeText', event.target.value)} /></label>
       </div>
@@ -461,7 +503,7 @@ function OperationCaseBlocks({ operations, onSend, onExclude }) {
     {operations.length === 0 && <p className="rounded-lg bg-slate-50 px-6 py-5 text-[14px] text-slate-500">ไม่มี Operation Number ที่รอส่งจาก OR</p>}
     {operations.map((operation, index) => <article key={operation.operationNo} className="overflow-hidden rounded-xl border border-[#dbe4f0] bg-white shadow-sm">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/70 px-6 py-4">
-        <div className="flex items-center gap-3"><span className="grid size-8 place-items-center rounded-full bg-[#175beb] text-sm font-semibold text-white">{index + 1}</span><div><p className="text-[11px] font-medium text-slate-400">OPERATION NUMBER</p><h4 className="text-lg font-semibold text-[#002d73]">{operation.operationNo || '-'}</h4></div></div>
+        <div className="flex items-center gap-3"><span className="grid size-8 place-items-center rounded-full bg-[#175beb] text-sm font-semibold text-white">{index + 1}</span><div><p className="text-[11px] font-medium text-slate-400">OPERATION NUMBER</p><h4 className="text-lg font-semibold text-[#002d73]">{operation.operationLabel || operation.operationNo || '-'}</h4></div></div>
         <div className="flex flex-wrap items-center gap-2"><StatusBadge>รอตรวจสอบ</StatusBadge><button onClick={() => onExclude(operation)} className="inline-flex h-8 items-center gap-2 rounded-lg border border-red-300 bg-white px-3 text-sm font-medium text-red-500 hover:bg-red-50"><MinusCircle size={15} />ตัดเคสออก</button><button onClick={() => onSend(operation)} className="inline-flex h-8 items-center gap-2 rounded-lg bg-[#175beb] px-3 text-sm font-medium text-white shadow-sm hover:bg-blue-700"><Send size={15} />ส่ง Case</button></div>
       </header>
       <div className="grid gap-6 px-6 py-5 md:grid-cols-2 xl:grid-cols-4">
@@ -494,26 +536,26 @@ export function PatientInfoCard({ patient }) {
     ['ประเภทแผล (Wound Class)', patient.woundClass],
   ]
   return <article className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-    <header className="flex flex-wrap items-center gap-4 px-5 py-5 sm:px-6">
+    <header className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5">
       {patient.patientPhoto
-        ? <img src={patient.patientPhoto} alt={`รูปผู้ป่วย ${patient.name || ''}`} className="size-28 shrink-0 rounded-xl border border-slate-200 object-cover sm:size-36" />
-        : <div className="grid size-28 shrink-0 place-items-center sm:size-36 rounded-xl border border-blue-100 bg-blue-50/50 text-[#175beb]"><UserRound size={64} strokeWidth={1.4} /></div>}
+        ? <img src={patient.patientPhoto} alt={`รูปผู้ป่วย ${patient.name || ''}`} className="size-16 shrink-0 rounded-lg border border-slate-200 object-cover sm:size-20" />
+        : <div className="grid size-16 shrink-0 place-items-center sm:size-20 rounded-lg border border-blue-100 bg-blue-50/50 text-[#175beb]"><UserRound size={40} strokeWidth={1.4} /></div>}
       <div className="min-w-0 flex-1"><p className="text-[13px] font-medium text-slate-500">HN <span className="ml-1 text-slate-700">{patient.id}</span></p><h2 className="mt-1 break-words text-[22px] font-semibold leading-8 text-slate-900">{patient.name}</h2></div>
-      <div className="flex flex-wrap gap-4 text-[12px] text-slate-500">
-        <div><p className="mb-1.5">ประเภทผู้ป่วย</p><span className="inline-block rounded-md bg-blue-50 px-2.5 py-1 font-medium text-[#175beb]">{patient.patientType?.toUpperCase() || 'ไม่ระบุ'}</span></div>
-        <div><p className="mb-1.5">สถานะเคส</p><span className="inline-block rounded-md bg-blue-50 px-2.5 py-1 font-medium text-[#175beb]">{patient.workflowStatus === 'CASE' ? 'ส่ง case แล้ว' : 'รอตรวจสอบ'}</span></div>
+      <div className="flex flex-wrap gap-3 text-[12px] text-slate-500">
+        <div><p className="mb-1">ประเภทผู้ป่วย</p><span className="inline-block rounded-md bg-blue-50 px-2.5 py-1 font-medium text-[#175beb]">{patient.patientType?.toUpperCase() || 'ไม่ระบุ'}</span></div>
+        <div><p className="mb-1">สถานะเคส</p><span className="inline-block rounded-md bg-blue-50 px-2.5 py-1 font-medium text-[#175beb]">{patient.workflowStatus === 'CASE' ? 'ส่ง case แล้ว' : 'รอตรวจสอบ'}</span></div>
       </div>
     </header>
-    <dl className="grid grid-cols-1 gap-x-8 gap-y-5 px-5 pb-5 pt-2 sm:grid-cols-2 sm:px-6 sm:pb-6 lg:grid-cols-3">
+    <dl className="grid grid-cols-1 gap-x-6 gap-y-2 px-4 pb-3 pt-1 sm:grid-cols-2 sm:px-5 sm:pb-4 lg:grid-cols-3">
       {[...demographics, ['ที่อยู่', patient.address], ...health, ['โรคร่วม/ปัจจัยเสี่ยง', patient.comorbidities]].map(([label, value]) => (
-        <div key={label} className="flex min-w-0 items-start justify-between gap-4">
+        <div key={label} className="flex min-w-0 items-start justify-between gap-3">
           <dt className="shrink-0 text-[14px] text-slate-500">{label}</dt>
           <dd className="min-w-0 whitespace-pre-wrap break-words text-right text-[14px] font-medium text-slate-800">{value === '' || value == null ? 'ไม่ระบุ' : value}</dd>
         </div>
       ))}
       <div className="col-span-full min-w-0">
         <dt className="text-[14px] text-slate-500">รายละเอียดสภาพแผล</dt>
-        <dd className="mt-2 whitespace-pre-wrap break-words text-[14px] font-medium leading-6 text-slate-800">{patient.woundDischargeNotes || 'ไม่ระบุ'}</dd>
+        <dd className="mt-1 whitespace-pre-wrap break-words text-[14px] font-medium leading-5 text-slate-800">{patient.woundDischargeNotes || 'ไม่ระบุ'}</dd>
       </div>
     </dl>
   </article>
@@ -526,7 +568,7 @@ function SurgerySection({ patient, hideRisk = false }) {
   const operationNoteGroups = [
     [['วันที่เริ่มผ่าตัด', formatDate(patient.startAt)], ['เวลาเริ่มผ่าตัด', formatTime(patient.startAt)]],
     [['วันที่สิ้นสุดผ่าตัด', formatDate(patient.endAt)], ['เวลาสิ้นสุดผ่าตัด', formatTime(patient.endAt)]],
-    [['ระยะเวลาผ่าตัด', patient.durationMinutes != null ? `${patient.durationMinutes} นาที` : '-'], ['ผลลัพธ์หลังผ่าตัด', outcomeLabel]]
+    [['ระยะเวลาผ่าตัด', patient.durationMinutes != null ? `${patient.durationMinutes} นาที` : '-'], ['Operation outcome', outcomeLabel]]
   ]
   return <section className={`mt-3 grid items-stretch gap-3 ${hideRisk ? '' : 'xl:grid-cols-[2fr_1fr]'}`}><article className="rounded-xl border border-[#e2e8f0] bg-white px-5 py-4 shadow-sm"><h3 className="text-[16px] font-medium text-[#002d73]">ข้อมูลการผ่าตัด</h3><div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">{operationNoteGroups.map((items, index) => <div key={index} className={`space-y-3 ${index ? 'border-t border-slate-100 pt-4 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0' : ''}`}>{items.map(([label, value]) => <DetailRow key={label} label={label} value={value || '-'} />)}</div>)}</div></article>{!hideRisk && <article className="flex min-h-[170px] flex-col overflow-hidden rounded-xl border border-[#e2e8f0] bg-white shadow-sm"><h3 className="border-b border-slate-100 px-6 py-4 text-[16px] font-medium text-[#002d73]">ปัจจัยเสี่ยง SSI</h3><div className="grid flex-1 place-items-center px-6 py-6 text-sm text-slate-400">ยังไม่มีข้อมูลการประเมินความเสี่ยง</div></article>}</section>
 }
@@ -539,14 +581,14 @@ function OperationSurgerySections({ operations = [] }) {
   return <section className="mt-3 space-y-3">
     {operations.map(operation => <article key={operation.operationNo} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
-        <div><h3 className="text-[16px] font-semibold text-[#002d73]">ข้อมูลการผ่าตัด</h3><p className="mt-1 text-[12px] text-slate-500">Operation Number <strong className="ml-1 font-semibold text-blue-700">{operation.operationNo || '-'}</strong></p></div>
+        <div><h3 className="text-[16px] font-semibold text-[#002d73]">ข้อมูลการผ่าตัด</h3><p className="mt-1 text-[12px] text-slate-500">Operation Number <strong className="ml-1 font-semibold text-blue-700">{operation.operationLabel || operation.operationNo || '-'}</strong></p></div>
         <span className="rounded-md bg-blue-50 px-2.5 py-1 text-[12px] font-medium text-blue-700">{operation.patientType?.toUpperCase() || '-'}</span>
       </header>
       <div className="grid gap-0 px-5 py-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="space-y-3 pb-4 sm:pr-5 xl:pb-0"><DetailRow label="หัตถการ" value={operation.procedure || '-'} /><DetailRow label="Diagnosis" value={operation.diagnosis || '-'} /><DetailRow label="ศัลยแพทย์" value={operation.surgeon || '-'} /></div>
         <div className="space-y-3 border-t border-slate-100 py-4 sm:border-l sm:border-t-0 sm:py-0 sm:pl-5 xl:pr-5"><DetailRow label="แผนก" value={operation.department || '-'} /><DetailRow label="ห้องผ่าตัด" value={operation.operatingRoom || '-'} /><DetailRow label="ประเภทการผ่าตัด" value={operation.operationType || '-'} /></div>
         <div className="space-y-3 border-t border-slate-100 py-4 xl:border-l xl:border-t-0 xl:py-0 xl:pl-5 xl:pr-5"><DetailRow label="วันที่เริ่มผ่าตัด" value={formatDate(operation.startAt)} /><DetailRow label="เวลาเริ่มผ่าตัด" value={formatTime(operation.startAt)} /><DetailRow label="ระยะเวลาผ่าตัด" value={operation.durationMinutes != null ? `${operation.durationMinutes} นาที` : '-'} /></div>
-        <div className="space-y-3 border-t border-slate-100 pt-4 sm:border-l sm:pl-5 xl:border-t-0 xl:pt-0"><DetailRow label="วันที่สิ้นสุดผ่าตัด" value={formatDate(operation.endAt)} /><DetailRow label="เวลาสิ้นสุดผ่าตัด" value={formatTime(operation.endAt)} /><DetailRow label="ผลลัพธ์หลังผ่าตัด" value={outcomeLabel(operation.outcome)} /></div>
+        <div className="space-y-3 border-t border-slate-100 pt-4 sm:border-l sm:pl-5 xl:border-t-0 xl:pt-0"><DetailRow label="วันที่สิ้นสุดผ่าตัด" value={formatDate(operation.endAt)} /><DetailRow label="เวลาสิ้นสุดผ่าตัด" value={formatTime(operation.endAt)} /><DetailRow label="Operation outcome" value={outcomeLabel(operation.outcome)} /></div>
       </div>
       {operation.orHandoverNote && <div className="mx-5 mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3"><p className="text-[12px] font-semibold text-amber-700">บันทึกส่งต่อจาก OR</p><p className="mt-1 whitespace-pre-wrap break-words text-[14px] leading-6 text-slate-700">{operation.orHandoverNote}</p></div>}
     </article>)}
@@ -590,7 +632,7 @@ function ContactAndProcedures({ patient, operations = [patient] }) {
     </article>
     <article className="rounded-xl border border-[#e2e8f0] bg-white px-5 py-4 shadow-sm sm:px-6">
       <h3 className="inline-flex items-center gap-2 text-[16px] font-medium leading-7 text-[#002d73]">รายการหัตถการในเคส <span className="text-[13px] font-normal text-slate-500">({operations.length} รายการ)</span><Info size={17} className="text-[#64748b]" /></h3>
-      <div className="mt-4 overflow-hidden rounded-lg border border-slate-200"><table className="w-full table-fixed text-[13px] text-[#434651]"><colgroup><col className="w-[8%]" /><col className="w-[18%]" /><col className="w-[30%]" /><col className="w-[26%]" /><col className="w-[18%]" /></colgroup><thead className="h-11 bg-[#f8fafc] font-semibold uppercase tracking-[.6px] text-[#1e293b]"><tr><th className="px-3 text-center align-middle">ลำดับ</th><th className="px-3 text-center align-middle">Operation Number</th><th className="px-3 text-center align-middle">หัตถการ</th><th className="px-3 text-center align-middle">ศัลยแพทย์</th><th className="px-3 text-center align-middle">สถานะ SSI</th></tr></thead><tbody>{operations.map((operation, index) => { const presentation = evaluationPresentation(operation.operationNo); return <tr key={operation.operationNo} className="min-h-16 border-t border-slate-100"><td className="px-3 py-5 text-center align-middle font-medium">{index + 1}</td><td className="break-words px-3 py-5 text-center align-middle font-medium text-blue-700">{operation.operationNo || '-'}</td><td className="break-words px-3 py-5 text-center align-middle">{operation.procedure || '-'}</td><td className="break-words px-3 py-5 text-center align-middle">{operation.surgeon || '-'}</td><td className="px-3 py-5 text-center align-middle"><span className={`inline-flex items-center justify-center gap-1.5 ${presentation.color}`}><i className={`size-[7px] shrink-0 rounded-full ${presentation.dot}`} />{presentation.text}</span></td></tr> })}</tbody></table></div>
+      <div className="mt-4 overflow-hidden rounded-lg border border-slate-200"><table className="w-full table-fixed text-[13px] text-[#434651]"><colgroup><col className="w-[8%]" /><col className="w-[18%]" /><col className="w-[30%]" /><col className="w-[26%]" /><col className="w-[18%]" /></colgroup><thead className="h-11 bg-[#f8fafc] font-semibold uppercase tracking-[.6px] text-[#1e293b]"><tr><th className="px-3 text-center align-middle">ลำดับ</th><th className="px-3 text-center align-middle">Operation Number</th><th className="px-3 text-center align-middle">หัตถการ</th><th className="px-3 text-center align-middle">ศัลยแพทย์</th><th className="px-3 text-center align-middle">สถานะ SSI</th></tr></thead><tbody>{operations.map((operation, index) => { const presentation = evaluationPresentation(operation.operationNo); return <tr key={operation.operationNo} className="min-h-16 border-t border-slate-100"><td className="px-3 py-5 text-center align-middle font-medium">{index + 1}</td><td className="break-words px-3 py-5 text-center align-middle font-medium text-blue-700">{operation.operationLabel || operation.operationNo || '-'}</td><td className="break-words px-3 py-5 text-center align-middle">{operation.procedure || '-'}</td><td className="break-words px-3 py-5 text-center align-middle">{operation.surgeon || '-'}</td><td className="px-3 py-5 text-center align-middle"><span className={`inline-flex items-center justify-center gap-1.5 ${presentation.color}`}><i className={`size-[7px] shrink-0 rounded-full ${presentation.dot}`} />{presentation.text}</span></td></tr> })}</tbody></table></div>
     </article>
   </section>
 }
@@ -702,24 +744,23 @@ const hospitalDepartments = [
   'เวชศาสตร์ฟื้นฟู (Rehabilitation Medicine)',
   'เวชศาสตร์ฉุกเฉิน (Emergency Medicine)',
   'ผู้ป่วยนอกทั่วไป (General OPD)',
-  'หอผู้ป่วยวิกฤต (ICU)',
 ]
 
 function QueueModal({ patient, onClose, onSend }) {
   const [patientType, setPatientType] = useState(patient.patientType?.toUpperCase() || 'OPD')
-  const [department, setDepartment] = useState('ศัลยกรรมทั่วไป (General Surgery)')
-  const [note, setNote] = useState(patient.orHandoverNote || '')
+  const [department, setDepartment] = useState(patient.patientType?.toUpperCase() === 'IPD' ? ipdWards[0] : hospitalDepartments[0])
+  const departments = patientType === 'IPD' ? ipdWards : hospitalDepartments
+  const changePatientType = type => { setPatientType(type); setDepartment(type === 'IPD' ? ipdWards[0] : hospitalDepartments[0]) }
   return <div className="fixed inset-0 z-50 bg-slate-950/45" onMouseDown={onClose}><aside className="absolute inset-y-0 right-0 w-full max-w-[708px] overflow-y-auto bg-white shadow-2xl" onMouseDown={(e) => e.stopPropagation()}>
-    <header className="flex h-[85px] items-center justify-between border-b border-slate-200 px-6"><div><h2 className="text-[20px] font-semibold text-[#1f2937]">ส่งเคสไปยัง OPD/IPD Queue</h2><p className="mt-1 text-[14px] text-slate-500">กำหนดปลายทางและแผนการติดตามเบื้องต้นก่อนส่งต่อ</p></div><button onClick={onClose}><X size={20} className="text-slate-400" /></button></header>
+    <header className="flex h-[85px] items-center justify-between border-b border-slate-200 px-6"><div><h2 className="text-[20px] font-semibold text-[#1f2937]">ส่งเคสไปยัง OPD/IPD Queue</h2><p className="mt-1 text-[14px] text-slate-500">เลือกปลายทางและแผนกรับเคสก่อนส่งต่อ</p></div><button onClick={onClose}><X size={20} className="text-slate-400" /></button></header>
     <div className="space-y-6 p-6">
       <section className="rounded-lg border border-blue-200 bg-blue-50/60 p-[17px]"><h3 className="flex items-center gap-2 text-[16px] font-semibold text-blue-800"><Users size={20} />สรุปข้อมูลเคส</h3><div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-[14px]">{[['ชื่อผู้ป่วย', patient.name], ['แผนกต้นทาง', patient.department], ['HN', `HN${patient.id}`], ['หัตถการ', patient.procedure], ['ความเสี่ยง SSI', patient.risk], ['ศัลยแพทย์', patient.surgeon]].map(([k, v]) => <div key={k} className="grid grid-cols-[89px_1fr]"><span className="text-slate-500">{k}</span><strong className="font-medium">{v}</strong></div>)}</div></section>
-      <section className="space-y-5">{[['เลือกปลายทาง *', 'tabs'], ['เลือกแผนก *', 'select'], ['กำหนดระดับความสำคัญ *', 'priority']].map(([label, type]) => <div key={label} className="grid grid-cols-[209px_1fr] items-center"><label className="text-[14px]">{label}</label>{type === 'tabs' ? <div className="grid h-[38px] grid-cols-2 overflow-hidden rounded-lg border border-slate-300"><button type="button" onClick={() => setPatientType('OPD')} className={`border-r border-blue-400 ${patientType === 'OPD' ? 'bg-blue-50 text-blue-600' : ''}`}>OPD</button><button type="button" onClick={() => setPatientType('IPD')} className={patientType === 'IPD' ? 'bg-blue-50 text-blue-600' : ''}>IPD</button></div> : type === 'select' ? <select value={department} onChange={(event) => setDepartment(event.target.value)} className="field h-[39px]">{hospitalDepartments.map((item) => <option key={item} value={item}>{item}</option>)}</select> : <div className="grid grid-cols-3 gap-2"><button type="button" className="h-[38px] rounded-lg border border-blue-400 bg-blue-50 text-blue-600">ปกติ</button><button type="button" className="h-[38px] rounded-lg border border-slate-300">ด่วน</button><button type="button" className="h-[38px] rounded-lg border border-slate-300">เร่งด่วน</button></div>}</div>)}
-        <div className="grid grid-cols-[209px_1fr]"><label className="pt-2 text-[14px]">บันทึกเบื้องต้นจาก OR</label><textarea value={note} onChange={event => setNote(event.target.value)} maxLength={1000} className="h-[96px] resize-none rounded-lg border border-slate-300 p-3 text-[14px] outline-none focus:border-[#175beb] focus:ring-2 focus:ring-blue-50" placeholder="กรอกรายละเอียดสำคัญที่ต้องการส่งต่อให้ OPD/IPD..." /></div>
+      <section className="space-y-5">{[['เลือกปลายทาง *', 'tabs'], [patientType === 'IPD' ? 'เลือก Ward *' : 'เลือกแผนก *', 'select']].map(([label, type]) => <div key={label} className="grid grid-cols-[209px_1fr] items-center"><label className="text-[14px]">{label}</label>{type === 'tabs' ? <div className="grid h-[38px] grid-cols-2 overflow-hidden rounded-lg border border-slate-300"><button type="button" onClick={() => changePatientType('OPD')} className={`border-r border-blue-400 ${patientType === 'OPD' ? 'bg-blue-50 text-blue-600' : ''}`}>OPD</button><button type="button" onClick={() => changePatientType('IPD')} className={patientType === 'IPD' ? 'bg-blue-50 text-blue-600' : ''}>IPD</button></div> : <select value={department} onChange={(event) => setDepartment(event.target.value)} className="field h-[39px]">{departments.map((item) => <option key={item} value={item}>{item}</option>)}</select>}</div>)}
       </section>
       <div className="flex h-[46px] items-center gap-3 rounded-lg bg-blue-50 px-3 text-[14px] text-blue-700"><Info size={16} />เลือกปลายทางและแผนกรับเคสก่อนส่งข้อมูล</div>
       <div className="flex justify-end gap-3 border-b border-slate-200 pb-5">
         <button onClick={onClose} className="btn-secondary h-[38px] px-6">ยกเลิก</button>
-        <button onClick={() => onSend(patientType, department, note.trim())} className="btn-primary inline-flex h-[38px] items-center gap-2 px-6"><Send size={14} />ส่งเคส</button>
+        <button onClick={() => onSend(patientType, department, patient.orHandoverNote || '')} className="btn-primary inline-flex h-[38px] items-center gap-2 px-6"><Send size={14} />ส่งเคส</button>
       </div>
       <section><h3 className="mb-4 text-[16px] font-semibold">ประวัติการส่งข้อมูล</h3><div className="rounded-lg border border-slate-200 px-4 py-10 text-center text-[13px] text-slate-400">ยังไม่มีประวัติการส่งข้อมูล</div></section>
     </div>
@@ -979,7 +1020,7 @@ function AddActivityModal({ patient, onClose, onSave }) {
   )
 }
 
-function SuspectedCaseDetail({ patient, operations = [patient] }) {
+function SuspectedCaseDetail({ patient, operations = [patient], onEditPatient }) {
   const { id, subtab } = useParams()
   const navigate = useNavigate()
   const { search } = useLocation()
@@ -1019,7 +1060,7 @@ function SuspectedCaseDetail({ patient, operations = [patient] }) {
   const [assessmentModalOpen, setAssessmentModalOpen] = useState(false)
   const [evaluationHistory, setEvaluationHistory] = useState([])
   const [selectedHistory, setSelectedHistory] = useState(null)
-  const caseProcedures = operations.map(operation => ({ operationNo: operation.operationNo, name: operation.procedure, surgeon: operation.surgeon }))
+  const caseProcedures = operations.map(operation => ({ operationNo: operation.operationNo, operationLabel: operation.operationLabel, name: operation.procedure, surgeon: operation.surgeon }))
   const ssiText = patient.ssiStatus === 'CONFIRMED_SSI' ? 'ยืนยัน SSI' : patient.ssiStatus === 'SUSPECTED_SSI' ? 'สงสัย SSI' : patient.ssiStatus === 'NOT_SSI' ? 'ไม่เข้าเกณฑ์ SSI' : 'ยังไม่ประเมิน'
 
   useEffect(() => {
@@ -1038,13 +1079,13 @@ function SuspectedCaseDetail({ patient, operations = [patient] }) {
         if (data.otherSymptom) items.push({ label: 'อาการอื่นๆ', value: data.otherSymptom })
         const otherLabels = { nausea: 'คลื่นไส้ / อาเจียน', musclePain: 'ปวดข้อ/ปวดกล้ามเนื้อ', other: 'อาการอื่นๆ เพิ่มเติม' }
         Object.entries(data.otherCheckboxes || {}).filter(([, value]) => value).forEach(([key]) => items.push({ label: otherLabels[key] || key, value: key === 'other' && data.otherCheckboxesText ? data.otherCheckboxesText : 'มี' }))
-        const treatmentLabels = { none: 'ไม่ได้ไปพบแพทย์', metDoctor: 'ไปพบแพทย์แล้ว (OPD/IPD)', other: data.dischargeTreatmentText || 'อื่นๆ' }
+        const treatmentLabels = { none: 'ไม่ได้พบแพทย์', metDoctor: 'พบแพทย์แล้ว (OPD/IPD)', other: data.dischargeTreatmentText || 'อื่นๆ' }
         if (data.dischargeTreatment) items.push({ label: 'การรักษาหลังจำหน่าย', value: treatmentLabels[data.dischargeTreatment] || data.dischargeTreatment })
         if (data.followUpMethod) items.push({ label: 'วิธีการติดตาม', value: data.followUpMethod })
-        if (data.followerName) items.push({ label: 'ผู้ติดตาม', value: data.followerName })
+        if (data.followerName) items.push({ label: 'ชื่อผู้ติดตาม', value: data.followerName })
         if (data.contactPhone) items.push({ label: 'เบอร์ของเจ้าหน้าที่ที่ติดตาม', value: data.contactPhone })
         if (data.remarks) items.push({ label: 'หมายเหตุการติดตาม', value: data.remarks })
-        if (data.evalRemarks) items.push({ label: 'การจัดการ/คำแนะนำ', value: data.evalRemarks })
+        if (data.evalRemarks) items.push({ label: 'ให้การรักษา/คำแนะนำ', value: data.evalRemarks })
         setAssessmentItems(items)
 
         const thaiDateTime = value => { if (!value) return { date: '-', time: '-' }; const parsed = new Date(value); return { date: parsed.toLocaleDateString('th-TH'), time: parsed.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) } }
@@ -1054,10 +1095,10 @@ function SuspectedCaseDetail({ patient, operations = [patient] }) {
           const detailRows = Object.entries(saved.symptoms || {}).filter(([, value]) => value).map(([key, value]) => ({ label: symptomNames.get(String(key)) || key, value: statusText[value] || String(value) }))
           if (saved.otherSymptom) detailRows.push({ label: 'อาการอื่นๆ', value: saved.otherSymptom })
           if (saved.followUpMethod) detailRows.push({ label: 'วิธีการติดตาม', value: saved.followUpMethod })
-          if (saved.followerName) detailRows.push({ label: 'ผู้ติดตาม', value: saved.followerName })
+          if (saved.followerName) detailRows.push({ label: 'ชื่อผู้ติดตาม', value: saved.followerName })
           if (saved.contactPhone) detailRows.push({ label: 'เบอร์ของเจ้าหน้าที่ที่ติดตาม', value: saved.contactPhone })
           if (saved.remarks) detailRows.push({ label: 'หมายเหตุการติดตาม', value: saved.remarks })
-          if (saved.evalRemarks) detailRows.push({ label: 'การจัดการ/คำแนะนำ', value: saved.evalRemarks })
+          if (saved.evalRemarks) detailRows.push({ label: 'ให้การรักษา/คำแนะนำ', value: saved.evalRemarks })
           if (saved.dischargeTreatment) detailRows.push({ label: 'การรักษาหลังจำหน่าย', value: treatmentLabels[saved.dischargeTreatment] || saved.dischargeTreatment })
           return detailRows
         }
@@ -1186,7 +1227,7 @@ function SuspectedCaseDetail({ patient, operations = [patient] }) {
           <ArrowLeft size={12} />กลับไปหน้ารายการ
         </Link>
         <div className="flex items-center gap-2">
-          <span className="rounded border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[13px] text-emerald-600">สร้าง Follow-up สำเร็จ</span>
+          <button type="button" onClick={onEditPatient} className="inline-flex h-9 items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 text-[13px] font-medium text-blue-600 hover:bg-blue-50"><Edit2 size={15} />แก้ไขข้อมูลคนไข้</button><span className="rounded border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[13px] text-emerald-600">สร้าง Follow-up สำเร็จ</span>
           <span className="rounded border border-orange-200 bg-orange-50 px-2.5 py-1 text-[13px] text-orange-500">ต้องติดตามวันนี้</span>
         </div>
       </div>
@@ -1268,7 +1309,7 @@ function SuspectedCaseDetail({ patient, operations = [patient] }) {
                         <th className="px-4 text-left">สถานะ SSI</th>
                       </tr>
                     </thead>
-                    <tbody>{caseProcedures.map((procedure, index) => <tr key={procedure.operationNo || `${procedure.name}-${index}`} className="h-12 border-t border-slate-100"><td className="px-4">{index + 1}</td><td className="px-4 font-medium text-blue-700">{procedure.operationNo || '-'}</td><td className="px-4 font-medium text-slate-800">{procedure.name || '-'}</td><td className="px-4">{procedure.surgeon || '-'}</td><td className={`px-4 font-semibold ${patient.ssiStatus === 'SUSPECTED_SSI' ? 'text-orange-500' : patient.ssiStatus === 'CONFIRMED_SSI' ? 'text-red-600' : patient.ssiStatus === 'NOT_SSI' ? 'text-emerald-600' : 'text-slate-400'}`}>● {ssiText}</td></tr>)}</tbody>
+                    <tbody>{caseProcedures.map((procedure, index) => <tr key={procedure.operationNo || `${procedure.name}-${index}`} className="h-12 border-t border-slate-100"><td className="px-4">{index + 1}</td><td className="px-4 font-medium text-blue-700">{procedure.operationLabel || procedure.operationNo || '-'}</td><td className="px-4 font-medium text-slate-800">{procedure.name || '-'}</td><td className="px-4">{procedure.surgeon || '-'}</td><td className={`px-4 font-semibold ${patient.ssiStatus === 'SUSPECTED_SSI' ? 'text-orange-500' : patient.ssiStatus === 'CONFIRMED_SSI' ? 'text-red-600' : patient.ssiStatus === 'NOT_SSI' ? 'text-emerald-600' : 'text-slate-400'}`}>● {ssiText}</td></tr>)}</tbody>
                   </table>
                 </div>
               </div>
@@ -1476,7 +1517,7 @@ function SuspectedCaseDetail({ patient, operations = [patient] }) {
                         onChange={() => setDischargeTreatment('not_visited')}
                         className="accent-blue-600 cursor-pointer"
                       />
-                      ไม่ได้ไปพบแพทย์
+                      ไม่ได้พบแพทย์
                     </label>
                     <label className="flex items-center gap-2 font-medium cursor-pointer select-none">
                       <input
@@ -1486,7 +1527,7 @@ function SuspectedCaseDetail({ patient, operations = [patient] }) {
                         onChange={() => setDischargeTreatment('visited')}
                         className="accent-blue-600 cursor-pointer"
                       />
-                      ไปพบแพทย์แล้ว (OPD/IPD)
+                      พบแพทย์แล้ว (OPD/IPD)
                     </label>
                     <label className="flex items-center gap-2 font-medium cursor-pointer select-none">
                       <input

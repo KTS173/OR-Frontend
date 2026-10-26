@@ -33,6 +33,7 @@ const withAssessmentScore = (payload) => {
 const operationToPatient = (operation) => ({
   id: operation.hn,
   operationNo: operation.operation_no,
+  operationLabel: /^RIS-[a-f0-9]{64}-[123]$/.test(operation.operation_no || '') ? `Operation Number ${operation.operation_no.slice(-1)}` : operation.operation_no,
   name: [operation.first_name, operation.last_name].filter(Boolean).join(' ') || 'ไม่ระบุชื่อ',
   firstName: operation.first_name,
   lastName: operation.last_name,
@@ -177,5 +178,7 @@ export const api = {
   markRecovered: (operationNo) => request(`/api/operations/${encodeURIComponent(operationNo)}/recovery`, { method: 'PATCH' }),
   getNotifications: (userId = currentUserId()) => userId ? request(`/api/notifications?userId=${encodeURIComponent(userId)}`) : Promise.resolve([]),
   markNotificationRead: (notificationKey, userId = currentUserId()) => request('/api/notifications/read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notificationKey, userId }) }),
+  getSsiReview: (operationNo) => request(`/api/operations/${encodeURIComponent(operationNo)}/ssi-review`),
+  saveSsiReview: (operationNo, data) => request(`/api/operations/${encodeURIComponent(operationNo)}/ssi-review`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data }) }),
   getSearchRecords: () => request('/api/search-records'),
 }

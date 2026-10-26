@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, Info, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Edit2, Check, ChevronLeft, ChevronRight, Info, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../services/api.js'
@@ -119,7 +119,7 @@ export default function CreateFollowUpPage() {
   if (error && !patient) return <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">{error}</div>
 
   return <div className="space-y-4">
-    <button type="button" onClick={() => navigate(-1)} className="inline-flex h-9 items-center gap-2 rounded-lg px-1 text-[14px] font-medium text-[#175beb] hover:text-blue-700"><ArrowLeft size={15} />กลับไปหน้ารายการ</button>
+    <div className="flex items-center justify-between"><button type="button" onClick={() => navigate(-1)} className="inline-flex h-9 items-center gap-2 rounded-lg px-1 text-[14px] font-medium text-[#175beb] hover:text-blue-700"><ArrowLeft size={15} />กลับไปหน้ารายการ</button><button type="button" onClick={() => navigate(`/cases/${encodeURIComponent(patient.operationNo)}?edit=1`)} className="inline-flex h-9 items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 text-sm text-blue-600"><Edit2 size={15} />แก้ไขข้อมูลคนไข้</button></div>
     <PatientInfoCard patient={patient} />
 
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

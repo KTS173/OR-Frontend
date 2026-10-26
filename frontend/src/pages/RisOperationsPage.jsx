@@ -75,7 +75,7 @@ export default function RisOperationsPage() {
               {!loading && !filtered.length && <tr><td colSpan="9" className="px-4 py-12 text-center text-slate-500">ยังไม่มีข้อมูลการผ่าตัด</td></tr>}
               {!loading && filtered.map((item) => (
                 <tr key={item.id ?? item.operation_no} className="border-t border-slate-100 hover:bg-blue-50/40">
-                  <td className="px-4 py-4 font-semibold text-blue-600">{item.operation_no || '-'}</td>
+                  <td className="px-4 py-4 font-semibold text-blue-600">{/^RIS-[a-f0-9]{64}-[123]$/.test(item.operation_no || '') ? `Operation Number ${item.operation_no.slice(-1)}` : item.operation_no || '-'}</td>
                   <td className="px-4 py-4">{item.hn || '-'}</td>
                   <td className="px-4 py-4 font-medium">{[item.first_name, item.last_name].filter(Boolean).join(' ') || '-'}</td>
                   <td className="max-w-[240px] px-4 py-4">{item.procedure_name || '-'}</td>

@@ -20,8 +20,8 @@ export default function SettingsPage() {
     { id: 'gap', name: 'แผลแยก', enabled: true },
   ])
   const [dischargeTreatmentOptions, setDischargeTreatmentOptions] = useState([
-    { id: 'none', name: 'ไม่ได้ไปพบแพทย์', enabled: true },
-    { id: 'metDoctor', name: 'ไปพบแพทย์แล้ว (OPD/IPD)', enabled: true },
+    { id: 'none', name: 'ไม่ได้พบแพทย์', enabled: true },
+    { id: 'metDoctor', name: 'พบแพทย์แล้ว (OPD/IPD)', enabled: true },
     { id: 'other', name: 'อื่นๆ', enabled: true },
   ])
 
@@ -100,7 +100,7 @@ export default function SettingsPage() {
   useEffect(() => {
     api.getSettings().then((saved) => {
       if (saved.ssiCriteria) setSsiCriteria(saved.ssiCriteria)
-      if (saved.dischargeTreatmentOptions) setDischargeTreatmentOptions(saved.dischargeTreatmentOptions)
+      if (saved.dischargeTreatmentOptions) setDischargeTreatmentOptions(saved.dischargeTreatmentOptions.map(item => ({ ...item, name: item.name.replace('ไม่ได้ไปพบแพทย์', 'ไม่ได้พบแพทย์').replace('ไปพบแพทย์แล้ว', 'พบแพทย์แล้ว') })))
       if (saved.schedules) setSchedules(saved.schedules)
       if (saved.methods) setMethods(saved.methods.map(normalizeFollowUpMethod))
       if (Array.isArray(saved.riskLevels) && saved.riskLevels.length) setRiskLevels(saved.riskLevels.map(level => level.id === 'moderate' && Number(level.max) === 49 ? { ...level, max: 50 } : level.id === 'high' && Number(level.min) === 50 ? { ...level, min: 51 } : level))
