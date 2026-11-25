@@ -1,3 +1,7 @@
+import SsiSurveillanceBanner from '../components/SsiSurveillanceBanner.jsx'
+import SsiHandoverRisk from '../components/ui/SsiHandoverRisk.jsx'
+import { ssiSurveillanceRiskFactors, requiresSsiSurveillance } from '../utils/ssiSurveillanceRisk.js'
+import { savedSsiRisk } from '../utils/ssiRiskLevel.js'
 import SsiReviewBoard from '../components/SsiReviewBoard.jsx'
 import { operatingRooms, operationTypes, operationUrgencies, operationOutcomes } from '../utils/operationOptions.js'
 import { ipdWards } from '../utils/careDestinations.js'
@@ -82,18 +86,32 @@ export default function CaseDetailPage() {
 
   useEffect(() => {
     let active = true
-    api.getPatientGroup(id)
-      .then((operations) => { if (active) { const selected = operations.find((item) => item.operationNo === id) || operations[0]; setPatient(selected); setDraft(selected); setPatientOperations(operations) } })
-      .catch((error) => active && setLoadError(error.message || 'โหลดข้อมูลไม่สำเร็จ'))
-      .finally(() => active && setLoading(false))
-    return () => { active = false }
+    let requestVersion = 0
+    const load = async (initial = false) => {
+      const version = ++requestVersion
+      try {
+        const operations = await api.getPatientGroup(id)
+        if (!active || version !== requestVersion) return
+        const selected = operations.find(item => item.operationNo === id) || operations[0]
+        setPatient(selected); setPatientOperations(operations)
+        if (initial) setDraft(selected)
+      } catch (error) {
+        if (active && initial) setLoadError(error.message || 'โหลดข้อมูลไม่สำเร็จ')
+      } finally {
+        if (active && initial) setLoading(false)
+      }
+    }
+    const refresh = () => load()
+    load(true)
+    window.addEventListener('operations-updated', refresh)
+    return () => { active = false; window.removeEventListener('operations-updated', refresh) }
   }, [id])
 
-  const handleSend = async (patientType, department, note) => {
+  const handleSend = async (patientType, department, note, priority, ssiRiskFactors) => {
     if (!queueOperation) return
     try {
-      await api.assignPatientType(queueOperation.operationNo, patientType, department, note)
-      const updateOperation = (item) => item.operationNo === queueOperation.operationNo ? { ...item, patientType: patientType.toLowerCase(), receivingDepartment: department, orHandoverNote: note, workflowStatus: 'QUEUED' } : item
+      await api.assignPatientType(queueOperation.operationNo, patientType, department, note, priority, ssiRiskFactors)
+      const updateOperation = (item) => item.operationNo === queueOperation.operationNo ? { ...item, patientType: patientType.toLowerCase(), receivingDepartment: department, orHandoverNote: note, casePriority: priority, orSsiRiskFactors: ssiRiskFactors, workflowStatus: 'QUEUED' } : item
       setPatientOperations((current) => current.map(updateOperation))
       setPatient((current) => updateOperation(current))
       window.dispatchEvent(new Event('operations-updated'))
@@ -590,6 +608,7 @@ function OperationSurgerySections({ operations = [] }) {
         <div className="space-y-3 border-t border-slate-100 py-4 xl:border-l xl:border-t-0 xl:py-0 xl:pl-5 xl:pr-5"><DetailRow label="วันที่เริ่มผ่าตัด" value={formatDate(operation.startAt)} /><DetailRow label="เวลาเริ่มผ่าตัด" value={formatTime(operation.startAt)} /><DetailRow label="ระยะเวลาผ่าตัด" value={operation.durationMinutes != null ? `${operation.durationMinutes} นาที` : '-'} /></div>
         <div className="space-y-3 border-t border-slate-100 pt-4 sm:border-l sm:pl-5 xl:border-t-0 xl:pt-0"><DetailRow label="วันที่สิ้นสุดผ่าตัด" value={formatDate(operation.endAt)} /><DetailRow label="เวลาสิ้นสุดผ่าตัด" value={formatTime(operation.endAt)} /><DetailRow label="Operation outcome" value={outcomeLabel(operation.outcome)} /></div>
       </div>
+      <SsiSurveillanceBanner operation={operation}/>
       {operation.orHandoverNote && <div className="mx-5 mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3"><p className="text-[12px] font-semibold text-amber-700">บันทึกส่งต่อจาก OR</p><p className="mt-1 whitespace-pre-wrap break-words text-[14px] leading-6 text-slate-700">{operation.orHandoverNote}</p></div>}
     </article>)}
   </section>
@@ -747,6 +766,8 @@ const hospitalDepartments = [
 ]
 
 function QueueModal({ patient, onClose, onSend }) {
+  const [ssiRiskFactors, setSsiRiskFactors] = useState(()=>Object.fromEntries(ssiSurveillanceRiskFactors.map(item=>[item.id,patient.orSsiRiskFactors?.[item.id]===true])))
+  const priority = requiresSsiSurveillance(ssiRiskFactors) ? 'HIGH' : 'LOW'
   const [patientType, setPatientType] = useState(patient.patientType?.toUpperCase() || 'OPD')
   const [department, setDepartment] = useState(patient.patientType?.toUpperCase() === 'IPD' ? ipdWards[0] : hospitalDepartments[0])
   const departments = patientType === 'IPD' ? ipdWards : hospitalDepartments
@@ -754,13 +775,14 @@ function QueueModal({ patient, onClose, onSend }) {
   return <div className="fixed inset-0 z-50 bg-slate-950/45" onMouseDown={onClose}><aside className="absolute inset-y-0 right-0 w-full max-w-[708px] overflow-y-auto bg-white shadow-2xl" onMouseDown={(e) => e.stopPropagation()}>
     <header className="flex h-[85px] items-center justify-between border-b border-slate-200 px-6"><div><h2 className="text-[20px] font-semibold text-[#1f2937]">ส่งเคสไปยัง OPD/IPD Queue</h2><p className="mt-1 text-[14px] text-slate-500">เลือกปลายทางและแผนกรับเคสก่อนส่งต่อ</p></div><button onClick={onClose}><X size={20} className="text-slate-400" /></button></header>
     <div className="space-y-6 p-6">
-      <section className="rounded-lg border border-blue-200 bg-blue-50/60 p-[17px]"><h3 className="flex items-center gap-2 text-[16px] font-semibold text-blue-800"><Users size={20} />สรุปข้อมูลเคส</h3><div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-[14px]">{[['ชื่อผู้ป่วย', patient.name], ['แผนกต้นทาง', patient.department], ['HN', `HN${patient.id}`], ['หัตถการ', patient.procedure], ['ความเสี่ยง SSI', patient.risk], ['ศัลยแพทย์', patient.surgeon]].map(([k, v]) => <div key={k} className="grid grid-cols-[89px_1fr]"><span className="text-slate-500">{k}</span><strong className="font-medium">{v}</strong></div>)}</div></section>
+      <section className="rounded-lg border border-blue-200 bg-blue-50/60 p-[17px]"><h3 className="flex items-center gap-2 text-[16px] font-semibold text-blue-800"><Users size={20} />สรุปข้อมูลเคส</h3><div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-[14px]">{[['ชื่อผู้ป่วย', patient.name], ['แผนกต้นทาง', patient.department], ['HN', `HN${patient.id}`], ['หัตถการ', patient.procedure], ['ความเสี่ยง SSI', <SsiHandoverRisk factors={ssiRiskFactors} />], ['ศัลยแพทย์', patient.surgeon]].map(([k, v]) => <div key={k} className="grid grid-cols-[89px_1fr]"><span className="text-slate-500">{k}</span><strong className="font-medium">{v}</strong></div>)}</div></section>
       <section className="space-y-5">{[['เลือกปลายทาง *', 'tabs'], [patientType === 'IPD' ? 'เลือก Ward *' : 'เลือกแผนก *', 'select']].map(([label, type]) => <div key={label} className="grid grid-cols-[209px_1fr] items-center"><label className="text-[14px]">{label}</label>{type === 'tabs' ? <div className="grid h-[38px] grid-cols-2 overflow-hidden rounded-lg border border-slate-300"><button type="button" onClick={() => changePatientType('OPD')} className={`border-r border-blue-400 ${patientType === 'OPD' ? 'bg-blue-50 text-blue-600' : ''}`}>OPD</button><button type="button" onClick={() => changePatientType('IPD')} className={patientType === 'IPD' ? 'bg-blue-50 text-blue-600' : ''}>IPD</button></div> : <select value={department} onChange={(event) => setDepartment(event.target.value)} className="field h-[39px]">{departments.map((item) => <option key={item} value={item}>{item}</option>)}</select>}</div>)}
       </section>
+      <section className="space-y-3 rounded-xl border border-slate-200 p-4"><h3 className="text-sm font-semibold text-[#002d73]">สาเหตุหรือปัจจัยที่เกี่ยวข้องกับ SSI</h3><p className="text-xs text-slate-500">เลือกอย่างน้อย 1 ข้อ = เสี่ยงสูง ต้องเฝ้าระวังเป็นพิเศษ</p>{ssiSurveillanceRiskFactors.map(item=><label key={item.id} className="flex cursor-pointer items-start gap-3 text-sm text-slate-700"><input type="checkbox" className="mt-0.5 size-4 shrink-0 accent-red-600" checked={ssiRiskFactors[item.id]} onChange={event=>setSsiRiskFactors(current=>({...current,[item.id]:event.target.checked}))}/><span>{item.label}</span></label>)}<SsiHandoverRisk factors={ssiRiskFactors} details/></section>
       <div className="flex h-[46px] items-center gap-3 rounded-lg bg-blue-50 px-3 text-[14px] text-blue-700"><Info size={16} />เลือกปลายทางและแผนกรับเคสก่อนส่งข้อมูล</div>
       <div className="flex justify-end gap-3 border-b border-slate-200 pb-5">
         <button onClick={onClose} className="btn-secondary h-[38px] px-6">ยกเลิก</button>
-        <button onClick={() => onSend(patientType, department, patient.orHandoverNote || '')} className="btn-primary inline-flex h-[38px] items-center gap-2 px-6"><Send size={14} />ส่งเคส</button>
+        <button onClick={() => onSend(patientType, department, patient.orHandoverNote || '', priority, ssiRiskFactors)} className="btn-primary inline-flex h-[38px] items-center gap-2 px-6"><Send size={14} />ส่งเคส</button>
       </div>
       <section><h3 className="mb-4 text-[16px] font-semibold">ประวัติการส่งข้อมูล</h3><div className="rounded-lg border border-slate-200 px-4 py-10 text-center text-[13px] text-slate-400">ยังไม่มีประวัติการส่งข้อมูล</div></section>
     </div>
@@ -1109,9 +1131,9 @@ function SuspectedCaseDetail({ patient, operations = [patient], onEditPatient })
           const saved = evaluation?.data || {}
           const roundDocuments = (documents || []).filter(doc => !doc.follow_up_round || doc.follow_up_round === round.day)
           const flaggedForSsi = /suspect|confirmed|positive/i.test(evaluation?.result || '')
-          return { id: `round-${round.id || index}`, sortAt: evaluation?.evaluated_at || `${round.date || '9999-12-31'}T${round.time || '23:59'}`, roundNumber: index + 1, dayLabel: round.day || `รอบที่ ${index + 1}`, date: when.date, time: when.time, nurseName: evaluation?.evaluated_by || followUps[0]?.assigned_to || '-', status: evaluation ? 'completed' : 'pending', sspiFlag: flaggedForSsi, ssiStatus: flaggedForSsi ? patient.ssiStatus : null, woundCondition: evaluation ? (saved.evalRemarks || saved.remarks || saved.otherSymptom || 'บันทึกผลการประเมินแล้ว') : '', riskLevel: evaluation ? resultText(evaluation.result) : '', otherSymptoms: saved.otherSymptom || '-', reason: null, contactChannel: { hasPhone: /โทร|phone/i.test(saved.followUpMethod || ''), fileCount: roundDocuments.filter(doc => !String(doc.mime_type || '').startsWith('image/')).length, imageCount: roundDocuments.filter(doc => String(doc.mime_type || '').startsWith('image/')).length }, details: evaluation ? detailsFrom(evaluation) : [], rawResult: evaluation?.result || null }
+          return { id: `round-${round.id || index}`, sortAt: evaluation?.evaluated_at || `${round.date || '9999-12-31'}T${round.time || '23:59'}`, roundNumber: index + 1, dayLabel: round.day || `รอบที่ ${index + 1}`, date: when.date, time: when.time, nurseName: evaluation?.evaluated_by || followUps[0]?.assigned_to || '-', status: evaluation ? 'completed' : 'pending', sspiFlag: flaggedForSsi, ssiStatus: flaggedForSsi ? patient.ssiStatus : null, woundCondition: evaluation ? (saved.evalRemarks || saved.remarks || saved.otherSymptom || 'บันทึกผลการประเมินแล้ว') : '', riskLevel: evaluation?.data?.assessmentModel === 'ssi-checklist-v1' ? '' : evaluation ? savedSsiRisk(evaluation)?.label || 'ยังไม่มีคะแนน' : '', otherSymptoms: saved.otherSymptom || '-', reason: null, contactChannel: { hasPhone: /โทร|phone/i.test(saved.followUpMethod || ''), fileCount: roundDocuments.filter(doc => !String(doc.mime_type || '').startsWith('image/')).length, imageCount: roundDocuments.filter(doc => String(doc.mime_type || '').startsWith('image/')).length }, details: evaluation ? detailsFrom(evaluation) : [], rawResult: evaluation?.result || null }
         })
-        const activityRows = (activities || []).map((activity, index) => { const when = thaiDateTime(activity.activity_at || activity.created_at); const evaluation = evaluations.find(item => String(item.round_key) === `ACTIVITY:${activity.id}`); const flaggedForSsi = /suspect|confirmed|positive/i.test(evaluation?.result || ''); return { id: `activity-${activity.id}`, sortAt: activity.activity_at || activity.created_at, roundNumber: index + 1, dayLabel: 'กิจกรรมแทรก', date: when.date, time: when.time, nurseName: evaluation?.evaluated_by || activity.staff || '-', status: 'interrupt_activity', sspiFlag: flaggedForSsi, recoveryFlag: evaluation?.result === 'recovery_clear', ssiStatus: flaggedForSsi ? patient.ssiStatus : null, woundCondition: activity.purpose || activity.activity_type || 'กิจกรรมแทรก', riskLevel: evaluation ? resultText(evaluation.result) : '', otherSymptoms: '', reason: activity.detail || '-', contactChannel: { hasPhone: Boolean(activity.contact_primary), fileCount: 0, imageCount: 0 }, details: evaluation ? [...detailsFrom(evaluation), { label: 'ประเภทกิจกรรม', value: activity.activity_type || '-' }] : [{ label: 'ประเภทกิจกรรม', value: activity.activity_type || '-' }, { label: 'วัตถุประสงค์', value: activity.purpose || '-' }, { label: 'รายละเอียด', value: activity.detail || '-' }, { label: 'สถานที่', value: activity.location || '-' }, { label: 'ผู้ดำเนินการ', value: activity.staff || '-' }] } })
+        const activityRows = (activities || []).map((activity, index) => { const when = thaiDateTime(activity.activity_at || activity.created_at); const evaluation = evaluations.find(item => String(item.round_key) === `ACTIVITY:${activity.id}`); const flaggedForSsi = /suspect|confirmed|positive/i.test(evaluation?.result || ''); return { id: `activity-${activity.id}`, sortAt: activity.activity_at || activity.created_at, roundNumber: index + 1, dayLabel: 'กิจกรรมแทรก', date: when.date, time: when.time, nurseName: evaluation?.evaluated_by || activity.staff || '-', status: 'interrupt_activity', sspiFlag: flaggedForSsi, recoveryFlag: evaluation?.result === 'recovery_clear', ssiStatus: flaggedForSsi ? patient.ssiStatus : null, woundCondition: activity.purpose || activity.activity_type || 'กิจกรรมแทรก', riskLevel: evaluation?.data?.assessmentModel === 'ssi-checklist-v1' ? '' : evaluation ? savedSsiRisk(evaluation)?.label || 'ยังไม่มีคะแนน' : '', otherSymptoms: '', reason: activity.detail || '-', contactChannel: { hasPhone: Boolean(activity.contact_primary), fileCount: 0, imageCount: 0 }, details: evaluation ? [...detailsFrom(evaluation), { label: 'ประเภทกิจกรรม', value: activity.activity_type || '-' }] : [{ label: 'ประเภทกิจกรรม', value: activity.activity_type || '-' }, { label: 'วัตถุประสงค์', value: activity.purpose || '-' }, { label: 'รายละเอียด', value: activity.detail || '-' }, { label: 'สถานที่', value: activity.location || '-' }, { label: 'ผู้ดำเนินการ', value: activity.staff || '-' }] } })
         setEvaluationHistory([...scheduledRows, ...activityRows].sort((a, b) => String(a.sortAt).localeCompare(String(b.sortAt))))
       })
       .catch(() => { if (active) { setAssessmentItems([]); setEvaluationHistory([]) } })

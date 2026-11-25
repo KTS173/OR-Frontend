@@ -1,3 +1,4 @@
+const {normalizeHandoverRisk,handoverRiskLevel}=require('./ssiHandoverRisk');
 const express = require('express');
 const cors = require('cors');
 const { normalizeOperationIdentity } = require('./operationIdentity');
@@ -35,16 +36,6 @@ const notificationRuleKey = (row) => {
   if (/appointment|นัดหมาย/.test(text)) return 'appointmentReminder';
   if (/follow-up-due|follow-up due|ติดตามผู้ป่วย/.test(text)) return 'followUpDue';
   return 'others';
-};
-const assessmentScore = (data = {}) => {
-  const answers = Object.values(data.symptoms || {}).filter(Boolean);
-  if (!answers.length) return null;
-  const points = answers.reduce((sum, value) => {
-    if (/^(has|yes|true|มี)$/i.test(String(value))) return sum + 1;
-    if (/^(unknown|unsure|ไม่ทราบ)$/i.test(String(value))) return sum + 0.5;
-    return sum;
-  }, 0);
-  return Number(((points / answers.length) * 100).toFixed(2));
 };
 
 const valuesFrom = (body) => {
@@ -242,6 +233,14 @@ app.get('/api/operations', async (_req, res, next) => {
       f.completed_at,f.viewed_at AS follow_up_viewed_at,f.created_at AS follow_up_created_at,
       e.id AS evaluation_id,e.result AS evaluation_result,e.score AS evaluation_score,
       e.data AS evaluation_data,e.evaluated_at,
+      (SELECT jsonb_build_object('result',scheduled.result,'evaluatedAt',scheduled.evaluated_at)
+       FROM evaluations scheduled WHERE scheduled.operation_no=o.operation_no
+         AND scheduled.follow_up_id IS NOT NULL
+         AND COALESCE(scheduled.round_key,'') NOT LIKE 'ACTIVITY:%'
+         AND COALESCE(scheduled.round_key,'') NOT LIKE 'CONTACT:%'
+         AND scheduled.result NOT IN ('contact_failed','recovery_clear')
+         AND COALESCE(scheduled.data->>'assessmentKind','SCHEDULED')='SCHEDULED'
+       ORDER BY scheduled.evaluated_at DESC,scheduled.id DESC LIMIT 1) AS latest_scheduled_evaluation,
       EXISTS (
         SELECT 1 FROM evaluations history
         WHERE history.operation_no=o.operation_no
@@ -252,11 +251,12 @@ app.get('/api/operations', async (_req, res, next) => {
         FROM evaluations history
         WHERE history.operation_no=o.operation_no
           AND (history.doctor_decision='CONFIRMED_SSI' OR history.result ~* '(confirmed|positive)')
-      ) AS confirmed_ssi_at
+      ) AS confirmed_ssi_at,
+      (SELECT created_at FROM ssi_case_reviews review WHERE review.operation_no=o.operation_no) AS ssi_review_created_at
       FROM ris_operations o LEFT JOIN LATERAL (
         SELECT * FROM follow_ups x WHERE x.operation_no=o.operation_no ORDER BY x.created_at DESC LIMIT 1
       ) f ON TRUE LEFT JOIN LATERAL (
-        SELECT * FROM evaluations x WHERE x.operation_no=o.operation_no AND COALESCE(x.round_key,'') NOT LIKE 'ACTIVITY:%' ORDER BY x.evaluated_at DESC LIMIT 1
+        SELECT * FROM evaluations x WHERE x.operation_no=o.operation_no AND x.result NOT IN ('contact_failed','recovery_clear') ORDER BY x.evaluated_at DESC LIMIT 1
       ) e ON TRUE ORDER BY o.created_at DESC`);
     res.json({ success: true, data: result.rows });
   } catch (error) {
@@ -346,16 +346,24 @@ app.patch('/api/operations/:operationNo/patient-type', async (req, res, next) =>
   const patientType = String(req.body?.patientType || '').trim().toUpperCase();
   const department = String(req.body?.department || '').trim();
   const note = String(req.body?.note || '').trim();
+  let priority = req.body?.priority ?? 'LOW';
+  if (!['HIGH', 'MEDIUM', 'LOW'].includes(priority)) {
+    return res.status(400).json({ success: false, message: 'ระดับความสำคัญไม่ถูกต้อง' });
+  }
   if (!['OPD', 'IPD'].includes(patientType)) {
     return res.status(400).json({ success: false, message: 'patientType must be OPD or IPD' });
   }
 
+  let factors;
+  try { factors=normalizeHandoverRisk(req.body?.ssiRiskFactors); }
+  catch { return res.status(400).json({success:false,message:'ข้อมูลปัจจัยเสี่ยง SSI ไม่ถูกต้อง'}); }
+  if(factors!=null) priority=handoverRiskLevel(factors)==='HIGH'?'HIGH':'LOW';
   try {
     const result = await query(
-      `UPDATE ris_operations SET patient_type = $1, receiving_department = $2, or_handover_note = $3, workflow_status = 'QUEUED',
-       assigned_user_id = NULL, assigned_to = NULL, queued_at = NOW(), accepted_at = NULL, updated_at = NOW()
-       WHERE operation_no = $4 RETURNING operation_no, patient_type, receiving_department, or_handover_note, workflow_status`,
-      [patientType, department || null, note || null, req.params.operationNo]
+      `UPDATE ris_operations SET patient_type = $1, receiving_department = $2, or_handover_note = $3, case_priority = $5, or_ssi_risk_factors = COALESCE($6::jsonb,or_ssi_risk_factors), workflow_status = 'QUEUED',
+       handover_data_edited = FALSE, assigned_user_id = NULL, assigned_to = NULL, queued_at = NOW(), accepted_at = NULL, updated_at = NOW()
+       WHERE operation_no = $4 RETURNING operation_no, patient_type, receiving_department, or_handover_note, case_priority, or_ssi_risk_factors, workflow_status`,
+      [patientType, department || null, note || null, req.params.operationNo, priority, factors==null?null:JSON.stringify(factors)]
     );
     if (!result.rows[0]) return res.status(404).json({ success: false, message: 'Operation not found' });
     res.json({ success: true, data: result.rows[0] });
@@ -445,7 +453,15 @@ app.put('/api/settings', async(req,res,next)=>{
 });
 
 app.get('/api/operations/:operationNo/follow-ups', async(req,res,next)=>{try{const r=await query('SELECT * FROM follow_ups WHERE operation_no=$1 ORDER BY created_at DESC',[req.params.operationNo]);res.json({success:true,data:r.rows});}catch(e){next(e);}});
-app.get('/api/follow-ups', async(req,res,next)=>{try{const assignedUserId=Number(req.query.assignedUserId)||null;const params=[];let where=`o.workflow_status IN ('ASSIGNED','FOLLOW_UP_ACTIVE','SUSPECTED_SSI','CONFIRMED_SSI','RECOVERED','FOLLOW_UP_COMPLETED')`;if(assignedUserId){params.push(assignedUserId);where+=` AND o.assigned_user_id=$${params.length}`;}const r=await query(`SELECT o.*, f.id AS follow_up_id, f.follow_up_no, f.template_days, f.auto_calculate, f.schedule AS follow_up_schedule, f.selected_procedures AS follow_up_selected_procedures, f.status AS follow_up_status, f.assigned_to AS follow_up_assigned_to, f.current_round_index, f.completed_at, f.viewed_at AS follow_up_viewed_at, f.created_at AS follow_up_created_at, f.updated_at AS follow_up_updated_at FROM ris_operations o LEFT JOIN LATERAL (SELECT * FROM follow_ups x WHERE x.operation_no=o.operation_no ORDER BY x.created_at DESC LIMIT 1) f ON TRUE WHERE ${where} ORDER BY COALESCE(f.created_at,o.accepted_at) DESC`,params);res.json({success:true,data:r.rows});}catch(e){next(e);}});
+app.get('/api/follow-ups', async(req,res,next)=>{try{const assignedUserId=Number(req.query.assignedUserId)||null;const params=[];let where=`o.workflow_status IN ('ASSIGNED','FOLLOW_UP_ACTIVE','SUSPECTED_SSI','CONFIRMED_SSI','RECOVERED','FOLLOW_UP_COMPLETED')`;if(assignedUserId){params.push(assignedUserId);where+=` AND o.assigned_user_id=$${params.length}`;}const r=await query(`SELECT o.*, f.id AS follow_up_id, f.follow_up_no, f.template_days, f.auto_calculate, f.schedule AS follow_up_schedule, f.selected_procedures AS follow_up_selected_procedures, f.status AS follow_up_status, f.assigned_to AS follow_up_assigned_to, f.current_round_index, f.completed_at, f.viewed_at AS follow_up_viewed_at, f.created_at AS follow_up_created_at, f.updated_at AS follow_up_updated_at,e.id AS evaluation_id,e.score AS evaluation_score,e.result AS evaluation_result,e.data AS evaluation_data,e.evaluated_at,
+      (SELECT jsonb_build_object('result',scheduled.result,'evaluatedAt',scheduled.evaluated_at)
+       FROM evaluations scheduled WHERE scheduled.operation_no=o.operation_no
+         AND scheduled.follow_up_id IS NOT NULL
+         AND COALESCE(scheduled.round_key,'') NOT LIKE 'ACTIVITY:%'
+         AND COALESCE(scheduled.round_key,'') NOT LIKE 'CONTACT:%'
+         AND scheduled.result NOT IN ('contact_failed','recovery_clear')
+         AND COALESCE(scheduled.data->>'assessmentKind','SCHEDULED')='SCHEDULED'
+       ORDER BY scheduled.evaluated_at DESC,scheduled.id DESC LIMIT 1) AS latest_scheduled_evaluation FROM ris_operations o LEFT JOIN LATERAL (SELECT * FROM follow_ups x WHERE x.operation_no=o.operation_no ORDER BY x.created_at DESC LIMIT 1) f ON TRUE LEFT JOIN LATERAL (SELECT * FROM evaluations x WHERE x.operation_no=o.operation_no AND x.result NOT IN ('contact_failed','recovery_clear') ORDER BY x.evaluated_at DESC LIMIT 1) e ON TRUE WHERE ${where} ORDER BY COALESCE(f.created_at,o.accepted_at) DESC`,params);res.json({success:true,data:r.rows});}catch(e){next(e);}});
 app.patch('/api/follow-ups/:id/viewed', async(req,res,next)=>{try{const userId=Number(req.body?.userId);const r=await query(`UPDATE follow_ups SET viewed_at=NOW(),updated_at=NOW() WHERE id=$1 AND ($2::int IS NULL OR assigned_user_id=$2) RETURNING id,viewed_at`,[req.params.id,userId||null]);if(!r.rows[0])return res.status(404).json({success:false,message:'ไม่พบงานติดตามของผู้ใช้งาน'});res.json({success:true,data:r.rows[0]});}catch(e){next(e);}});
 app.post('/api/operations/:operationNo/follow-ups', async(req,res,next)=>{try{const existing=await query(`SELECT id FROM follow_ups WHERE operation_no=$1 AND status='ACTIVE'`,[req.params.operationNo]);if(existing.rows[0])return res.status(409).json({success:false,message:'เคสนี้มี Follow-up ที่กำลังดำเนินการอยู่แล้ว'});const no=`SUR-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;const schedule=Array.isArray(req.body.schedule)?req.body.schedule:[];const selectedProcedures=Array.isArray(req.body.selectedProcedures)?req.body.selectedProcedures:[];const owner=await query('SELECT assigned_user_id,assigned_to FROM ris_operations WHERE operation_no=$1',[req.params.operationNo]);const r=await query(`INSERT INTO follow_ups(follow_up_no,operation_no,template_days,auto_calculate,schedule,selected_procedures,assigned_to,assigned_user_id) VALUES($1,$2,$3,$4,$5::jsonb,$6::jsonb,$7,$8) RETURNING *`,[no,req.params.operationNo,Number(req.body.templateDays)||30,req.body.autoCalculate!==false,JSON.stringify(schedule),JSON.stringify(selectedProcedures),owner.rows[0]?.assigned_to||req.body.assignedTo||null,owner.rows[0]?.assigned_user_id||null]);await query(`UPDATE ris_operations SET workflow_status='FOLLOW_UP_ACTIVE',updated_at=NOW() WHERE operation_no=$1`,[req.params.operationNo]);res.status(201).json({success:true,data:r.rows[0]});}catch(e){next(e);}});
 app.patch('/api/follow-ups/:id', async(req,res,next)=>{try{const schedule=Array.isArray(req.body.schedule)?req.body.schedule:null;if(!schedule?.length)return res.status(400).json({success:false,message:'ต้องมีรอบติดตามอย่างน้อย 1 รอบ'});if(schedule.some(x=>!x.day||!x.date||!x.time||!x.method))return res.status(400).json({success:false,message:'กรุณากรอกข้อมูลรอบติดตามที่จำเป็นให้ครบ'});const r=await query(`UPDATE follow_ups SET template_days=$1,auto_calculate=$2,schedule=$3::jsonb,updated_at=NOW() WHERE id=$4 RETURNING *`,[Number(req.body.templateDays)||30,req.body.autoCalculate!==false,JSON.stringify(schedule),req.params.id]);if(!r.rows[0])return res.status(404).json({success:false,message:'ไม่พบ Follow-up'});res.json({success:true,data:r.rows[0]});}catch(e){next(e);}});
@@ -464,10 +480,20 @@ app.put('/api/operations/:operationNo/ssi-review', async(req,res,next)=>{
   if(!data||typeof data!=='object'||Array.isArray(data))return res.status(400).json({success:false,message:'ข้อมูลทบทวนไม่ถูกต้อง'});
   if(data.classification&&!['SUPERFICIAL','DEEP','ORGAN_SPACE'].includes(data.classification))return res.status(400).json({success:false,message:'SSI Classification ไม่ถูกต้อง'});
   if(!data.header||typeof data.header!=='object'||Array.isArray(data.header)||!data.risks||typeof data.risks!=='object'||!data.bundle||typeof data.bundle!=='object'||!Array.isArray(data.findings))return res.status(400).json({success:false,message:'ข้อมูลแบบทบทวนไม่ครบถ้วน'});
+  if(data.decision && !['CONFIRMED_SSI','NOT_SSI'].includes(data.decision))return res.status(400).json({success:false,message:'ผลสรุป SSI ไม่ถูกต้อง'});
+  if(data.decision && (!String(data.issues||'').trim()||!String(data.reviewer||'').trim()))return res.status(400).json({success:false,message:'กรุณาระบุเหตุผล/สาเหตุและชื่อผู้ทบทวนก่อนยืนยันผล'});
   try {
     const found=await query('SELECT operation_no FROM ris_operations WHERE operation_no=$1',[req.params.operationNo]);
     if(!found.rows[0])return res.status(404).json({success:false,message:'ไม่พบเคส'});
-    const result=await query(`INSERT INTO ssi_case_reviews(operation_no,data) VALUES($1,$2::jsonb) ON CONFLICT(operation_no) DO UPDATE SET data=EXCLUDED.data,updated_at=NOW() RETURNING *`,[req.params.operationNo,JSON.stringify(data)]);
+    const result=data.decision ? await query(`WITH saved AS (
+      INSERT INTO ssi_case_reviews(operation_no,data,confirmed_at,concluded_at)
+      VALUES($1,$2::jsonb,CASE WHEN $3='CONFIRMED_SSI' THEN NOW() END,NOW())
+      ON CONFLICT(operation_no) DO UPDATE SET data=EXCLUDED.data,updated_at=NOW(),
+        concluded_at=CASE WHEN ssi_case_reviews.data->>'decision' IS DISTINCT FROM $3 THEN NOW() ELSE COALESCE(ssi_case_reviews.concluded_at,NOW()) END,
+        confirmed_at=CASE WHEN $3='CONFIRMED_SSI' THEN COALESCE(ssi_case_reviews.confirmed_at,NOW()) ELSE NULL END RETURNING *
+    ), updated AS (UPDATE ris_operations SET ssi_status=CASE WHEN ssi_status='RECOVERED' AND $3='CONFIRMED_SSI' THEN ssi_status ELSE $3 END,workflow_status=CASE WHEN ssi_status='RECOVERED' AND $3='CONFIRMED_SSI' THEN workflow_status WHEN $3='CONFIRMED_SSI' THEN 'CONFIRMED_SSI' ELSE 'FOLLOW_UP_ACTIVE' END,updated_at=NOW()
+      WHERE operation_no=$1 RETURNING operation_no) SELECT saved.* FROM saved JOIN updated USING(operation_no)`,[req.params.operationNo,JSON.stringify(data),data.decision])
+      : await query(`INSERT INTO ssi_case_reviews(operation_no,data) VALUES($1,$2::jsonb) ON CONFLICT(operation_no) DO UPDATE SET data=EXCLUDED.data,updated_at=NOW() RETURNING *`,[req.params.operationNo,JSON.stringify(data)]);
     res.json({success:true,data:result.rows[0]});
   }catch(error){next(error)}
 });
@@ -477,14 +503,34 @@ app.post('/api/operations/:operationNo/documents', async(req,res,next)=>{try{con
 app.get('/api/case-documents/:id/download', async(req,res,next)=>{try{const r=await query('SELECT file_name,mime_type,file_data FROM case_documents WHERE id=$1',[req.params.id]);if(!r.rows[0])return res.status(404).json({success:false,message:'ไม่พบเอกสาร'});res.json({success:true,data:r.rows[0]});}catch(e){next(e);}});
 app.get('/api/operations/:operationNo/activities', async(req,res,next)=>{try{const r=await query('SELECT * FROM case_activities WHERE operation_no=$1 ORDER BY created_at DESC',[req.params.operationNo]);res.json({success:true,data:r.rows});}catch(e){next(e);}});
 app.post('/api/operations/:operationNo/activities', async(req,res,next)=>{try{const b=req.body||{};if(!b.activityType||!b.activityAt||!b.purpose||!b.staff||!b.contactPrimary||!b.detail)return res.status(400).json({success:false,message:'กรุณากรอกข้อมูลกิจกรรมที่จำเป็นให้ครบ'});const r=await query(`INSERT INTO case_activities(operation_no,activity_type,activity_at,purpose,location,staff,contact_primary,contact_secondary,detail,notify_period) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,[req.params.operationNo,b.activityType,b.activityAt,b.purpose,b.location||null,b.staff,b.contactPrimary,b.contactSecondary||null,b.detail,b.notifyPeriod||null]);res.status(201).json({success:true,data:r.rows[0]});}catch(e){next(e);}});
-app.post('/api/operations/:operationNo/activity-evaluations', async(req,res,next)=>{try{const b=req.body||{};if(!b.activityId||!b.result)return res.status(400).json({success:false,message:'กรุณาระบุกิจกรรมและผลการประเมิน'});const activity=(await query('SELECT id FROM case_activities WHERE id=$1 AND operation_no=$2',[b.activityId,req.params.operationNo])).rows[0];if(!activity)return res.status(404).json({success:false,message:'ไม่พบกิจกรรมของเคสนี้'});const followUp=(await query('SELECT * FROM follow_ups WHERE operation_no=$1 ORDER BY created_at DESC LIMIT 1',[req.params.operationNo])).rows[0];if(!followUp)return res.status(409).json({success:false,message:'ยังไม่มี Follow-up สำหรับบันทึกผลประเมิน'});const roundKey=`ACTIVITY:${activity.id}`;const r=await query(`INSERT INTO evaluations(operation_no,evaluation_type,result,score,data,evaluated_by,evaluated_at,follow_up_id,round_key) VALUES($1,'SSI_ACTIVITY',$2,$3,$4::jsonb,$5,COALESCE($6,NOW()),$7,$8) RETURNING *`,[req.params.operationNo,b.result,b.score||null,JSON.stringify(b.data||{}),b.evaluatedBy||null,b.evaluatedAt||null,followUp.id,roundKey]);if(/confirmed|positive/i.test(b.result))await query(`UPDATE ris_operations SET ssi_status='CONFIRMED_SSI',workflow_status='CONFIRMED_SSI',updated_at=NOW() WHERE operation_no=$1`,[req.params.operationNo]);else if(/suspect/i.test(b.result))await query(`UPDATE ris_operations SET ssi_status='SUSPECTED_SSI',workflow_status='SUSPECTED_SSI',updated_at=NOW() WHERE operation_no=$1`,[req.params.operationNo]);res.status(201).json({success:true,data:r.rows[0]});}catch(e){if(e.code==='23505')return res.status(409).json({success:false,message:'กิจกรรมนี้มีผลประเมินแล้ว'});next(e);}});
+// Store one authoritative risk snapshot for every scheduled or additional assessment.
+app.use(['/api/operations/:operationNo/evaluations','/api/operations/:operationNo/activity-evaluations','/api/evaluations/:id'],async(req,res,next)=>{
+  if(!['POST','PATCH'].includes(req.method))return next();
+  try{
+    const body=req.body||{};
+    if(body.data?.assessmentModel==='ssi-checklist-v1'){
+      req.body=require('./ssiChecklist').prepareSsiChecklist(body);return next();
+    }
+    if(body.result==='contact_failed'||body.data?.contactStatus==='failed'){
+      body.score=null;body.data={...body.data,riskAssessment:null,calculatedRisk:null};return next();
+    }
+    if(!body.data?.symptoms&&!body.data?.ssiRiskFactors)return next();
+    const settings=await query("SELECT value FROM system_settings WHERE key='riskLevels'");
+    const {calculateSsiRisk}=require('./ssiRiskScore');
+    const risk=calculateSsiRisk(body.data,settings.rows[0]?.value||[]);
+    body.score=risk?.score??null;body.data={...body.data,riskAssessment:risk,calculatedRisk:risk?.level??null};
+    next();
+  }catch(error){next(error);}
+});
+
+app.post('/api/operations/:operationNo/activity-evaluations', async(req,res,next)=>{try{const b=req.body||{};if(!b.activityId||!b.result)return res.status(400).json({success:false,message:'กรุณาระบุกิจกรรมและผลการประเมิน'});const activity=(await query('SELECT id FROM case_activities WHERE id=$1 AND operation_no=$2',[b.activityId,req.params.operationNo])).rows[0];if(!activity)return res.status(404).json({success:false,message:'ไม่พบกิจกรรมของเคสนี้'});const followUp=(await query('SELECT * FROM follow_ups WHERE operation_no=$1 ORDER BY created_at DESC LIMIT 1',[req.params.operationNo])).rows[0];if(!followUp)return res.status(409).json({success:false,message:'ยังไม่มี Follow-up สำหรับบันทึกผลประเมิน'});const roundKey=`ACTIVITY:${activity.id}`;const r=await query(`INSERT INTO evaluations(operation_no,evaluation_type,result,score,data,evaluated_by,evaluated_at,follow_up_id,round_key) VALUES($1,'SSI_ACTIVITY',$2,$3,$4::jsonb,$5,COALESCE($6,NOW()),$7,$8) RETURNING *`,[req.params.operationNo,b.result,b.score??null,JSON.stringify(b.data||{}),b.evaluatedBy||null,b.evaluatedAt||null,followUp.id,roundKey]);if(/confirmed|positive/i.test(b.result))await query(`UPDATE ris_operations SET ssi_status='CONFIRMED_SSI',workflow_status='CONFIRMED_SSI',updated_at=NOW() WHERE operation_no=$1`,[req.params.operationNo]);else if(/suspect/i.test(b.result))await query(`UPDATE ris_operations SET ssi_status='SUSPECTED_SSI',workflow_status='SUSPECTED_SSI',updated_at=NOW() WHERE operation_no=$1`,[req.params.operationNo]);res.status(201).json({success:true,data:r.rows[0]});}catch(e){if(e.code==='23505')return res.status(409).json({success:false,message:'กิจกรรมนี้มีผลประเมินแล้ว'});next(e);}});
 app.get('/api/operations/:operationNo/evaluations', async(req,res,next)=>{try{const r=await query('SELECT * FROM evaluations WHERE operation_no=$1 ORDER BY evaluated_at DESC',[req.params.operationNo]);res.json({success:true,data:r.rows});}catch(e){next(e);}});
-app.patch('/api/evaluations/:id', async(req,res,next)=>{try{const b=req.body||{};if(!b.result)return res.status(400).json({success:false,message:'กรุณาระบุผลการประเมิน'});const r=await query(`UPDATE evaluations SET result=$1,data=$2::jsonb,evaluated_by=COALESCE($3,evaluated_by),evaluated_at=NOW() WHERE id=$4 RETURNING *`,[b.result,JSON.stringify(b.data||{}),b.evaluatedBy||null,req.params.id]);if(!r.rows[0])return res.status(404).json({success:false,message:'ไม่พบผลการประเมิน'});await query(`UPDATE follow_ups SET schedule=(SELECT jsonb_agg(CASE WHEN COALESCE(x->>'id',x->>'day')=$1 THEN x||jsonb_build_object('result',$2,'completedAt',NOW()) ELSE x END ORDER BY ord) FROM follow_ups f2,jsonb_array_elements(f2.schedule) WITH ORDINALITY a(x,ord) WHERE f2.id=follow_ups.id),updated_at=NOW() WHERE id=$3`,[r.rows[0].round_key,b.result,r.rows[0].follow_up_id]);const ssi=/suspect/i.test(b.result)?'SUSPECTED_SSI':/confirmed|positive/i.test(b.result)?'CONFIRMED_SSI':'NOT_SSI';const workflow=ssi==='SUSPECTED_SSI'?'SUSPECTED_SSI':ssi==='CONFIRMED_SSI'?'CONFIRMED_SSI':'FOLLOW_UP_ACTIVE';await query('UPDATE ris_operations SET ssi_status=$1,workflow_status=$2,updated_at=NOW() WHERE operation_no=$3',[ssi,workflow,r.rows[0].operation_no]);res.json({success:true,data:r.rows[0]});}catch(e){next(e);}});
-app.get('/api/evaluations', async(req,res,next)=>{try{const userId=Number(req.query.assignedUserId)||null;const params=[];let where='TRUE';if(userId){params.push(userId);where=`o.assigned_user_id=$1`;}const r=await query(`SELECT o.*,e.id AS evaluation_id,e.round_key AS evaluation_round,e.result AS evaluation_result,e.evaluated_by,e.evaluated_at,e.data AS evaluation_data FROM evaluations e JOIN ris_operations o ON o.operation_no=e.operation_no WHERE ${where} ORDER BY e.evaluated_at DESC`,params);res.json({success:true,data:r.rows});}catch(e){next(e);}});
+app.patch('/api/evaluations/:id', async(req,res,next)=>{try{const b=req.body||{};if(!b.result)return res.status(400).json({success:false,message:'กรุณาระบุผลการประเมิน'});const r=await query(`UPDATE evaluations SET result=$1,data=$2::jsonb,evaluated_by=COALESCE($3,evaluated_by),evaluated_at=NOW(),score=$5 WHERE id=$4 RETURNING *`,[b.result,JSON.stringify(b.data||{}),b.evaluatedBy||null,req.params.id,b.score??null]);if(!r.rows[0])return res.status(404).json({success:false,message:'ไม่พบผลการประเมิน'});await query(`UPDATE follow_ups SET schedule=(SELECT jsonb_agg(CASE WHEN COALESCE(x->>'id',x->>'day')=$1 THEN x||jsonb_build_object('result',$2::text,'completedAt',NOW()) ELSE x END ORDER BY ord) FROM follow_ups f2,jsonb_array_elements(f2.schedule) WITH ORDINALITY a(x,ord) WHERE f2.id=follow_ups.id),updated_at=NOW() WHERE id=$3`,[r.rows[0].round_key,b.result,r.rows[0].follow_up_id]);const ssi=/suspect/i.test(b.result)?'SUSPECTED_SSI':/confirmed|positive/i.test(b.result)?'CONFIRMED_SSI':'NOT_SSI';const workflow=ssi==='SUSPECTED_SSI'?'SUSPECTED_SSI':ssi==='CONFIRMED_SSI'?'CONFIRMED_SSI':'FOLLOW_UP_ACTIVE';await query('UPDATE ris_operations SET ssi_status=$1,workflow_status=$2,updated_at=NOW() WHERE operation_no=$3',[ssi,workflow,r.rows[0].operation_no]);res.json({success:true,data:r.rows[0]});}catch(e){next(e);}});
+app.get('/api/evaluations', async(req,res,next)=>{try{const userId=Number(req.query.assignedUserId)||null;const params=[];let where='TRUE';if(userId){params.push(userId);where=`o.assigned_user_id=$1`;}const r=await query(`SELECT o.*,e.id AS evaluation_id,e.round_key AS evaluation_round,e.result AS evaluation_result,e.score AS evaluation_score,e.evaluated_by,e.evaluated_at,e.data AS evaluation_data FROM evaluations e JOIN ris_operations o ON o.operation_no=e.operation_no WHERE ${where} ORDER BY e.evaluated_at DESC`,params);res.json({success:true,data:r.rows});}catch(e){next(e);}});
 app.post('/api/operations/:operationNo/evaluations', async(req,res,next)=>{try{const b=req.body||{};if(!b.result)return res.status(400).json({success:false,message:'กรุณาระบุผลการประเมิน'});const followUp=await query(`SELECT * FROM follow_ups WHERE operation_no=$1 AND status='ACTIVE' ORDER BY created_at DESC LIMIT 1`,[req.params.operationNo]);const active=followUp.rows[0];if(!active)return res.status(409).json({success:false,message:'ยังไม่มี Follow-up ที่กำลังดำเนินการ'});const schedule=Array.isArray(active.schedule)?active.schedule:[];const roundIndex=Number.isInteger(Number(b.roundIndex))?Number(b.roundIndex):active.current_round_index;if(roundIndex!==active.current_round_index)return res.status(409).json({success:false,message:'รอบนี้ถูกประเมินแล้ว กรุณาประเมินรอบปัจจุบัน'});const round=schedule[roundIndex];if(!round)return res.status(409).json({success:false,message:'ไม่พบรอบติดตามที่ต้องประเมิน'});const roundKey=round.id||round.day||String(roundIndex);const duplicate=await query('SELECT id FROM evaluations WHERE follow_up_id=$1 AND round_key=$2',[active.id,roundKey]);if(duplicate.rows[0])return res.status(409).json({success:false,message:'รอบนี้มีผลประเมินแล้ว ไม่สามารถประเมินซ้ำได้'});const todayBangkok=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());const scheduledDate=String(round.date||round.scheduledAt||'').slice(0,10);if(roundIndex>0&&scheduledDate&&todayBangkok<scheduledDate)return res.status(409).json({success:false,message:`ยังไม่ถึงวันประเมิน ${round.day||`รอบที่ ${roundIndex+1}`} (กำหนด ${scheduledDate})`});if(b.data?.contactStatus==='failed'){
   const attempt=await query(`INSERT INTO evaluations(operation_no,evaluation_type,result,score,data,evaluated_by,evaluated_at,follow_up_id,round_key) VALUES($1,$2,'contact_failed',NULL,$3,$4,COALESCE($5,NOW()),$6,$7) RETURNING *`,[req.params.operationNo,b.evaluationType||'SSI',{...b.data,symptoms:{},calculatedRisk:null,suggestedResult:''},b.evaluatedBy||null,b.evaluatedAt||null,active.id,`CONTACT:${require('node:crypto').randomUUID()}`]);
   return res.status(201).json({success:true,data:{evaluation:attempt.rows[0],contactFailed:true,followUpCompleted:false}});
-}const r=await query(`INSERT INTO evaluations(operation_no,evaluation_type,result,score,data,evaluated_by,evaluated_at,follow_up_id,round_key) VALUES($1,$2,$3,$4,$5,$6,COALESCE($7,NOW()),$8,$9) RETURNING *`,[req.params.operationNo,b.evaluationType||'SSI',b.result,b.score||null,b.data||{},b.evaluatedBy||null,b.evaluatedAt||null,active.id,roundKey]);schedule[roundIndex]={...round,status:'COMPLETED',completedAt:new Date().toISOString(),evaluationId:r.rows[0].id,result:b.result};const nextIndex=roundIndex+1;const finished=nextIndex>=schedule.length;await query(`UPDATE follow_ups SET schedule=$1::jsonb,current_round_index=$2,status=$3,completed_at=$4,updated_at=NOW() WHERE id=$5`,[JSON.stringify(schedule),nextIndex,finished?'COMPLETED':'ACTIVE',finished?new Date():null,active.id]);const ssiStatus=/confirmed|positive/i.test(b.result)?'CONFIRMED_SSI':/suspect/i.test(b.result)?'SUSPECTED_SSI':'NOT_SSI';const workflow=/confirmed|positive/i.test(b.result)?'CONFIRMED_SSI':/suspect/i.test(b.result)?'SUSPECTED_SSI':finished?'FOLLOW_UP_COMPLETED':'FOLLOW_UP_ACTIVE';await query(`UPDATE ris_operations SET ssi_status=$1,workflow_status=$2,updated_at=NOW() WHERE operation_no=$3`,[ssiStatus,workflow,req.params.operationNo]);res.status(201).json({success:true,data:{evaluation:r.rows[0],nextRound:schedule[nextIndex]||null,followUpCompleted:finished}});}catch(e){if(e.code==='23505')return res.status(409).json({success:false,message:'รอบนี้มีผลประเมินแล้ว ไม่สามารถประเมินซ้ำได้'});next(e);}});
+}const r=await query(`INSERT INTO evaluations(operation_no,evaluation_type,result,score,data,evaluated_by,evaluated_at,follow_up_id,round_key) VALUES($1,$2,$3,$4,$5,$6,COALESCE($7,NOW()),$8,$9) RETURNING *`,[req.params.operationNo,b.evaluationType||'SSI',b.result,b.score??null,b.data||{},b.evaluatedBy||null,b.evaluatedAt||null,active.id,roundKey]);schedule[roundIndex]={...round,status:'COMPLETED',completedAt:new Date().toISOString(),evaluationId:r.rows[0].id,result:b.result};const nextIndex=roundIndex+1;const finished=nextIndex>=schedule.length;await query(`UPDATE follow_ups SET schedule=$1::jsonb,current_round_index=$2,status=$3,completed_at=$4,updated_at=NOW() WHERE id=$5`,[JSON.stringify(schedule),nextIndex,finished?'COMPLETED':'ACTIVE',finished?new Date():null,active.id]);const ssiStatus=/confirmed|positive/i.test(b.result)?'CONFIRMED_SSI':/suspect/i.test(b.result)?'SUSPECTED_SSI':'NOT_SSI';const workflow=/confirmed|positive/i.test(b.result)?'CONFIRMED_SSI':/suspect/i.test(b.result)?'SUSPECTED_SSI':finished?'FOLLOW_UP_COMPLETED':'FOLLOW_UP_ACTIVE';await query(`UPDATE ris_operations SET ssi_status=$1,workflow_status=$2,updated_at=NOW() WHERE operation_no=$3`,[ssiStatus,workflow,req.params.operationNo]);res.status(201).json({success:true,data:{evaluation:r.rows[0],nextRound:schedule[nextIndex]||null,followUpCompleted:finished}});}catch(e){if(e.code==='23505')return res.status(409).json({success:false,message:'รอบนี้มีผลประเมินแล้ว ไม่สามารถประเมินซ้ำได้'});next(e);}});
 
 app.patch('/api/evaluations/:id/doctor-decision', async(req,res,next)=>{try{const decision=String(req.body?.decision||'').toUpperCase();if(!['NOT_SSI','CONFIRMED_SSI'].includes(decision))return res.status(400).json({success:false,message:'decision ต้องเป็น NOT_SSI หรือ CONFIRMED_SSI'});const r=await query(`UPDATE evaluations SET doctor_decision=$1,doctor_note=$2,doctor_reviewed_by=$3,doctor_reviewed_at=NOW() WHERE id=$4 RETURNING *`,[decision,req.body.note||null,req.body.reviewedBy||null,req.params.id]);if(!r.rows[0])return res.status(404).json({success:false,message:'ไม่พบผลประเมิน'});await query(`UPDATE ris_operations SET ssi_status=$1,workflow_status=$2,updated_at=NOW() WHERE operation_no=$3`,[decision,decision==='CONFIRMED_SSI'?'CONFIRMED_SSI':'FOLLOW_UP_ACTIVE',r.rows[0].operation_no]);res.json({success:true,data:r.rows[0]});}catch(e){next(e);}});
 
@@ -492,19 +538,14 @@ app.patch('/api/operations/:operationNo/doctor-decision', async(req,res,next)=>{
 
 app.patch('/api/operations/:operationNo/recovery', async(req,res,next)=>{try{const recovery=(await query(`SELECT id FROM evaluations WHERE operation_no=$1 AND result='recovery_clear' ORDER BY evaluated_at DESC LIMIT 1`,[req.params.operationNo])).rows[0];if(!recovery)return res.status(409).json({success:false,message:'กรุณาบันทึกผลประเมินการหายก่อนยืนยันสิ้นสุดการติดเชื้อ'});const r=await query(`UPDATE ris_operations SET ssi_status='RECOVERED',workflow_status='RECOVERED',updated_at=NOW() WHERE operation_no=$1 AND ssi_status='CONFIRMED_SSI' RETURNING *`,[req.params.operationNo]);if(!r.rows[0])return res.status(409).json({success:false,message:'เคสนี้ยังไม่ได้รับการยืนยัน SSI'});res.json({success:true,data:r.rows[0]});}catch(e){next(e);}});
 
-app.get('/api/notifications', async(req,res,next)=>{try{
-  const userId=Number(req.query.userId)||null;
-  const user=userId?(await query('SELECT id,role,department FROM app_users WHERE id=$1',[userId])).rows[0]:null;
-  if(!user)return res.json({success:true,data:[]});
+async function buildSystemNotifications(){
   const settingsRows=(await query(`SELECT key,value FROM system_settings WHERE key IN ('notificationPreferencesConfigured','alertTypes','intervals','staffRoles','staffChannels','staffRecipientEnabled')`)).rows;
   const notificationSettings=Object.fromEntries(settingsRows.map(row=>[row.key,row.value]));
   const alertTypes={followUpDue:true,appointmentReminder:true,noAssessmentResponse:true,overdue:true,prepAlert:true,others:true};
-  const roleSettingKey={ADMIN:'admin',OR:'orStaff','OR STAFF':'orStaff',OPD:'opdNurse','OPD NURSE':'opdNurse',IPD:'ipdNurse','IPD NURSE':'ipdNurse',DOCTOR:'physician',PHYSICIAN:'physician'}[String(user.role||'').toUpperCase()];
-  const webAlertsEnabled=notificationSettings.notificationPreferencesConfigured===true&&notificationSettings.staffRecipientEnabled===true&&notificationSettings.staffChannels?.dashboard===true&&Boolean(roleSettingKey&&notificationSettings.staffRoles?.[roleSettingKey]);
   const intervalRules=Array.isArray(notificationSettings.intervals)?notificationSettings.intervals:[];
   const operations=(await query(`SELECT o.operation_no,o.hn,o.first_name,o.last_name,o.workflow_status,o.ssi_status,
-      o.receiving_department,o.patient_type,o.queued_at,o.accepted_at,o.updated_at,
-      f.id AS follow_up_id,f.schedule,f.current_round_index,f.status AS follow_up_status,
+      o.receiving_department,o.patient_type,o.case_priority,o.or_ssi_risk_factors,o.queued_at,o.accepted_at,o.updated_at,o.source_system,o.created_at,
+      f.created_at AS follow_up_created_at,f.id AS follow_up_id,f.schedule,f.current_round_index,f.status AS follow_up_status,
       e.data AS latest_evaluation_data
     FROM ris_operations o
     LEFT JOIN LATERAL (SELECT * FROM follow_ups x WHERE x.operation_no=o.operation_no ORDER BY x.created_at DESC LIMIT 1) f ON TRUE
@@ -513,7 +554,10 @@ app.get('/api/notifications', async(req,res,next)=>{try{
   const notifications=[];
   const now=new Date();
   for(const op of operations){
-    if(op.workflow_status==='QUEUED') notifications.push({...op,notification_key:`QUEUE:${op.operation_no}:${op.queued_at||op.updated_at}`,notification_type:'NEW_QUEUE',detail:`มีเคสใหม่จากห้องผ่าตัดส่งเข้า ${op.patient_type||''} ${op.receiving_department||''}`.trim(),priority:'NORMAL',event_at:op.queued_at||op.updated_at,due_date:null});
+    if(/EXTENSION/i.test(op.source_system||'') && op.created_at) notifications.push({...op,notification_key:`EXTENSION:${op.operation_no}`,notification_type:'NEW_OR_CASE',detail:'ได้รับเคสจาก extension รอตรวจสอบเคสจาก OR',priority:'NORMAL',event_at:op.created_at});
+    if(op.accepted_at) notifications.push({...op,notification_key:`ACCEPT:${op.operation_no}:${new Date(op.accepted_at).toISOString()}`,notification_type:'CASE_ACCEPTED',detail:'เจ้าหน้าที่รับเคสเข้าดูแลแล้ว',priority:'NORMAL',event_at:op.accepted_at});
+    if(op.follow_up_id) notifications.push({...op,notification_key:`FOLLOWUP:${op.follow_up_id}`,notification_type:'FOLLOW_UP_CREATED',detail:'สร้างรอบติดตามผู้ป่วยแล้ว',priority:'NORMAL',event_at:op.follow_up_created_at});
+    if(op.queued_at||op.workflow_status==='QUEUED') notifications.push({...op,notification_key:`QUEUE:${op.operation_no}:${op.queued_at||op.updated_at}`,notification_type:'NEW_QUEUE',detail:`มีเคสใหม่จากห้องผ่าตัดส่งเข้า ${op.patient_type||''} ${op.receiving_department||''}${op.or_ssi_risk_factors==null?` · ระดับความสำคัญ: ${{HIGH:'สูง',MEDIUM:'กลาง',LOW:'ต่ำ'}[op.case_priority]||'ต่ำ'}`:handoverRiskLevel(op.or_ssi_risk_factors)==='HIGH'?' · ความเสี่ยง SSI: สูง ต้องเฝ้าระวังเป็นพิเศษ':' · ความเสี่ยง SSI: เคสปกติ'}`.trim(),priority:op.or_ssi_risk_factors==null?op.case_priority||'LOW':handoverRiskLevel(op.or_ssi_risk_factors)==='HIGH'?'HIGH':'LOW',event_at:op.queued_at||op.updated_at,due_date:null});
     const schedule=Array.isArray(op.schedule)?op.schedule:[];
     schedule.forEach((round,index)=>{
       if(!round?.date||index!==Number(op.current_round_index||0))return;
@@ -544,7 +588,7 @@ app.get('/api/notifications', async(req,res,next)=>{try{
   const operationNos=[...operationMap.keys()];
   if(operationNos.length){
     const activities=(await query(`SELECT a.*, EXISTS(SELECT 1 FROM evaluations e WHERE e.operation_no=a.operation_no AND e.round_key='ACTIVITY:'||a.id::text) AS evaluated FROM case_activities a WHERE operation_no=ANY($1::text[])
-      AND created_at >= NOW() - INTERVAL '90 days' ORDER BY created_at DESC`,[operationNos])).rows;
+       ORDER BY created_at DESC`,[operationNos])).rows;
     activities.forEach(activity=>{const op=operationMap.get(activity.operation_no);if(!op)return;const appointment=activity.activity_at?new Intl.DateTimeFormat('th-TH',{dateStyle:'short',timeStyle:'short',timeZone:'Asia/Bangkok'}).format(new Date(activity.activity_at)):'ยังไม่ระบุเวลา';notifications.push({...op,notification_key:`ACTIVITY:${activity.id}`,notification_type:'ADDITIONAL_ACTIVITY',detail:`เพิ่มกิจกรรมแทรก: ${activity.activity_type||'-'} · นัดหมาย ${appointment} · ${activity.detail||activity.purpose||'-'}`,priority:'NORMAL',event_at:activity.created_at,due_date:String(activity.activity_at||'').slice(0,10),activity_id:activity.id,activity_type:activity.activity_type,activity_at:activity.activity_at,activity_purpose:activity.purpose,activity_detail:activity.detail});});
     activities.forEach(activity=>{
       if(activity.evaluated||!activity.notify_period||!activity.activity_at)return;
@@ -581,12 +625,39 @@ app.get('/api/notifications', async(req,res,next)=>{try{
     const documents=(await query(`SELECT id,operation_no,file_name,created_at FROM case_documents WHERE operation_no=ANY($1::text[]) ORDER BY created_at DESC`,[operationNos])).rows;
     documents.forEach(document=>{const op=operationMap.get(document.operation_no);if(!op)return;notifications.push({...op,notification_key:`DOCUMENT:${document.id}`,notification_type:'DOCUMENT_UPLOADED',detail:`อัปโหลดเอกสาร: ${document.file_name}`,priority:'NORMAL',event_at:document.created_at,due_date:null});});
   }
+  const reviews=(await query('SELECT operation_no,updated_at,data,confirmed_at FROM ssi_case_reviews')).rows;
+  reviews.forEach(review=>{const op=operationMap.get(review.operation_no);if(op)notifications.push({...op,notification_key:`REVIEW:${review.operation_no}:${review.updated_at.toISOString ? review.updated_at.toISOString() : review.updated_at}`,notification_type:'SSI_REVIEW_SAVED',detail:review.confirmed_at?'ทีมทบทวนยืนยันการติดเชื้อ SSI แล้ว':'บันทึกผลทบทวน SSI Review แล้ว',priority:review.confirmed_at?'HIGH':'NORMAL',event_at:review.updated_at});});
+  const edits=(await query('SELECT id,operation_no,edited_at FROM case_data_edits')).rows;
+  edits.forEach(edit=>{const op=operationMap.get(edit.operation_no);if(op)notifications.push({...op,notification_key:`DATA_EDIT:${edit.id}`,notification_type:'CASE_DATA_UPDATED',detail:'มีการแก้ไขข้อมูลเคสหลังส่งให้ OPD/IPD',priority:'NORMAL',event_at:edit.edited_at});});
+  return notifications;
+}
+
+app.get('/api/notifications', async(req,res,next)=>{try{
+  const userId=Number(req.query.userId)||null;
+  const user=userId?(await query('SELECT id,role,department FROM app_users WHERE id=$1',[userId])).rows[0]:null;
+  if(!user)return res.json({success:true,data:[]});
+  const notifications=await buildSystemNotifications();
   const reads=(await query('SELECT notification_key,read_at FROM notification_reads WHERE user_id=$1',[user.id])).rows;
   const readMap=new Map(reads.map(row=>[row.notification_key,row.read_at]));
   notifications.forEach(item=>{item.read_at=readMap.get(item.notification_key)||null;item.is_read=Boolean(item.read_at)});
   notifications.sort((a,b)=>new Date(b.event_at||0)-new Date(a.event_at||0));
   res.json({success:true,data:notifications});
 }catch(e){next(e);}});
+
+app.get('/api/report-outcomes', async(_req,res,next)=>{try{
+  const [operations,followUps,evaluations,activities,reviews,transfers,documents,edits,notifications]=await Promise.all([
+    query('SELECT operation_no,queued_at,accepted_at,ssi_status,handover_data_edited FROM ris_operations'),
+    query('SELECT id,operation_no FROM follow_ups'),
+    query('SELECT id,operation_no,follow_up_id,round_key,result,data,evaluated_at,doctor_decision FROM evaluations'),
+    query('SELECT id,operation_no,activity_type,activity_at,purpose,detail,created_at FROM case_activities'),
+    query('SELECT operation_no,data,confirmed_at,concluded_at,updated_at FROM ssi_case_reviews'),
+    query('SELECT id,operation_no FROM case_transfers'),query('SELECT id,operation_no FROM case_documents'),
+    query('SELECT id,operation_no FROM case_data_edits'),buildSystemNotifications()
+  ]);
+  const { buildOutcomeMetadata }=require('./outcomeReport');
+  res.json({success:true,data:buildOutcomeMetadata({operations:operations.rows,followUps:followUps.rows,evaluations:evaluations.rows,
+    activities:activities.rows,reviews:reviews.rows,transfers:transfers.rows,documents:documents.rows,edits:edits.rows,notifications})});
+}catch(error){next(error);}});
 
 app.post('/api/notifications/read', async(req,res,next)=>{try{
   const userId=Number(req.body?.userId)||null;

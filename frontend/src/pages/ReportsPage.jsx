@@ -1,3 +1,6 @@
+import { bangkokDate, filterReportPeriod, reportPeriodLabels } from '../utils/reportPeriod.js'
+import OutcomeKpis from '../components/OutcomeKpis.jsx'
+import { buildOutcomeKpis } from '../utils/outcomeKpis.js'
 import { exportReportWorkbook } from '../utils/exportReportWorkbook.js'
 import { printReport } from '../utils/printReport.js'
 import { buildPatientSheets, loadCaseDetails } from '../utils/patientActivityReport.js'
@@ -23,6 +26,8 @@ export default function ReportsPage(){
   const [exporting,setExporting]=useState(false)
   const [exportProgress,setExportProgress]=useState('')
   const [printError,setPrintError]=useState('')
+  const [kpiPeriod,setKpiPeriod]=useState('month')
+  const [kpiDate,setKpiDate]=useState(()=>bangkokDate())
   const exportPdf=async()=>{
     if(printing)return
     setPrinting(true);setPrintError('')
@@ -31,12 +36,16 @@ export default function ReportsPage(){
     finally { setPrinting(false) }
   }
 
-  const {data:patients}=useApiQuery(api.getPatients),[dateFrom,setDateFrom]=useState(''),[dateTo,setDateTo]=useState(''),[department,setDepartment]=useState('all'),[procedure,setProcedure]=useState('all'),[ssi,setSsi]=useState('all'),[patientType,setPatientType]=useState('all'),[periodType,setPeriodType]=useState('custom'),[periodValue,setPeriodValue]=useState('')
+  const {data:patients,loading:kpiLoading,error:kpiError}=useApiQuery(api.getReportPatients),[dateFrom,setDateFrom]=useState(''),[dateTo,setDateTo]=useState(''),[department,setDepartment]=useState('all'),[procedure,setProcedure]=useState('all'),[ssi,setSsi]=useState('all'),[patientType,setPatientType]=useState('all'),[periodType,setPeriodType]=useState('custom'),[periodValue,setPeriodValue]=useState('')
   const [rangeFrom,rangeTo]=periodType==='custom'||!periodValue?[dateFrom,dateTo]:periodRange(periodType,periodValue)
   const changePeriodType=type=>{setPeriodType(type);setPeriodValue(periodDefaults()[type]||'')}
   const years=[...new Set([todayIso().slice(0,4),...patients.map(p=>String(p.startAt||p.createdAt||'').slice(0,4)).filter(Boolean)])].sort().reverse()
   const departments=[...new Set(patients.map(p=>p.department).filter(Boolean))],procedures=[...new Set(patients.map(p=>p.procedure).filter(Boolean))]
   const data=useMemo(()=>patients.filter(p=>{const date=String(p.startAt||p.createdAt||'').slice(0,10);return(!rangeFrom||date>=rangeFrom)&&(!rangeTo||date<=rangeTo)&&(department==='all'||p.department===department)&&(procedure==='all'||p.procedure===procedure)&&(ssi==='all'||getSsiReportCategory(p)===ssi)&&(patientType==='all'||p.patientType===patientType)}),[patients,rangeFrom,rangeTo,department,procedure,ssi,patientType])
+  const kpiData=useMemo(()=>filterReportPeriod(data,kpiPeriod,kpiDate),[data,kpiPeriod,kpiDate])
+  const outcomeKpis=useMemo(()=>buildOutcomeKpis(kpiData),[kpiData])
+  const kpiPeriodLabel=reportPeriodLabels[kpiPeriod]
+  const kpiSelectedDate=kpiDate.slice(0,kpiPeriod==='day'?10:kpiPeriod==='month'?7:4)
   const suspected=data.filter(p=>getSsiReportCategory(p)==='SUSPECTED_SSI').length,confirmed=data.filter(p=>hasConfirmedSsiHistory(p)).length,overdue=data.filter(p=>(p.followUpSchedule||[]).some(r=>r.status!=='COMPLETED'&&r.date<new Date().toISOString().slice(0,10))).length
   const metrics=[['เคสผ่าตัดทั้งหมด',data.length,'คน',Users],['เคสผ่าตัดวันนี้',data.filter(p=>p.startAt?.slice(0,10)===new Date().toISOString().slice(0,10)).length,'คน',CalendarDays],['รอตรวจสอบจาก OR',data.filter(p=>p.workflowStatus==='OR_PENDING').length,'คน',ClipboardList],['ส่งเข้า OPD/IPD แล้ว',data.filter(p=>p.patientType).length,'คน',Send],['ครบกำหนดติดตามวันนี้',data.filter(p=>(p.followUpSchedule||[]).some(r=>r.date===new Date().toISOString().slice(0,10))).length,'คน',CheckCircle2],['ติดตามเกินกำหนด',overdue,'คน',AlertTriangle],['รอแพทย์ประเมิน',suspected,'คน',Stethoscope],['ความพึงพอใจผู้ป่วย','-','คะแนน',Users],['สงสัย SSI',suspected,'',AlertTriangle],['ยืนยัน SSI',confirmed,'',CheckCircle2]]
   const procedureData=useMemo(()=>{const map=new Map();data.forEach(p=>{const key=p.procedure||'ไม่ระบุ';const v=map.get(key)||{name:key,total:0,confirmed:0};v.total++;if(hasConfirmedSsiHistory(p))v.confirmed++;map.set(key,v)});return[...map.values()].map(x=>({...x,rate:x.total?Number((x.confirmed/x.total*100).toFixed(2)):0})).sort((a,b)=>b.rate-a.rate)},[data])
@@ -52,7 +61,9 @@ export default function ReportsPage(){
       const donuts=JSON.parse(reportRef.current.querySelector('[data-export-donuts]').dataset.exportDonuts)
       const percent=(count,total)=>total?Number((count/total*100).toFixed(2)):0
       const sheets=[
-        {name:'ตัวกรองรายงาน',headers:['รายการ','ค่าที่เลือก'],rows:[['รูปแบบรายงาน',periodLabels[periodType]],['วันที่เริ่มต้น',rangeFrom||'ทั้งหมด'],['วันที่สิ้นสุด',rangeTo||'ทั้งหมด'],['จำนวนเคสในรายงาน',data.length],['แผนก',department==='all'?'ทั้งหมด':department],['หัตถการ',procedure==='all'?'ทั้งหมด':procedure],['ประเภท SSI',ssi],['ประเภทผู้ป่วย',patientType],['ช่วงกราฟ',charts.period],['ปีกราฟ',charts.year],['เกณฑ์ SSI','รวมเคสที่เคยยืนยันติดเชื้อ แม้ปัจจุบันหายแล้ว']]},
+        {name:'ตัวกรองรายงาน',headers:['รายการ','ค่าที่เลือก'],rows:[['รูปแบบรายงาน',periodLabels[periodType]],['วันที่เริ่มต้น',rangeFrom||'ทั้งหมด'],['วันที่สิ้นสุด',rangeTo||'ทั้งหมด'],['จำนวนเคสในรายงาน',data.length],['แผนก',department==='all'?'ทั้งหมด':department],['หัตถการ',procedure==='all'?'ทั้งหมด':procedure],['ประเภท SSI',ssi],['ประเภทผู้ป่วย',patientType],['รอบประเมิน KPI',kpiPeriodLabel],['ช่วงประเมิน KPI',kpiSelectedDate],['ช่วงกราฟ',charts.period],['ปีกราฟ',charts.year],['เกณฑ์ SSI','รวมเคสที่เคยยืนยันติดเชื้อ แม้ปัจจุบันหายแล้ว']]},
+        {name:'SSI เชิงรุกตามหัตถการ',headers:['หัตถการ','IC ยืนยันเชิงรุก','เคสผ่าตัดทั้งหมด','อัตรา (%)','เป้าหมาย'],rows:[...new Set(kpiData.map(p=>p.procedure||'ไม่ระบุ'))].map(name=>{const row=buildOutcomeKpis(kpiData.filter(p=>(p.procedure||'ไม่ระบุ')===name))[3];return[name,row.numerator,row.denominator,row.value==null?'—':Number(row.value.toFixed(2)),row.target]})},
+        {name:'Outcome KPIs',headers:['ลำดับ','KPI','รายละเอียด','ก่อนโครงการ','เป้าหมาย','ผลจริง (%)','จำนวน','ทั้งหมด','สถานะ','รอบประเมิน','ช่วงประเมิน'],rows:outcomeKpis.map(r=>[r.id,r.name,r.title,r.baseline,r.target,r.value==null?'ยังคำนวณไม่ได้':Number(r.value.toFixed(2)),r.numerator,r.denominator,r.status,kpiPeriodLabel,kpiSelectedDate])},
         {name:'ยอดสรุป',headers:['รายการ','จำนวน','หน่วย'],rows:metrics.map(([label,value,unit])=>[label,value,unit])},
         {name:'เคสทั้งหมดและ SSI',headers:['ช่วงเวลา','เคสทั้งหมด','เคสติดเชื้อ SSI'],rows:charts.caseTrend.map(r=>[r.label,r.total,r.infected])},
         {name:'เคสแยกการผ่าตัด',headers:['หัตถการ','จำนวนเคส','ยืนยัน SSI','สัดส่วนเคสทั้งหมด (%)'],rows:charts.procedures.map(r=>[r.name,r.total,r.confirmed,r.rate])},
@@ -84,5 +95,6 @@ export default function ReportsPage(){
       </article>
     </section>
     <AnalyticsDonutPair patients={data}/>
+    <OutcomeKpis rows={outcomeKpis} loading={kpiLoading} error={kpiError} period={kpiPeriod} onPeriodChange={setKpiPeriod} selectedDate={kpiSelectedDate} onDateChange={value=>setKpiDate(kpiPeriod==='day'?value:kpiPeriod==='month'?`${value}-01`:`${value}-01-01`)}/>
     <section data-report-controls className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"><h2 className="text-[14px] font-semibold text-[#002d73]">✉️ ไปยังเมล</h2><div className="mt-4 grid gap-3"><label className="text-[11px]">ผู้รับ<input className="form-input mt-1" placeholder="ระบุอีเมลผู้รับ"/></label><div className="flex flex-col gap-3 sm:flex-row sm:items-end"><label className="min-w-0 flex-1 text-[11px]">หัวข้อ<input className="form-input mt-1" defaultValue="รายงานสรุประบบคิวโรงพยาบาล"/></label><button className="btn-filled-primary inline-flex items-center gap-2" disabled title="ยังไม่ได้เชื่อมระบบอีเมล"><Send size={15}/>ส่ง</button></div></div></section></div>
 }

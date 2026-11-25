@@ -28,7 +28,7 @@ import { api } from '../../services/api.js'
 
 const primaryMenu = [
   { label: 'แดชบอร์ด', path: '/dashboard', icon: LayoutDashboard },
-  { label: 'ตรวจสอบเคสจาก OR', path: '/or-validation', icon: ClipboardCheck },
+  { label: 'ตรวจสอบเคสจาก OR', path: '/or-validation', icon: ClipboardCheck, countKey: 'orValidation' },
   { label: 'คิว OPD', path: '/opd-queue', icon: ClipboardList, countKey: 'opd' },
   { label: 'คิว IPD', path: '/ipd-queue', icon: BedSingle, countKey: 'ipd' },
   { label: 'งานติดตามของฉัน', path: '/my-follow-ups', icon: ListChecks, countKey: 'followUps' },
@@ -39,7 +39,7 @@ const primaryMenu = [
 const ssiMenu = [
   { label: 'เคสสงสัย SSI', path: '/suspected-ssi', icon: ShieldAlert, countKey: 'suspected', danger: true },
   { label: 'เคสยืนยัน SSI', path: '/confirmed-ssi', icon: ShieldCheck, countKey: 'confirmed', danger: true },
-  { label: 'แพทย์ตรวจสอบ SSI', path: '/doctor-review', icon: Stethoscope, countKey: 'doctorReview' },
+  { label: 'แพทย์วินิจฉัย SSI', path: '/doctor-review', icon: Stethoscope, countKey: 'doctorReview' },
 ]
 
 const reportMenu = [
@@ -92,15 +92,16 @@ function NavItems({ items, onNavigate, counts }) {
 export default function Sidebar({ open, onClose }) {
   const navigate = useNavigate()
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
-  const { data: patients, refetch } = useApiQuery(api.getPatients)
+  const { data: patients, refetch } = useApiQuery(api.getPatients, { refreshInterval: 5000 })
   const { data: followUpPatients, refetch: refetchFollowUps } = useApiQuery(api.getFollowUpPatients)
-  const { data: notifications, refetch: refetchNotifications } = useApiQuery(api.getNotifications)
+  const { data: notifications, refetch: refetchNotifications } = useApiQuery(api.getNotifications, { refreshInterval: 5000 })
   const currentUser = (() => { try { return JSON.parse(sessionStorage.getItem('or-smart-user') || 'null') } catch { return null } })()
   const seenStorageKey = `or-smart-menu-seen:${currentUser?.id || 'guest'}`
   const [seenMenuItems, setSeenMenuItems] = useState(() => { try { return JSON.parse(localStorage.getItem(seenStorageKey) || '{}') } catch { return {} } })
   const visibleQueue = (patient, role) => patient.workflowStatus === 'QUEUED'
     && patient.patientType === role.toLowerCase()
   const menuItems = {
+    orValidation: patients.filter(patient => patient.workflowStatus === 'OR_PENDING'),
     opd: patients.filter((patient) => visibleQueue(patient, 'OPD')),
     ipd: patients.filter((patient) => visibleQueue(patient, 'IPD')),
     followUps: followUpPatients.filter((patient) => patient.followUpId && !patient.followUpViewedAt),
@@ -119,6 +120,7 @@ export default function Sidebar({ open, onClose }) {
     return menuItems[countKey].filter(item => !seen.has(String(itemKey(item, countKey)))).length
   }
   const counts = {
+    orValidation: unseenCount('orValidation'),
     opd: unseenCount('opd'),
     ipd: unseenCount('ipd'),
     followUps: unseenCount('followUps'),

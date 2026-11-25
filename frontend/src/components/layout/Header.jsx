@@ -1,3 +1,4 @@
+import CasePriorityBadge from '../ui/CasePriorityBadge.jsx'
 import { Bell, CalendarDays, ChevronDown, Menu } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -27,7 +28,7 @@ const routeTitles = {
 export default function Header({ onMenu }) {
   const { pathname, search } = useLocation()
   const navigate = useNavigate()
-  const { data: notifications, refetch } = useApiQuery(api.getNotifications)
+  const { data: notifications, refetch } = useApiQuery(api.getNotifications, { refreshInterval: 5000 })
   const [notificationOpen, setNotificationOpen] = useState(false)
   const notificationRef = useRef(null)
   const unreadCount = notifications.filter((notification) => !notification.read_at).length
@@ -37,7 +38,7 @@ export default function Header({ onMenu }) {
     document.addEventListener('mousedown', closeOnOutsideClick)
     return () => document.removeEventListener('mousedown', closeOnOutsideClick)
   }, [])
-  const notificationLabels = { NEW_QUEUE: 'รับเคสใหม่', FOLLOW_UP_DUE: 'ถึงรอบติดตาม', FOLLOW_UP_OVERDUE: 'ติดตามเกินกำหนด', FOLLOW_UP_RECORDED: 'บันทึกติดตามตามรอบ', SSI_RISK_FOUND: 'พบความเสี่ยง SSI', SSI_SENT_TO_DOCTOR: 'ส่งให้แพทย์ตรวจสอบ', SSI_CONFIRMED: 'ยืนยัน SSI', SSI_NOT_CONFIRMED: 'ไม่พบการติดเชื้อ SSI', SSI_RECOVERED: 'หายจาก SSI', CASE_TRANSFERRED: 'ย้ายเคส', DOCUMENT_UPLOADED: 'เพิ่มเอกสาร', ADDITIONAL_ACTIVITY: 'เพิ่มกิจกรรมแทรก' }
+  const notificationLabels = { NEW_OR_CASE: 'รับเคสจาก extension', NEW_QUEUE: 'รับเคสใหม่', CASE_ACCEPTED: 'รับเคสเข้าดูแล', FOLLOW_UP_CREATED: 'สร้างรอบติดตาม', SSI_REVIEW_SAVED: 'บันทึก SSI Review', CASE_DATA_UPDATED: 'แก้ไขข้อมูลเคส', FOLLOW_UP_DUE: 'ถึงรอบติดตาม', FOLLOW_UP_OVERDUE: 'ติดตามเกินกำหนด', FOLLOW_UP_RECORDED: 'บันทึกติดตามตามรอบ', SSI_RISK_FOUND: 'พบความเสี่ยง SSI', SSI_SENT_TO_DOCTOR: 'ส่งให้แพทย์ตรวจสอบ', SSI_CONFIRMED: 'ยืนยัน SSI', SSI_NOT_CONFIRMED: 'ไม่พบการติดเชื้อ SSI', SSI_RECOVERED: 'หายจาก SSI', CASE_TRANSFERRED: 'ย้ายเคส', DOCUMENT_UPLOADED: 'เพิ่มเอกสาร', ADDITIONAL_ACTIVITY: 'เพิ่มกิจกรรมแทรก' }
   const openNotification = async notification => {
     setNotificationOpen(false)
     if (!notification.read_at) {
@@ -74,7 +75,7 @@ export default function Header({ onMenu }) {
           </button>
           {notificationOpen && <section className="absolute right-0 top-12 z-50 w-[min(380px,calc(100vw-24px))] overflow-hidden rounded-xl border border-slate-200 bg-white text-left shadow-2xl">
             <header className="flex items-center justify-between border-b border-slate-100 px-4 py-3"><div><h2 className="text-[16px] font-semibold text-[#002d73]">การแจ้งเตือน</h2><p className="mt-0.5 text-[11px] text-slate-500">ยังไม่ได้อ่าน {unreadCount} รายการ</p></div><button type="button" onClick={() => { setNotificationOpen(false); navigate('/notifications') }} className="text-[12px] font-medium text-blue-600 hover:underline">ดูทั้งหมด</button></header>
-            <div className="max-h-[420px] overflow-y-auto">{!notifications.length ? <p className="px-4 py-10 text-center text-[13px] text-slate-400">ยังไม่มีการแจ้งเตือน</p> : notifications.slice(0, 6).map(notification => <button key={notification.notification_key} type="button" onClick={() => openNotification(notification)} className={`flex w-full gap-3 border-b border-slate-100 px-4 py-3 text-left hover:bg-slate-50 ${notification.read_at ? 'bg-white' : 'bg-blue-50/50'}`}><span className={`mt-1 size-2 shrink-0 rounded-full ${notification.priority === 'HIGH' ? 'bg-red-500' : notification.read_at ? 'bg-slate-300' : 'bg-blue-600'}`} /><span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-semibold text-slate-800">{notificationLabels[notification.notification_type] || 'การแจ้งเตือน'}</span><span className="mt-1 line-clamp-2 block text-[12px] leading-5 text-slate-500">{notification.detail || '-'}</span><span className="mt-1.5 block text-[11px] text-slate-400">HN {notification.hn || '-'} · {notification.event_at ? new Date(notification.event_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '-'}</span></span></button>)}</div>
+            <div className="max-h-[420px] overflow-y-auto">{!notifications.length ? <p className="px-4 py-10 text-center text-[13px] text-slate-400">ยังไม่มีการแจ้งเตือน</p> : notifications.slice(0, 6).map(notification => <button key={notification.notification_key} type="button" onClick={() => openNotification(notification)} className={`flex w-full gap-3 border-b border-slate-100 px-4 py-3 text-left hover:bg-slate-50 ${notification.read_at ? 'bg-white' : 'bg-blue-50/50'}`}><span className={`mt-1 size-2 shrink-0 rounded-full ${notification.priority === 'HIGH' ? 'bg-red-500' : notification.notification_type === 'NEW_QUEUE' ? (notification.priority === 'MEDIUM' ? 'bg-orange-500' : 'bg-green-500') : notification.read_at ? 'bg-slate-300' : 'bg-blue-600'}`} /><span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-semibold text-slate-800">{notificationLabels[notification.notification_type] || 'การแจ้งเตือน'}{notification.notification_type === 'NEW_QUEUE' && <span className="ml-2"><CasePriorityBadge priority={notification.priority} /></span>}</span><span className="mt-1 line-clamp-2 block text-[12px] leading-5 text-slate-500">{notification.detail || '-'}</span><span className="mt-1.5 block text-[11px] text-slate-400">HN {notification.hn || '-'} · {notification.event_at ? new Date(notification.event_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '-'}</span></span></button>)}</div>
             <footer className="p-2"><button type="button" onClick={() => { setNotificationOpen(false); navigate('/notifications') }} className="h-9 w-full rounded-lg text-[13px] font-medium text-blue-600 hover:bg-blue-50">เปิดศูนย์แจ้งเตือน</button></footer>
           </section>}
         </div>

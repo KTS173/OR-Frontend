@@ -2695,3 +2695,22 @@ table :is(thead, tbody, tfoot, tr)[class*="border-slate-100"] {
   accent-color: #94a3b8;
   opacity: .45;
 }
+
+/* Align table headings, values, and actions consistently across all pages. */
+table th,
+table td {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+table :is(th, td) :is(p, small, strong, span, div) {
+  text-align: center;
+}
+
+table :is(th, td) :is(.justify-start, .justify-end, .justify-between) {
+  justify-content: center !important;
+}
+
+.evaluation-symptoms-card .assessment-table :is(th, td):first-child {
+  text-align: left !important;
+}

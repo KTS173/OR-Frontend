@@ -1,3 +1,5 @@
+import { defaultSsiRiskLevels, normalizeSsiRiskLevels } from '../utils/ssiRiskLevel.js'
+import { normalizeSsiCriteria } from '../utils/ssiSuspicionCriteria.js'
 import { Bell, Calendar, CheckCircle2, Database, Edit2, Info, Plus, RefreshCw, Save, Settings, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { api } from '../services/api.js'
@@ -10,15 +12,7 @@ export default function SettingsPage() {
   const [notice, setNotice] = useState(null)
 
   // 1. SSI Criteria State
-  const [ssiCriteria, setSsiCriteria] = useState([
-    { id: 'fever', name: 'มีไข้ (อุณหภูมิ ≥ 38°C)', enabled: true },
-    { id: 'pain', name: 'ปวดแผล/เจ็บแผลเพิ่มขึ้น', enabled: true },
-    { id: 'swell', name: 'แผลบวม', enabled: true },
-    { id: 'red', name: 'แผลแดง', enabled: true },
-    { id: 'pus', name: 'มีน้ำเหลือง/หนองจากแผล', enabled: true },
-    { id: 'smell', name: 'กลิ่นผิดปกติจากแผล', enabled: true },
-    { id: 'gap', name: 'แผลแยก', enabled: true },
-  ])
+  const [ssiCriteria, setSsiCriteria] = useState(() => normalizeSsiCriteria())
   const [dischargeTreatmentOptions, setDischargeTreatmentOptions] = useState([
     { id: 'none', name: 'ไม่ได้พบแพทย์', enabled: true },
     { id: 'metDoctor', name: 'พบแพทย์แล้ว (OPD/IPD)', enabled: true },
@@ -42,12 +36,7 @@ export default function SettingsPage() {
     { id: 2, name: 'ประเมินจากรูปแผล', enabled: true },
     { id: 3, name: 'แพทย์นัดตรวจ', enabled: true },
   ])
-  const [riskLevels, setRiskLevels] = useState([
-    { id: 'low', name: 'ต่ำ', min: 0, max: 24, color: '#10b981' },
-    { id: 'moderate', name: 'ปานกลาง', min: 25, max: 50, color: '#f59e0b' },
-    { id: 'high', name: 'สูง', min: 51, max: 74, color: '#ef4444' },
-    { id: 'critical', name: 'สูงมาก', min: 75, max: 100, color: '#7f1d1d' },
-  ])
+  const [riskLevels, setRiskLevels] = useState(defaultSsiRiskLevels)
 
   // 3. HIS Sync Settings State
   const [syncFreq, setSyncFreq] = useState('')
@@ -99,11 +88,11 @@ export default function SettingsPage() {
 
   useEffect(() => {
     api.getSettings().then((saved) => {
-      if (saved.ssiCriteria) setSsiCriteria(saved.ssiCriteria)
+      if (saved.ssiCriteria) setSsiCriteria(normalizeSsiCriteria(saved.ssiCriteria))
       if (saved.dischargeTreatmentOptions) setDischargeTreatmentOptions(saved.dischargeTreatmentOptions.map(item => ({ ...item, name: item.name.replace('ไม่ได้ไปพบแพทย์', 'ไม่ได้พบแพทย์').replace('ไปพบแพทย์แล้ว', 'พบแพทย์แล้ว') })))
       if (saved.schedules) setSchedules(saved.schedules)
       if (saved.methods) setMethods(saved.methods.map(normalizeFollowUpMethod))
-      if (Array.isArray(saved.riskLevels) && saved.riskLevels.length) setRiskLevels(saved.riskLevels.map(level => level.id === 'moderate' && Number(level.max) === 49 ? { ...level, max: 50 } : level.id === 'high' && Number(level.min) === 50 ? { ...level, min: 51 } : level))
+      if (Array.isArray(saved.riskLevels)) setRiskLevels(normalizeSsiRiskLevels(saved.riskLevels))
       if (saved.sync) { setSyncFreq(saved.sync.freq); setSyncStart(saved.sync.start); setSyncEnd(saved.sync.end); setSyncEnabled(saved.sync.enabled) }
       if (saved.notificationPreferencesConfigured === true) {
         setAlertTypes({ followUpDue: true, appointmentReminder: true, noAssessmentResponse: true, overdue: true, prepAlert: true, others: true })

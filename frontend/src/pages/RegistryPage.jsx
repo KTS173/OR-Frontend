@@ -1,3 +1,7 @@
+import CurrentSsiRisk from '../components/ui/CurrentSsiRisk.jsx'
+import SsiHandoverRisk from '../components/ui/SsiHandoverRisk.jsx'
+import { savedSsiRisk } from '../utils/ssiRiskLevel.js'
+import CasePriorityBadge from '../components/ui/CasePriorityBadge.jsx'
 import { Activity, AlertCircle, AlertTriangle, ArrowLeftRight, ArrowRight, Bell, Calendar, CalendarClock, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Database, Download, Eye, File, History, Layers, Mail, PhoneCall, Plus, RefreshCw, RotateCcw, Scissors, Search, Settings2, ShieldCheck, Stethoscope, TimerReset, UserCheck, UserRound, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -108,7 +112,7 @@ function OpdQueuePage({ queueType, patients, loading, search, setSearch }) {
 
 function OpdPatientTable({ patients, loading, onSelect }) {
   const rows = patients.slice(0, 10)
-  return <section className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm"><header className="flex h-[72px] items-center justify-between px-6"><h2 className="text-[18px] font-semibold text-[#002d73]">รายการติดตามผู้ป่วย ({patients.length} ราย)</h2><button className="inline-flex h-[40px] w-[146px] items-center justify-between rounded-lg border border-[#e2e8f0] px-4 text-[14px]"><span className="inline-flex items-center gap-3"><CalendarDays size={17} />วันนี้</span><ChevronRight size={14} className="rotate-90" /></button></header><div className="overflow-x-auto"><table className="w-full min-w-[950px] text-[13px] text-[#434651]"><thead className="h-[40px] bg-[#f8fafc] font-semibold text-[#1e293b]"><tr>{['HN', 'ชื่อผู้ป่วย', 'อายุ/เพศ', 'หัตถการ', 'ศัลยแพทย์', 'วันผ่าตัด', 'วันรับข้อมูล'].map(h => <th key={h} className="px-4 text-left">{h}</th>)}</tr></thead><tbody>{loading ? Array.from({ length: 10 }).map((_, i) => <tr key={i} className="h-[60px] border-t border-slate-100"><td colSpan="7" className="px-4"><div className="h-3 animate-pulse rounded bg-slate-100" /></td></tr>) : rows.map((p) => <tr key={p.operationNo || p.id} onClick={() => onSelect(p)} className="h-[60px] cursor-pointer border-t border-slate-100 hover:bg-blue-50/40"><td className="px-4 font-semibold text-[#175beb]">{p.id}</td><td className="px-4"><span className="font-medium">{p.name}</span><small className="block text-[11px] text-[#64748b]">({p.dateOfBirth || '-'})</small></td><td className="px-4">{p.age ?? '-'} / {p.sex || '-'}</td><td className="max-w-[140px] px-4 text-center">{p.procedure || '-'}</td><td className="px-4">{p.surgeon || '-'}</td><td className="px-4">{p.surgeryDate}</td><td className="px-4">{p.createdAt ? new Date(p.createdAt).toLocaleDateString('th-TH') : '-'}</td></tr>)}</tbody></table></div><footer className="flex h-[46px] items-center justify-between border-t border-[#e2e8f0] px-6 text-[13px] text-[#64748b]"><span>Showing {rows.length} of {patients.length} Historical Log</span><div className="flex gap-2"><button className="page-button w-auto px-3">Previous</button><button className="page-button bg-[#175beb] text-white">1</button><button className="page-button">2</button><button className="page-button">3</button><button className="page-button w-auto px-3">Next</button></div></footer></section>
+  return <section className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm"><header className="flex h-[72px] items-center justify-between px-6"><h2 className="text-[18px] font-semibold text-[#002d73]">รายการติดตามผู้ป่วย ({patients.length} ราย)</h2><button className="inline-flex h-[40px] w-[146px] items-center justify-between rounded-lg border border-[#e2e8f0] px-4 text-[14px]"><span className="inline-flex items-center gap-3"><CalendarDays size={17} />วันนี้</span><ChevronRight size={14} className="rotate-90" /></button></header><div className="overflow-x-auto"><table className="w-full min-w-[950px] text-[13px] text-[#434651]"><thead className="h-[40px] bg-[#f8fafc] font-semibold text-[#1e293b]"><tr>{['HN', 'ชื่อผู้ป่วย', 'อายุ/เพศ', 'หัตถการ', 'ศัลยแพทย์', 'ความเสี่ยง SSI', 'วันผ่าตัด', 'วันรับข้อมูล'].map(h => <th key={h} className="px-4 text-left">{h}</th>)}</tr></thead><tbody>{loading ? Array.from({ length: 10 }).map((_, i) => <tr key={i} className="h-[60px] border-t border-slate-100"><td colSpan="8" className="px-4"><div className="h-3 animate-pulse rounded bg-slate-100" /></td></tr>) : rows.map((p) => <tr key={p.operationNo || p.id} onClick={() => onSelect(p)} className="h-[60px] cursor-pointer border-t border-slate-100 hover:bg-blue-50/40"><td className="px-4 font-semibold text-[#175beb]">{p.id}</td><td className="px-4"><span className="font-medium">{p.name}</span><small className="block text-[11px] text-[#64748b]">({p.dateOfBirth || '-'})</small></td><td className="px-4">{p.age ?? '-'} / {p.sex || '-'}</td><td className="max-w-[140px] px-4 text-center">{p.procedure || '-'}</td><td className="px-4">{p.surgeon || '-'}</td><td className="px-4"><SsiHandoverRisk factors={p.orSsiRiskFactors}/></td><td className="px-4">{p.surgeryDate}</td><td className="px-4">{p.createdAt ? new Date(p.createdAt).toLocaleDateString('th-TH') : '-'}</td></tr>)}</tbody></table></div><footer className="flex h-[46px] items-center justify-between border-t border-[#e2e8f0] px-6 text-[13px] text-[#64748b]"><span>Showing {rows.length} of {patients.length} Historical Log</span><div className="flex gap-2"><button className="page-button w-auto px-3">Previous</button><button className="page-button bg-[#175beb] text-white">1</button><button className="page-button">2</button><button className="page-button">3</button><button className="page-button w-auto px-3">Next</button></div></footer></section>
 }
 
 const validationMetrics = [
@@ -177,7 +181,7 @@ function MyFollowTable({ patients, loading }) {
     window.dispatchEvent(new Event('operations-updated'))
     navigate(`/follow-ups/${encodeURIComponent(patient.operationNo || patient.id)}`)
   }
-  return <section className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm"><header className="flex h-[72px] items-center justify-between px-6"><h2 className="text-[18px] font-semibold text-[#002d73]">รายการงานติดตาม ({patients.length} ราย)</h2></header><div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-[13px]"><thead className="h-10 bg-slate-50"><tr>{['HN', 'ชื่อผู้ป่วย', 'หัตถการ', 'ศัลยแพทย์', 'ความเสี่ยง SSI', 'สถานะติดตาม', 'กำหนดติดตามครั้งแรก'].map(x => <th key={x} className="px-4 text-left">{x}</th>)}</tr></thead><tbody>{loading && <tr><td colSpan="7" className="px-4 py-10 text-center text-slate-500">กำลังโหลดข้อมูล...</td></tr>}{!loading && !rows.length && <tr><td colSpan="7" className="px-4 py-10 text-center text-slate-500">ยังไม่มีการสร้างงานติดตาม</td></tr>}{!loading && rows.map((p) => { const firstSchedule = Array.isArray(p.followUpSchedule) ? p.followUpSchedule[0] : null; return <tr key={p.followUpId || p.operationNo} onClick={() => openFollowUp(p)} className={`h-[70px] cursor-pointer border-t border-slate-100 hover:bg-blue-50/40 ${!p.followUpViewedAt ? 'bg-blue-50/30' : ''}`}><td className="px-4 font-semibold">{p.id}</td><td className="px-4">{p.name}{!p.followUpViewedAt && <span className="ml-2 inline-block size-2 rounded-full bg-blue-600" />}<small className="block text-slate-500">{p.age != null ? `${p.age} ปี` : '-'} {p.dateOfBirth ? `(${p.dateOfBirth})` : ''}</small></td><td className="px-4">{p.procedure || '-'}</td><td className="px-4">{p.surgeon || '-'}</td><td className="px-4">-</td><td className="px-4"><StatusBadge>{p.followUpStatus || '-'}</StatusBadge></td><td className="px-4">{firstSchedule?.date || firstSchedule?.scheduledAt || '-'}</td></tr>})}</tbody></table></div><footer className="flex h-[46px] items-center justify-between border-t border-slate-200 px-6 text-[13px] text-slate-500"><span>แสดง {rows.length} จาก {patients.length} รายการ</span></footer></section>
+  return <section className="overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm"><header className="flex h-[72px] items-center justify-between px-6"><h2 className="text-[18px] font-semibold text-[#002d73]">รายการงานติดตาม ({patients.length} ราย)</h2></header><div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-[13px]"><thead className="h-10 bg-slate-50"><tr>{['HN', 'ชื่อผู้ป่วย', 'หัตถการ', 'ศัลยแพทย์', 'ความเสี่ยง SSI', 'สถานะติดตาม', 'กำหนดติดตามครั้งแรก'].map(x => <th key={x} className="px-4 text-left">{x}</th>)}</tr></thead><tbody>{loading && <tr><td colSpan="7" className="px-4 py-10 text-center text-slate-500">กำลังโหลดข้อมูล...</td></tr>}{!loading && !rows.length && <tr><td colSpan="7" className="px-4 py-10 text-center text-slate-500">ยังไม่มีการสร้างงานติดตาม</td></tr>}{!loading && rows.map((p) => { const firstSchedule = Array.isArray(p.followUpSchedule) ? p.followUpSchedule[0] : null; return <tr key={p.followUpId || p.operationNo} onClick={() => openFollowUp(p)} className={`h-[70px] cursor-pointer border-t border-slate-100 hover:bg-blue-50/40 ${!p.followUpViewedAt ? 'bg-blue-50/30' : ''}`}><td className="px-4 font-semibold">{p.id}</td><td className="px-4">{p.name}{!p.followUpViewedAt && <span className="ml-2 inline-block size-2 rounded-full bg-blue-600" />}<small className="block text-slate-500">{p.age != null ? `${p.age} ปี` : '-'} {p.dateOfBirth ? `(${p.dateOfBirth})` : ''}</small></td><td className="px-4">{p.procedure || '-'}</td><td className="px-4">{p.surgeon || '-'}</td><td className="px-4"><CurrentSsiRisk patient={p}/></td><td className="px-4"><StatusBadge>{p.followUpStatus || '-'}</StatusBadge></td><td className="px-4">{firstSchedule?.date || firstSchedule?.scheduledAt || '-'}</td></tr>})}</tbody></table></div><footer className="flex h-[46px] items-center justify-between border-t border-slate-200 px-6 text-[13px] text-slate-500"><span>แสดง {rows.length} จาก {patients.length} รายการ</span></footer></section>
 }
 
 function AcceptPatientModal({ patient, onClose }) {
@@ -423,13 +427,6 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch, refetch 
   const rawNavigate = useNavigate()
   const navigate = (to, options) => rawNavigate(typeof to === 'string' && to.startsWith('/suspected-cases/') && !to.includes('?') ? `${to}?from=${type}` : to, options)
   const detailQuery = `?from=${type}`
-  const [riskLevels, setRiskLevels] = useState([
-    { id: 'low', name: 'ต่ำ', min: 0, max: 24, color: '#10b981' },
-    { id: 'moderate', name: 'ปานกลาง', min: 25, max: 50, color: '#f59e0b' },
-    { id: 'high', name: 'สูง', min: 51, max: 74, color: '#ef4444' },
-    { id: 'critical', name: 'สูงมาก', min: 75, max: 100, color: '#7f1d1d' },
-  ])
-  useEffect(() => { api.getSettings().then(settings => { if (Array.isArray(settings.riskLevels) && settings.riskLevels.length) setRiskLevels(settings.riskLevels.map(level => level.id === 'moderate' && Number(level.max) === 49 ? { ...level, max: 50 } : level.id === 'high' && Number(level.min) === 50 ? { ...level, min: 51 } : level)) }).catch(() => {}) }, [])
   const [activeTab, setActiveTab] = useState('all')
   const [actionError, setActionError] = useState('')
   const [recoveryPatient, setRecoveryPatient] = useState(null)
@@ -457,17 +454,16 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch, refetch 
   ]
 
   const ssiRows = patients.map(patient => {
-    const answers = Object.values(patient.evaluationData?.symptoms || {}).filter(Boolean)
-    const points = answers.reduce((sum, value) => /^(has|yes|true|มี)$/i.test(String(value)) ? sum + 1 : /^(unknown|unsure|ไม่ทราบ)$/i.test(String(value)) ? sum + 0.5 : sum, 0)
-    const calculated = answers.length ? Number(((points / answers.length) * 100).toFixed(2)) : null
-    const score = calculated != null ? calculated : patient.evaluationScore != null ? Number(patient.evaluationScore) : null
-    const level = score == null ? null : riskLevels.find(item => score >= Number(item.min) && score <= Number(item.max)) || riskLevels[riskLevels.length - 1]
+    const savedRisk = savedSsiRisk({evaluation_score:patient.evaluationScore,evaluation_data:patient.evaluationData})
+    const score = savedRisk?.score ?? null
+    const level = savedRisk
+
     const schedule = Array.isArray(patient.followUpSchedule) ? patient.followUpSchedule : []
     const nextDueIndex = Math.min(Number(patient.currentRoundIndex || 0), schedule.length)
     const completedIndexes = schedule.map((round, index) => round.status === 'COMPLETED' || round.completedAt ? index : -1).filter(index => index >= 0)
     const currentIndex = completedIndexes.length ? completedIndexes[completedIndexes.length - 1] : Math.max(0, nextDueIndex - 1)
     const nextIndex = completedIndexes.length ? currentIndex + 1 : nextDueIndex
-    return { operationNo: patient.operationNo, hn: patient.id, name: patient.name, age: patient.age ? `${patient.age} ปี` : '-', birth: patient.dateOfBirth || '-', procedure: patient.procedure || '-', surgeon: patient.surgeon || '-', date: patient.surgeryDate, risk: level ? `${level.name} ${score}%` : 'ยังไม่มีคะแนน', riskColor: '', riskColorValue: level?.color || '#94a3b8', status: patient.ssiStatus, evaluationResult: patient.evaluationResult, startedAt: schedule[0]?.date || patient.followUpCreatedAt, templateDays: patient.followUpTemplateDays, schedule, currentIndex, currentRound: schedule[currentIndex], nextRound: schedule[nextIndex], phone: patient.phonePrimary }
+    return { operationNo: patient.operationNo, hn: patient.id, name: patient.name, age: patient.age ? `${patient.age} ปี` : '-', birth: patient.dateOfBirth || '-', procedure: patient.procedure || '-', surgeon: patient.surgeon || '-', date: patient.surgeryDate, risk: patient.evaluationData?.assessmentModel === 'ssi-checklist-v1' ? (patient.evaluationData.requiresIcReview ? 'เข้าข่ายสงสัย SSI' : 'ไม่เข้าข่าย SSI') : level ? `${level.name} ${score}%` : 'ยังไม่มีคะแนน', riskColor: '', riskColorValue: level?.color || '#94a3b8', status: patient.ssiStatus, evaluationResult: patient.evaluationResult, startedAt: schedule[0]?.date || patient.followUpCreatedAt, templateDays: patient.followUpTemplateDays, schedule, currentIndex, currentRound: schedule[currentIndex], nextRound: schedule[nextIndex], phone: patient.phonePrimary }
   })
 
   return (
@@ -576,10 +572,10 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch, refetch 
           </button>
         </header>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[2350px] text-[13px] text-[#434651]">
+          <table className="w-full min-w-[2190px] text-[13px] text-[#434651]">
             <thead className="h-10 bg-slate-50 font-semibold text-[#1e293b]">
               <tr>
-                {['HN', 'ชื่อผู้ป่วย', 'หัตถการ', 'ศัลยแพทย์', 'วันผ่าตัด', 'ความเสี่ยง SSI', 'สถานะประเมิน SSI', 'เริ่มติดตามครั้งแรก', 'รอบติดตาม', 'รอบปัจจุบัน', 'นัดติดตามถัดไป', 'ช่องทางติดต่อ', 'สถานะตรวจ SSI', 'จัดการ'].map((label) => <th key={label} className="whitespace-nowrap px-5 py-3 text-center first:text-left">{label}</th>)}
+                {['HN', 'ชื่อผู้ป่วย', 'หัตถการ', 'ศัลยแพทย์', 'วันผ่าตัด', 'สถานะประเมิน SSI', 'เริ่มติดตามครั้งแรก', 'รอบติดตาม', 'รอบปัจจุบัน', 'นัดติดตามถัดไป', 'ช่องทางติดต่อ', 'สถานะตรวจ SSI', 'จัดการ'].map((label) => <th key={label} className="whitespace-nowrap px-5 py-3 text-center first:text-left">{label}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -594,11 +590,6 @@ function SuspectedSSIPage({ type, patients, loading, search, setSearch, refetch 
                   <td className="whitespace-nowrap px-5 py-3 font-medium text-slate-700">{row.procedure}</td>
                   <td className="whitespace-nowrap px-5 py-3 text-slate-600">{row.surgeon}</td>
                   <td className="whitespace-nowrap px-5 py-3 text-slate-500">{row.date}</td>
-                  <td className="whitespace-nowrap px-5 py-3 text-center">
-                    <span className="inline-flex items-center justify-center gap-2 font-semibold" style={{ color: row.riskColorValue }}>
-                      <i className="size-2 rounded-full" style={{ backgroundColor: row.riskColorValue }} />{row.risk}
-                    </span>
-                  </td>
                   <td className="whitespace-nowrap px-5 py-3 text-center">
                     {row.status === 'RECOVERED' ? <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[12px] font-semibold text-emerald-600">หายจากการติดเชื้อ</span> : row.status === 'CONFIRMED_SSI' ? (
                       <span className={`rounded-lg px-2.5 py-1 text-[12px] font-semibold ${row.status === 'RECOVERED' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
@@ -682,10 +673,10 @@ function NotificationsCenterPage() {
   const [selectedNotification, setSelectedNotification] = useState(null);
   const openedNotificationKeyRef = useRef(null)
 
-  const { data: notificationData, loading, refetch } = useApiQuery(api.getNotifications)
+  const { data: notificationData, loading, refetch } = useApiQuery(api.getNotifications, { refreshInterval: 5000 })
   useEffect(() => { const timer = window.setInterval(refetch, 60000); return () => window.clearInterval(timer) }, [refetch])
   const typeLabels = {
-    NEW_QUEUE: 'รับเคสใหม่', FOLLOW_UP_DUE: 'ถึงรอบติดตาม',
+    NEW_OR_CASE: 'รับเคสจาก extension', NEW_QUEUE: 'รับเคสใหม่', CASE_ACCEPTED: 'รับเคสเข้าดูแล', FOLLOW_UP_CREATED: 'สร้างรอบติดตาม', SSI_REVIEW_SAVED: 'บันทึก SSI Review', CASE_DATA_UPDATED: 'แก้ไขข้อมูลเคส', FOLLOW_UP_DUE: 'ถึงรอบติดตาม',
     FOLLOW_UP_OVERDUE: 'ติดตามเกินกำหนด', FOLLOW_UP_TOMORROW: 'ใกล้ถึงรอบติดตาม', FOLLOW_UP_ADVANCE: 'ใกล้ถึงรอบติดตาม', APPOINTMENT_REMINDER: 'ใกล้ถึงวันนัด', NO_ASSESSMENT_RESPONSE: 'รอผู้ป่วยตอบกลับ',
     FOLLOW_UP_COMPLETED: 'ติดตามเสร็จสิ้น', FOLLOW_UP_RECORDED: 'บันทึกติดตามตามรอบ',
     SSI_RISK_FOUND: 'พบความเสี่ยง SSI', SSI_SENT_TO_DOCTOR: 'ส่งให้แพทย์ตรวจสอบ', SSI_CONFIRMED: 'ยืนยัน SSI', SSI_NOT_CONFIRMED: 'ไม่พบการติดเชื้อ SSI', SSI_RECOVERED: 'หายจาก SSI', SSI_SUSPECTED: 'ส่งให้แพทย์ตรวจสอบ',
@@ -771,6 +762,7 @@ function NotificationsCenterPage() {
               className="mt-1 h-[38px] w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-600 font-semibold"
             >
               <option>ทั้งหมด</option>
+              <option>รับเคสจาก extension</option>
               <option>รับเคสใหม่</option>
               <option>บันทึกติดตามตามรอบ</option>
               <option>พบความเสี่ยง SSI</option>
@@ -871,7 +863,7 @@ function NotificationsCenterPage() {
                     )}
                   </td>
                   <td className="px-4 font-semibold text-slate-800">{notif.type}</td>
-                  <td className="px-4 text-slate-500 text-xs font-medium max-w-[280px] truncate">{notif.detail}</td>
+                  <td className="px-4 text-slate-500 text-xs font-medium max-w-[280px] truncate">{notif.notification_type === 'NEW_QUEUE' && <span className="mr-2"><CasePriorityBadge priority={notif.priority} /></span>}{notif.detail}</td>
                   <td className="px-4">
                     <span className="font-semibold text-slate-800 block">{notif.patient.name}</span>
                     <small className="block text-[11px] text-slate-400 font-medium">
@@ -931,7 +923,7 @@ function NotificationsCenterPage() {
                 <div><p className="text-slate-400">เลขที่เคส</p><p className="mt-1 font-semibold text-slate-800">{selectedNotification.patient.or || '-'}</p></div>
                 <div><p className="text-slate-400">วันและเวลา</p><p className="mt-1 font-semibold text-slate-800">{selectedNotification.time}</p></div>
                 <div><p className="text-slate-400">ประเภทผู้ป่วย</p><p className="mt-1 font-semibold text-slate-800">{selectedNotification.patient_type || '-'}</p></div>
-                <div><p className="text-slate-400">ระดับความสำคัญ</p><p className={`mt-1 font-semibold ${selectedNotification.priority === 'HIGH' ? 'text-orange-600' : 'text-slate-800'}`}>{selectedNotification.priority === 'HIGH' ? 'สำคัญ' : 'ปกติ'}</p></div>
+                <div><p className="text-slate-400">ระดับความสำคัญ</p><p className={`mt-1 font-semibold ${selectedNotification.priority === 'HIGH' ? 'text-orange-600' : 'text-slate-800'}`}>{selectedNotification.notification_type === 'NEW_QUEUE' ? <CasePriorityBadge priority={selectedNotification.priority} /> : selectedNotification.priority === 'HIGH' ? 'สำคัญ' : 'ปกติ'}</p></div>
                 {selectedNotification.activity_type && <><div><p className="text-slate-400">ประเภทกิจกรรม</p><p className="mt-1 font-semibold text-slate-800">{selectedNotification.activity_type}</p></div><div><p className="text-slate-400">วันนัดหมายกิจกรรม</p><p className="mt-1 font-semibold text-slate-800">{selectedNotification.activity_at ? new Date(selectedNotification.activity_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : '-'}</p></div><div><p className="text-slate-400">วัตถุประสงค์</p><p className="mt-1 font-semibold text-slate-800">{selectedNotification.activity_purpose || '-'}</p></div><div><p className="text-slate-400">รายละเอียดกิจกรรม</p><p className="mt-1 font-semibold text-slate-800">{selectedNotification.activity_detail || '-'}</p></div></>}
               </div>
             </div>

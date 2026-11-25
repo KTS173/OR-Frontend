@@ -101,7 +101,7 @@ export default function EvaluationHistory({
                   ) : (
                     <div className="text-slate-700">
                       <strong className="block font-semibold text-slate-700">{item.woundCondition}</strong>
-                      <span className="text-[12px] text-slate-500 block mt-1">ความเสี่ยง SSI: {item.riskLevel}</span>
+                      {item.riskLevel && <span className="text-[12px] text-slate-500 block mt-1">ความเสี่ยง SSI: {item.riskLevel}</span>}
                       <span className="text-[12px] text-slate-500 block mt-0.5">อาการอื่นๆ: {item.otherSymptoms}</span>
                     </div>
                   )

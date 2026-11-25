@@ -1,3 +1,6 @@
+import { requiresSsiSurveillance } from '../utils/ssiSurveillanceRisk.js'
+import { savedSsiRisk } from '../utils/ssiRiskLevel.js'
+import { summarizeSsiAssessment } from '../utils/ssiAssessmentSummary.js'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 const currentUserId = () => {
   try { return JSON.parse(sessionStorage.getItem('or-smart-user') || 'null')?.id || null } catch { return null }
@@ -19,20 +22,19 @@ const formatDate = (value) => value
   : '-'
 
 const withAssessmentScore = (payload) => {
+  if (payload.data?.assessmentModel === 'ssi-checklist-v1') return {...payload,score:null}
   if (payload.score != null) return payload
-  const answers = Object.values(payload.data?.symptoms || {}).filter(Boolean)
-  if (!answers.length) return payload
-  const points = answers.reduce((sum, value) => {
-    if (/^(has|yes|true|มี)$/i.test(String(value))) return sum + 1
-    if (/^(unknown|unsure|ไม่ทราบ)$/i.test(String(value))) return sum + 0.5
-    return sum
-  }, 0)
-  return { ...payload, score: Number(((points / answers.length) * 100).toFixed(2)) }
+  if(payload.result==='contact_failed'||payload.data?.contactStatus==='failed') return {...payload,score:null}
+  const summary=summarizeSsiAssessment(payload.data?.symptoms,payload.data?.ssiRiskFactors)
+  return {...payload,score:summary.score}
+
 }
 
 const operationToPatient = (operation) => ({
   id: operation.hn,
   operationNo: operation.operation_no,
+  sourceSystem: operation.source_system,
+  requestId: operation.request_id,
   operationLabel: /^RIS-[a-f0-9]{64}-[123]$/.test(operation.operation_no || '') ? `Operation Number ${operation.operation_no.slice(-1)}` : operation.operation_no,
   name: [operation.first_name, operation.last_name].filter(Boolean).join(' ') || 'ไม่ระบุชื่อ',
   firstName: operation.first_name,
@@ -74,6 +76,9 @@ const operationToPatient = (operation) => ({
   department: operation.operation_department,
   receivingDepartment: operation.receiving_department,
   orHandoverNote: operation.or_handover_note,
+  orSsiRiskFactors: operation.or_ssi_risk_factors,
+  latestScheduledEvaluation: operation.latest_scheduled_evaluation,
+  casePriority: operation.or_ssi_risk_factors == null ? operation.case_priority || 'LOW' : requiresSsiSurveillance(operation.or_ssi_risk_factors) ? 'HIGH' : 'LOW',
   location: operation.operation_location,
   operatingRoom: operation.operating_room,
   urgency: operation.urgency,
@@ -100,7 +105,11 @@ const operationToPatient = (operation) => ({
   ssiStatus: operation.ssi_status || 'UNASSESSED',
   everConfirmedSsi: operation.ever_confirmed_ssi === true,
   confirmedSsiAt: operation.confirmed_ssi_at,
-  risk: 'ยังไม่ประเมิน',
+  ssiReviewCreatedAt: operation.ssi_review_created_at,
+  risk: operation.evaluation_data?.assessmentModel === 'ssi-checklist-v1' ? (operation.evaluation_data.requiresIcReview ? 'เข้าข่ายสงสัย SSI' : 'ไม่เข้าข่าย SSI') : savedSsiRisk(operation)?.label || 'ยังไม่ประเมิน',
+  riskScore: savedSsiRisk(operation)?.score ?? null,
+  riskLevel: savedSsiRisk(operation)?.id ?? null,
+  riskColor: savedSsiRisk(operation)?.color || '#94a3b8',
   createdAt: operation.created_at,
   followUpId: operation.follow_up_id,
   followUpNo: operation.follow_up_no,
@@ -141,12 +150,17 @@ export const api = {
       .filter((item) => item.hn === selected.hn && item.episode_no === selected.episode_no)
       .map(operationToPatient)
   },
+  getReportPatients: async () => {
+    const [patients, metadata] = await Promise.all([api.getPatients(), request('/api/report-outcomes')])
+    const byOperation = new Map(metadata.map(item => [item.operationNo, item]))
+    return patients.map(patient => ({ ...patient, ...byOperation.get(patient.operationNo) }))
+  },
   getOperations: () => request('/api/operations'),
   updateOperation: (operationNo, data) => request(`/api/operations/${encodeURIComponent(operationNo)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }),
-  assignPatientType: async (operationNo, patientType, department, note) => request(`/api/operations/${encodeURIComponent(operationNo)}/patient-type`, {
+  assignPatientType: async (operationNo, patientType, department, note, priority = 'LOW', ssiRiskFactors) => request(`/api/operations/${encodeURIComponent(operationNo)}/patient-type`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ patientType, department, note }),
+    body: JSON.stringify({ patientType, department, note, priority, ssiRiskFactors }),
   }),
   acceptOperation: (operationNo, userId) => request(`/api/operations/${encodeURIComponent(operationNo)}/accept`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId }) }),
   getUsers: () => request('/api/users'),

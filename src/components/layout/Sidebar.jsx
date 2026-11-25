@@ -36,7 +36,7 @@ const primaryMenu = [
 const ssiMenu = [
   { label: 'เคสสงสัย SSI', path: '/suspected-ssi', icon: ShieldAlert, danger: true },
   { label: 'เคสยืนยัน SSI', path: '/confirmed-ssi', icon: ShieldCheck, danger: true },
-  { label: 'แพทย์ตรวจสอบ SSI', path: '/doctor-review', icon: Stethoscope },
+  { label: 'แพทย์วินิจฉัย SSI', path: '/doctor-review', icon: Stethoscope },
 ]
 
 const reportMenu = [

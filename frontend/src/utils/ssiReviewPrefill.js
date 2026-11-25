@@ -1,3 +1,5 @@
+import { normalizeSsiCriteria } from './ssiSuspicionCriteria.js'
+import { selectedSsiRiskFactors } from './ssiSurveillanceRisk.js'
 const answer = value => {
   if (value === true || /^(yes|has|true|มี)$/i.test(String(value))) return 'YES'
   if (value === false || /^(no|false|ไม่มี)$/i.test(String(value))) return 'NO'
@@ -29,7 +31,7 @@ export function prefillSsiReview(patient, evaluations, criteria = []) {
   if (Number.isFinite(days) && days >= 0) put(9, days > 2 ? 'YES' : 'NO', `${days} วันก่อนผ่าตัด`, 'วันที่ Admit และวันผ่าตัด')
   const history = [...evaluations].filter(row => row.evaluation_type !== 'SSI_ACTIVITY' && !String(row.round_key || '').startsWith('ACTIVITY:') && !String(row.round_key || '').startsWith('CONTACT:') && row.result !== 'contact_failed').sort((a,b) => new Date(b.evaluated_at) - new Date(a.evaluated_at))
   let selectedClass = '', issues = ''
-  const labels = new Map(criteria.map(item => [String(item.id), item.name]))
+  const labels = new Map(normalizeSsiCriteria(criteria).map(item => [String(item.id), item.name]))
   for (const row of history) {
     const data = row.data || {}
     const source = `ประเมินตามรอบ ${row.round_key || ''}`.trim()
@@ -41,6 +43,7 @@ export function prefillSsiReview(patient, evaluations, criteria = []) {
     if (!issues && data.evalRemarks?.trim()) issues = `${source}: ${data.evalRemarks.trim()}`
     if (evidence.length < 3) {
       const symptoms = Object.entries(data.symptoms || {}).filter(([,value]) => answer(value) === 'YES').map(([key]) => labels.get(key) || ({ fever:'ไข้',pain:'ปวด',swell:'บวม',red:'แดง',pus:'หนอง',smell:'กลิ่นผิดปกติ',gap:'แผลแยก' })[key] || key)
+      symptoms.push(...selectedSsiRiskFactors(data.ssiRiskFactors).map(item => `ปัจจัยเสี่ยง: ${item.label}`))
       evidence.push({ round: row.round_key || '-', date: row.evaluated_at, result: row.doctor_decision || row.result, symptoms, advice: data.evalRemarks || '' })
     }
   }

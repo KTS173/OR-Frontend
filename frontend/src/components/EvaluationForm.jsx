@@ -1,3 +1,4 @@
+import { ssiSuspicionCriteria, meetsSsiSuspicionCriteria } from '../utils/ssiSuspicionCriteria.js'
 import { useEffect, useState } from 'react'
 import {
   Plus,
@@ -28,15 +29,8 @@ const fileToDataUrl = file => new Promise((resolve, reject) => {
 export default function EvaluationForm({ selectedPatient, setSelectedPatient, mode = 'scheduled', onCompleted }) {
   const isOutOfRound = mode === 'out-of-round'
   const [activeFollowUp, setActiveFollowUp] = useState(null)
-  const [symptomConfig, setSymptomConfig] = useState([])
   const [methodConfig, setMethodConfig] = useState([])
   const [dischargeTreatmentConfig, setDischargeTreatmentConfig] = useState([])
-  const [riskLevels, setRiskLevels] = useState([
-    { id: 'low', name: 'ต่ำ', min: 0, max: 24, color: '#10b981' },
-    { id: 'moderate', name: 'ปานกลาง', min: 25, max: 50, color: '#f59e0b' },
-    { id: 'high', name: 'สูง', min: 51, max: 74, color: '#ef4444' },
-    { id: 'critical', name: 'สูงมาก', min: 75, max: 100, color: '#7f1d1d' },
-  ])
   // Evaluation Form States
   const [followUpDate, setFollowUpDate] = useState('');
   const [followUpTime, setFollowUpTime] = useState('');
@@ -46,18 +40,8 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
   const [contactStatus, setContactStatus] = useState(''); // success, failed
   const [remarks, setRemarks] = useState('');
 
-  // CDC Symptoms
-  const [symptoms, setSymptoms] = useState({
-    fever: '',
-    pain: '',
-    swell: '',
-    red: '',
-    pus: '',
-    smell: '',
-    gap: ''
-  });
+  const [symptoms, setSymptoms] = useState(() => Object.fromEntries(ssiSuspicionCriteria.map(item => [item.id, ''])));
   const [otherSymptom, setOtherSymptom] = useState('');
-
   // Post-discharge treatments
   const [dischargeTreatment, setDischargeTreatment] = useState(''); // none, metDoctor, other
   const [dischargeTreatmentText, setDischargeTreatmentText] = useState('');
@@ -130,7 +114,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
 
   const resetAssessmentFields = () => {
     setFollowUpMethod(''); setFollowerName(''); setContactPhone(''); setContactStatus(''); setRemarks('')
-    setSymptoms({ fever: '', pain: '', swell: '', red: '', pus: '', smell: '', gap: '' })
+    setSymptoms(Object.fromEntries(ssiSuspicionCriteria.map(item => [item.id, ''])))
     setOtherSymptom('')
     setDischargeTreatment(''); setDischargeTreatmentText(''); setEvalResult(''); setEvalRemarks(''); setAttachments([])
   }
@@ -156,38 +140,32 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
 
   useEffect(() => {
     api.getSettings().then(settings => {
-      const configuredSymptoms = (settings.ssiCriteria || []).filter(item => item.enabled !== false)
-      setSymptomConfig(configuredSymptoms)
-      setSymptoms(Object.fromEntries(configuredSymptoms.map(item => [String(item.id), ''])))
       setMethodConfig((settings.methods || []).map(normalizeFollowUpMethod).filter(item => item.name && item.enabled !== false))
       setDischargeTreatmentConfig((settings.dischargeTreatmentOptions || [
         { id: 'none', name: 'ไม่ได้พบแพทย์', enabled: true },
         { id: 'metDoctor', name: 'พบแพทย์แล้ว (OPD/IPD)', enabled: true },
         { id: 'other', name: 'อื่นๆ', enabled: true },
       ]).filter(item => item.enabled !== false).map(item => ({ ...item, name: item.name.replace('ไม่ได้ไปพบแพทย์', 'ไม่ได้พบแพทย์').replace('ไปพบแพทย์แล้ว', 'พบแพทย์แล้ว') })))
-      if (Array.isArray(settings.riskLevels) && settings.riskLevels.length) setRiskLevels(settings.riskLevels.map(level => level.id === 'moderate' && Number(level.max) === 49 ? { ...level, max: 50 } : level.id === 'high' && Number(level.min) === 50 ? { ...level, min: 51 } : level))
-    }).catch(() => { setSymptomConfig([]); setMethodConfig([]); setDischargeTreatmentConfig([]) })
+    }).catch(() => { setMethodConfig([]); setDischargeTreatmentConfig([]) })
   }, [])
 
   const contactFailed = contactStatus === 'failed'
-  const requiredSymptomsAnswered = symptomConfig.length > 0 && symptomConfig.every(item => symptoms[String(item.id)])
-  const answeredSymptoms = Object.values(symptoms).filter(Boolean)
-  const assessmentPoints = answeredSymptoms.reduce((sum, value) => /^(has|yes|true|มี)$/i.test(String(value)) ? sum + 1 : /^(unknown|unsure|ไม่ทราบ)$/i.test(String(value)) ? sum + 0.5 : sum, 0)
-  const calculatedScore = answeredSymptoms.length ? Number(((assessmentPoints / answeredSymptoms.length) * 100).toFixed(2)) : null
-  const calculatedRisk = calculatedScore == null ? null : riskLevels.find(level => calculatedScore >= Number(level.min) && calculatedScore <= Number(level.max)) || riskLevels[riskLevels.length - 1]
-  const suggestedResult = calculatedScore == null ? '' : calculatedRisk?.id === 'low' ? 'not_infected' : 'suspect_ssi'
+  const meetsSuspicionCriteria = meetsSsiSuspicionCriteria(symptoms)
+  const allCriteriaAnswered = ssiSuspicionCriteria.every(item => ['no','yes','unknown'].includes(symptoms[item.id]))
+  const suggestedResult = meetsSuspicionCriteria ? 'suspect_ssi' : allCriteriaAnswered ? 'not_infected' : ''
+  useEffect(() => { setEvalResult(suggestedResult) }, [suggestedResult])
   const activeRoundIndex = activeFollowUp?.current_round_index || 0
   const activeRound = activeFollowUp?.schedule?.[activeRoundIndex]
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const scheduledDay = activeRound?.date ? new Date(`${activeRound.date}T00:00:00`) : null
   const roundIsDue = activeRoundIndex === 0 || !scheduledDay || today >= scheduledDay
   const validStaffPhone = contactPhone.trim().length > 0
-  const canSave = Boolean((isOutOfRound || roundIsDue) && activeFollowUp && followUpDate && followUpTime && followUpMethod && followerName && validStaffPhone && (contactFailed || (evalResult && requiredSymptomsAnswered)))
+  const canSave = Boolean((isOutOfRound || roundIsDue) && activeFollowUp && followUpDate && followUpTime && followUpMethod && followerName && validStaffPhone && (contactFailed || (evalResult && allCriteriaAnswered)))
 
   const saveAssessment = async (submittedToDoctor = false) => {
-    const result = contactFailed ? 'contact_failed' : evalResult
-    const score = contactFailed ? null : calculatedScore
-    const data = { followUpDate, followUpTime, followUpMethod, followerName, contactPhone, contactStatus, remarks, symptoms: contactFailed ? {} : symptoms, otherSymptom: contactFailed ? '' : otherSymptom, dischargeTreatment: contactFailed ? '' : dischargeTreatment, dischargeTreatmentText: contactFailed ? '' : dischargeTreatmentText, evalRemarks, nextAppointment, calculatedRisk: contactFailed ? null : calculatedRisk?.id, suggestedResult: contactFailed ? '' : suggestedResult, attachmentCount: attachments.length, submittedToDoctor, assessmentKind: isOutOfRound ? 'OUT_OF_ROUND' : 'SCHEDULED' }
+    const result = contactFailed ? 'contact_failed' : suggestedResult
+    const score = null
+    const data = { followUpDate, followUpTime, followUpMethod, followerName, contactPhone, contactStatus, remarks, assessmentModel: 'ssi-checklist-v1', otherSymptom: contactFailed ? '' : otherSymptom, requiresIcReview: !contactFailed && meetsSuspicionCriteria, symptoms: contactFailed ? {} : symptoms, dischargeTreatment: contactFailed ? '' : dischargeTreatment, dischargeTreatmentText: contactFailed ? '' : dischargeTreatmentText, evalRemarks, nextAppointment, suggestedResult: contactFailed ? '' : suggestedResult, attachmentCount: attachments.length, submittedToDoctor, assessmentKind: isOutOfRound ? 'OUT_OF_ROUND' : 'SCHEDULED' }
     if (isOutOfRound) {
       const activity = await api.createActivity(selectedPatient.operationNo, { activityType: 'ประเมินนอกเวลาตามรอบ', activityAt: `${followUpDate}T${followUpTime}:00+07:00`, purpose: evalResult === 'suspect_ssi' ? 'ประเมินอาการสงสัย SSI' : 'ติดตามอาการหลังผ่าตัด', location: null, staff: followerName, contactPrimary: contactPhone, detail: evalRemarks || remarks || 'บันทึกผลประเมินนอกเวลาตามรอบ' })
       await api.createActivityEvaluation(selectedPatient.operationNo, { activityId: activity.id, evaluationType: 'SSI_ACTIVITY', result, score, evaluatedBy: followerName, evaluatedAt: `${followUpDate}T${followUpTime}:00+07:00`, data })
@@ -343,71 +321,12 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
         {/* Right Column */}
         <div className="evaluation-right-column">
           <fieldset disabled={contactFailed} className="evaluation-assessment-fields">
-          {/* แบบประเมินอาการ CDC SSI */}
           <div className="sub-info-card evaluation-symptoms-card">
-            <div className="sub-info-card-header">
-              <h4 className="sub-info-card-title">แบบประเมินอาการ (CDC SSI)</h4>
-            </div>
-
-            <table className="assessment-table">
-              <thead>
-                <tr>
-                  <th>อาการ/อาการแสดง</th>
-                  <th className="assessment-table-center" style={{ width: '60px' }}>ไม่มี</th>
-                  <th className="assessment-table-center" style={{ width: '60px' }}>มี</th>
-                  <th className="assessment-table-center" style={{ width: '60px' }}>ไม่ทราบ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {symptomConfig.map(item => (
-                  <tr key={item.id}>
-                    <td>{item.name}</td>
-                    <td className="assessment-table-center">
-                      <input
-                        type="radio"
-                        name={item.id}
-                        className="radio-input"
-                        checked={symptoms[item.id] === 'no'}
-                        onChange={() => setSymptoms(prev => ({ ...prev, [item.id]: 'no' }))}
-                      />
-                    </td>
-                    <td className="assessment-table-center">
-                      <input
-                        type="radio"
-                        name={item.id}
-                        className="radio-input"
-                        checked={symptoms[item.id] === 'yes'}
-                        onChange={() => setSymptoms(prev => ({ ...prev, [item.id]: 'yes' }))}
-                      />
-                    </td>
-                    <td className="assessment-table-center">
-                      <input
-                        type="radio"
-                        name={item.id}
-                        className="radio-input"
-                        checked={symptoms[item.id] === 'unknown'}
-                        onChange={() => setSymptoms(prev => ({ ...prev, [item.id]: 'unknown' }))}
-                      />
-                    </td>
-                  </tr>
-                ))}
-                {!symptomConfig.length && <tr><td colSpan="4" className="py-6 text-center text-slate-400">ยังไม่ได้ตั้งค่าอาการสำหรับแบบประเมิน</td></tr>}
-                <tr>
-                  <td>อื่นๆ</td>
-                  <td colSpan="3">
-                    <input
-                      type="text"
-                      placeholder="ระบุอาการอื่นๆ"
-                      className="form-input"
-                      style={{ padding: '6px 10px', fontSize: '13px' }}
-                      value={otherSymptom}
-                      onChange={(e) => setOtherSymptom(e.target.value)}
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
+            <div className="sub-info-card-header"><h4 className="sub-info-card-title">เกณฑ์สงสัย SSI</h4></div>
+            <table className="assessment-table"><thead><tr><th>เกณฑ์/อาการแสดง</th>{['ไม่มี', 'มี', 'ไม่ทราบ'].map(label => <th key={label} className="assessment-table-center whitespace-nowrap" style={{width:'80px',minWidth:'80px'}}>{label}</th>)}</tr></thead><tbody>
+              {ssiSuspicionCriteria.map(item => <tr key={item.id}><td>{item.name}</td>{[['no','ไม่มี'],['yes','มี'],['unknown','ไม่ทราบ']].map(([value,label]) => <td key={value} className="assessment-table-center"><input type="radio" name={`ssi-criterion-${item.id}`} aria-label={`${item.name}: ${label}`} className="radio-input" checked={symptoms[item.id]===value} onChange={()=>setSymptoms(current=>({...current,[item.id]:value}))}/></td>)}</tr>)}
+              <tr><td>อื่นๆ</td><td colSpan="3"><input aria-label="อาการอื่นๆ" type="text" className="form-input" value={otherSymptom} onChange={event=>setOtherSymptom(event.target.value)} placeholder="ระบุอาการอื่นๆ" style={{padding:'6px 10px',fontSize:'13px'}}/></td></tr>
+            </tbody></table>
           </div>
 
           {/* การมารับการรักษาหลังจำหน่าย */}
@@ -437,14 +356,12 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
             </div>
 
             <div className="form-group" style={{ marginBottom: '16px' }}>
-              <label>ผลการประเมิน SSI (ระบบคำนวณอัตโนมัติ)</label>
-              <div className={`mt-2 rounded-lg border px-3 py-2.5 ${suggestedResult === 'suspect_ssi' ? 'border-orange-200 bg-orange-50' : suggestedResult === 'not_infected' ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
-                {calculatedScore == null ? <p className="text-[12px] text-slate-500">กรุณาตอบแบบประเมินอาการให้ครบ</p> : <div className="flex items-center justify-between gap-3"><div><p className="text-[12px] font-semibold text-slate-700">ผลคำนวณจากแบบประเมิน: <span style={{ color: calculatedRisk?.color }}>{calculatedRisk?.name || '-'}</span></p><p className="mt-0.5 text-[11px] text-slate-500">ระบบใช้เป็นข้อมูลประกอบ ผลที่บันทึกยึดตามเจ้าหน้าที่</p></div><strong className="text-[15px]" style={{ color: calculatedRisk?.color }}>{calculatedScore}%</strong></div>}
-              </div>
+              <label>ผลการประเมิน SSI</label>
               <div className="mt-3 grid grid-cols-2 gap-3">
-                <button type="button" onClick={() => setEvalResult('not_infected')} className={`rounded-lg border px-3 py-2.5 text-[13px] font-semibold ${evalResult === 'not_infected' ? 'border-emerald-500 bg-emerald-50 text-emerald-600' : 'border-slate-200 bg-white text-slate-600'}`}>ไม่เข้าข่ายการติดเชื้อ</button>
-                <button type="button" onClick={() => setEvalResult('suspect_ssi')} className={`rounded-lg border px-3 py-2.5 text-[13px] font-semibold ${evalResult === 'suspect_ssi' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-slate-200 bg-white text-slate-600'}`}>เข้าข่ายสงสัย SSI</button>
+                <button type="button" disabled={meetsSuspicionCriteria} onClick={() => setEvalResult('not_infected')} className={`rounded-lg border px-3 py-2.5 text-[13px] font-semibold ${evalResult === 'not_infected' ? 'border-emerald-500 bg-emerald-50 text-emerald-600' : 'border-slate-200 bg-white text-slate-600'}`}>ไม่เข้าข่ายการติดเชื้อ</button>
+                <button type="button" disabled={!meetsSuspicionCriteria} onClick={() => setEvalResult('suspect_ssi')} className={`rounded-lg border px-3 py-2.5 text-[13px] font-semibold ${evalResult === 'suspect_ssi' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-slate-200 bg-white text-slate-600'}`}>เข้าข่ายสงสัย SSI</button>
               </div>
+              {meetsSuspicionCriteria && <p role="status" className="mt-3 text-[13px] font-semibold text-orange-700">* สงสัย SSI — ให้ IC ตรวจสอบเพื่อยืนยัน</p>}
             </div>
 
             <div className="form-group" style={{ marginBottom: '16px' }}>
@@ -462,27 +379,29 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
               />
             </div>
 
-            <div className="form-group rounded-lg border border-orange-200 bg-orange-50/50 p-3">
-              <label className="text-orange-700">นัดหมายติดตามครั้งถัดไป (เพิ่มเติม)</label>
+            <div className="form-group">
+              <label className="mb-2 block text-slate-700">นัดหมายติดตามครั้งถัดไป (เพิ่มเติม)</label>
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
               <div className="mt-2 grid gap-3 sm:grid-cols-2">
                 <label>วันที่<input type="date" className="form-input mt-1" value={nextAppointment} onChange={event => { setNextAppointment(event.target.value); setAppointmentMessage('') }} /></label>
                 <label>เวลา<input type="time" className="form-input mt-1" value={appointmentTime} onChange={event => { setAppointmentTime(event.target.value); setAppointmentMessage('') }} /></label>
               </div>
               <label className="mt-3 block">เหตุผล/ตรวจผลเพิ่มเติม<input className="form-input mt-1" value={appointmentReason} onChange={event => setAppointmentReason(event.target.value)} placeholder="เช่น นัดติดตามผลตรวจเพิ่มเติม" /></label>
-              <p className="mt-2 text-xs text-slate-500">บันทึกเป็นกิจกรรมแทรกสีส้ม แจ้งเตือนในระบบก่อนนัด 1 วัน โดยรอบติดตามหลักยังคงเดิม</p>
-              <button type="button" className="mt-3 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" disabled={savingAppointment || !nextAppointment || !appointmentTime || !followerName.trim() || !contactPhone.trim()} onClick={async () => {
+              <p className="mt-2 text-xs text-slate-500">บันทึกเป็นกิจกรรมแทรก แจ้งเตือนในระบบก่อนนัด 1 วัน โดยรอบติดตามหลักยังคงเดิม</p>
+              <div className="mt-3 flex justify-end"><button type="button" className="btn-primary disabled:opacity-50" disabled={savingAppointment || !nextAppointment || !appointmentTime || !followerName.trim() || !contactPhone.trim()} onClick={async () => {
                 const activityAt = `${nextAppointment}T${appointmentTime}:00+07:00`
                 if (!Number.isFinite(new Date(activityAt).getTime()) || new Date(activityAt) <= new Date()) { setAppointmentMessage('กรุณาเลือกวันและเวลานัดในอนาคต'); return }
                 setSavingAppointment(true); setAppointmentMessage('')
                 try {
-                  await api.createActivity(selectedPatient.operationNo, { activityType: 'นัดหมายติดตามเพิ่มเติม', activityAt, purpose: appointmentReason.trim() || 'ติดตามผลตรวจเพิ่มเติม', staff: followerName.trim(), contactPrimary: contactPhone.trim(), detail: appointmentReason.trim() || 'นัดติดตามผลตรวจเพิ่มเติม', notifyPeriod: '1 วัน' })
+                  await api.createActivity(selectedPatient.operationNo, { activityType: 'นัดหมายติดตามเพิ่มเติม', activityAt, purpose: evalResult === 'suspect_ssi' ? `นัดตรวจสงสัย SSI: ${appointmentReason.trim() || 'ตรวจยืนยันการติดเชื้อ'}` : appointmentReason.trim() || 'ติดตามผลตรวจเพิ่มเติม', staff: followerName.trim(), contactPrimary: contactPhone.trim(), detail: appointmentReason.trim() || 'นัดติดตามผลตรวจเพิ่มเติม', notifyPeriod: '1 วัน' })
                   window.dispatchEvent(new Event('activities-updated')); window.dispatchEvent(new Event('operations-updated'))
                   setNextAppointment(''); setAppointmentReason(''); setAppointmentMessage('บันทึกนัดหมายเพิ่มเติมแล้ว')
                 } catch (error) { setAppointmentMessage(error.message || 'บันทึกนัดหมายไม่สำเร็จ') }
                 finally { setSavingAppointment(false) }
-              }}>{savingAppointment ? 'กำลังบันทึก...' : 'บันทึกนัดหมายเพิ่มเติม'}</button>
+              }}>{savingAppointment ? 'กำลังบันทึก...' : 'บันทึกนัดหมายเพิ่มเติม'}</button></div>
               {(!followerName.trim() || !contactPhone.trim()) && <p className="mt-2 text-xs text-slate-500">กรอกชื่อผู้ติดตามและเบอร์ติดต่อ (ภายใน) ก่อนบันทึกนัดหมาย</p>}
-              {appointmentMessage && <p role="status" className="mt-2 text-sm text-orange-700">{appointmentMessage}</p>}
+              {appointmentMessage && <p role="status" className="mt-2 text-sm text-slate-600">{appointmentMessage}</p>}
+              </div>
             </div>
           </div>
           </fieldset>
@@ -785,7 +704,7 @@ export default function EvaluationForm({ selectedPatient, setSelectedPatient, mo
                     }
                     const completedIndex = activeFollowUp.current_round_index || 0
                     const completedRound = activeFollowUp.schedule?.[completedIndex]?.day || `รอบที่ ${completedIndex + 1}`
-                    await api.createEvaluation(selectedPatient.operationNo, { evaluationType: 'SSI', result: 'suspect_ssi', roundIndex: completedIndex, data: { followUpDate, followUpTime, followUpMethod, followerName, contactPhone, contactStatus, remarks, symptoms, otherSymptom, dischargeTreatment, dischargeTreatmentText, evalRemarks, nextAppointment, submittedToDoctor: true, attachmentCount: attachments.length }, evaluatedBy: followerName })
+                    await api.createEvaluation(selectedPatient.operationNo, { evaluationType: 'SSI', result: 'suspect_ssi', roundIndex: completedIndex, data: { followUpDate, followUpTime, followUpMethod, followerName, contactPhone, contactStatus, remarks, assessmentModel: 'ssi-checklist-v1', otherSymptom: contactFailed ? '' : otherSymptom, requiresIcReview: meetsSuspicionCriteria, symptoms, dischargeTreatment, dischargeTreatmentText, evalRemarks, nextAppointment, submittedToDoctor: true, attachmentCount: attachments.length }, evaluatedBy: followerName })
                     const failedUploads = await uploadAttachments(completedRound)
                     window.dispatchEvent(new Event('operations-updated'))
                     setIsSubmitToDoctorModalOpen(false)

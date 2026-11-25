@@ -10,6 +10,8 @@ const pool = new Pool({
 });
 
 const ensureSchema = async () => {
+  await pool.query("ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS or_ssi_risk_factors JSONB");
+  await pool.query("ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS case_priority VARCHAR(10) NOT NULL DEFAULT 'LOW' CHECK (case_priority IN ('HIGH', 'MEDIUM', 'LOW'))");
   await pool.query(`CREATE TABLE IF NOT EXISTS ssi_case_reviews (
     operation_no VARCHAR(100) PRIMARY KEY REFERENCES ris_operations(operation_no) ON DELETE CASCADE,
     data JSONB NOT NULL DEFAULT '{}', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -78,6 +80,37 @@ const ensureSchema = async () => {
   await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS assigned_to VARCHAR(255)');
   await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS queued_at TIMESTAMPTZ');
   await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS accepted_at TIMESTAMPTZ');
+  await pool.query(`ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS handover_data_edited BOOLEAN;
+    ALTER TABLE ssi_case_reviews ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMPTZ;
+    ALTER TABLE ssi_case_reviews ADD COLUMN IF NOT EXISTS concluded_at TIMESTAMPTZ;
+    CREATE TABLE IF NOT EXISTS case_data_edits (
+      id BIGSERIAL PRIMARY KEY, operation_no TEXT NOT NULL REFERENCES ris_operations(operation_no) ON DELETE CASCADE,
+      edited_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), changed_fields JSONB NOT NULL
+    );
+    CREATE OR REPLACE FUNCTION track_handover_data_edit() RETURNS trigger LANGUAGE plpgsql AS $$
+    DECLARE changes JSONB;
+    BEGIN
+      IF OLD.queued_at IS NOT NULL AND NEW.queued_at IS NOT DISTINCT FROM OLD.queued_at THEN
+        SELECT jsonb_object_agg(k, jsonb_build_object('before',to_jsonb(OLD)->k,'after',to_jsonb(NEW)->k)) INTO changes
+        FROM jsonb_object_keys(to_jsonb(NEW)) k
+        WHERE k = ANY(ARRAY['hn','first_name','last_name','date_of_birth','age','sex','height_cm','weight_kg','bmi',
+          'episode_no','episode_date','ward_name','bed_no','surgeon','second_surgeon','third_surgeon','operation_department',
+          'operation_location','operating_room','urgency','operation_type','preoperative_diagnosis','procedure_name',
+          'procedure_free_text','primary_body_site','laterality','secondary_operation','start_at','end_at','duration_minutes',
+          'anesthesiologist','anesthesia_type','scrub_nurse','circulating_nurse','anesthesia_nurse','special_equipment',
+          'phone_primary','phone_secondary','line_id','email','ethnicity','nationality','insurance','address',
+          'implant_present','implant','comorbidities','smoking_status','wound_class','asa_class'])
+          AND (to_jsonb(NEW)->k) IS DISTINCT FROM (to_jsonb(OLD)->k);
+        IF changes IS NOT NULL THEN
+          NEW.handover_data_edited = TRUE;
+          INSERT INTO case_data_edits(operation_no,changed_fields) VALUES(OLD.operation_no,changes);
+        END IF;
+      END IF;
+      RETURN NEW;
+    END $$;
+    DROP TRIGGER IF EXISTS track_handover_data_edit ON ris_operations;
+    CREATE TRIGGER track_handover_data_edit BEFORE UPDATE ON ris_operations FOR EACH ROW EXECUTE FUNCTION track_handover_data_edit();`);
+
   await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS phone_primary VARCHAR(100)');
   await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS phone_secondary VARCHAR(100)');
   await pool.query('ALTER TABLE ris_operations ADD COLUMN IF NOT EXISTS line_id VARCHAR(255)');
